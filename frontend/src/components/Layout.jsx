@@ -41,6 +41,7 @@ import ChatBot from './ChatBot/ChatBot'
 import PWAInstallPrompt from './PWAInstallPrompt'
 import OfflineIndicator from './OfflineIndicator'
 import InAppNotification from './InAppNotification'
+import NotificationBell from './NotificationBell'
 
 const drawerWidth = 240
 
@@ -228,6 +229,7 @@ function Layout({ children }) {
             Gestão de Leads
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationBell />
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user?.nick || user?.username}
             </Typography>
