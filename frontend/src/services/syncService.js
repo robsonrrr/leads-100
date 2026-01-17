@@ -217,6 +217,22 @@ class SyncService {
             console.log(`📤 Processando ${pending.length} operações na fila...`)
 
             for (const item of pending) {
+                // Lógica de Retry com Backoff Exponencial
+                if (item.status === 'error') {
+                    const attempts = item.attempts || 1
+                    // Backoff: 30s * 2^(attempts-1) -> 30s, 1m, 2m, 4m...
+                    const backoffMs = Math.min(30000 * Math.pow(2, attempts - 1), 24 * 60 * 60 * 1000)
+
+                    const lastAttempt = item.last_attempt ? new Date(item.last_attempt).getTime() : 0
+                    const now = Date.now()
+
+                    if (now - lastAttempt < backoffMs) {
+                        // Ainda em período de espera, pular
+                        continue
+                    }
+                    console.log(`🔄 Retentando item ${item.id} (Tentativa ${attempts + 1})`)
+                }
+
                 try {
                     const payload = JSON.parse(item.payload)
 

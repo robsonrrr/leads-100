@@ -467,7 +467,8 @@ class SQLiteService {
      */
     async getPendingSyncItems() {
         if (!this.isReady) await this.init()
-        const result = this.db.exec("SELECT * FROM sync_queue WHERE status = 'pending' ORDER BY created_at ASC")
+        // Buscar pendentes e erros (para retry)
+        const result = this.db.exec("SELECT * FROM sync_queue WHERE status IN ('pending', 'error') ORDER BY created_at ASC")
         return this._resultToObjects(result)
     }
 
@@ -634,44 +635,54 @@ class SQLiteService {
     /**
      * Logs de erro para debug
      */
+    /**
+     * Logs de erro para debug
+     */
     logError(operation, error) {
-        const errorLog = {
-            timestamp: new Date().toISOString(),
-            operation,
-            message: error.message,
-            stack: error.stack
-        }
-        console.error('📦 SQLite Error:', errorLog)
-
-        // Salvar no localStorage para análise
-        try {
-            const logs = JSON.parse(localStorage.getItem('sqlite_errors') || '[]')
-            logs.push(errorLog)
-            // Manter apenas últimos 50 erros
-            if (logs.length > 50) logs.shift()
-            localStorage.setItem('sqlite_errors', JSON.stringify(logs))
-        } catch (e) {
-            // Ignore storage errors
-        }
+        // Implementação simplificada de log (pode ser expandida para tabela separada se necessário)
+        console.error(`[SQLite Error] ${operation}:`, error)
     }
 
     /**
-     * Retorna logs de erro
+     * Retorna itens com erro na fila de sync (usado para notificações)
      */
-    getErrorLogs() {
-        try {
-            return JSON.parse(localStorage.getItem('sqlite_errors') || '[]')
-        } catch (e) {
-            return []
-        }
+    async getErrorLogs() {
+        if (!this.isReady) await this.init()
+        const result = this.db.exec("SELECT * FROM sync_queue WHERE status = 'error' ORDER BY last_attempt DESC")
+        const items = this._resultToObjects(result)
+
+        // Mapear para formato esperado pelo componente de notificação
+        return items.map(item => ({
+            id: item.id,
+            message: `Erro ao sincronizar ${item.entity} (${item.action})`,
+            error: `Tentativa ${item.attempts} falhou.`,
+            timestamp: item.last_attempt,
+            entity: item.entity,
+            action: item.action
+        }))
     }
 
     /**
-     * Limpa logs de erro
+     * Limpa logs de erro (reseta items para status pending ou remove)
+     * Aqui opto por remover items com erro se usuário pedir limpar, 
+     * OU melhor, resetar para 'pending' para tentar de novo?
+     * O componente diz "Limpar", o que sugere remover da lista visual.
+     * Mas se removermos da fila, perdemos o dado.
+     * Vou interpretar "Limpar" como "Reconhecer erro e parar de tentar por enquanto" ou "Excluir".
+     * Dado que são dados de leads, excluir é perigoso. 
+     * Vou mudar status para 'cancelled' (preciso suportar esse status).
+     * Ou deletar. O usuário tem botão "Excluir" no rascunho.
+     * O componente SyncErrorNotifications tem "Limpar" que chama clearErrorLogs.
+     * Vou implementar clearErrorLogs deletando os logs? Não, sync_queue é a fila de trabalho.
+     * Vou resetar attempts para 0 e status para 'pending' (retry manual).
      */
-    clearErrorLogs() {
-        localStorage.removeItem('sqlite_errors')
+    async clearErrorLogs() {
+        if (!this.isReady) await this.init()
+        // Resetar itens com erro para pending (retry manual forçado)
+        this.db.run("UPDATE sync_queue SET status = 'pending', attempts = 0 WHERE status = 'error'")
+        await this.persist()
     }
+
 
     /**
      * Métricas de performance

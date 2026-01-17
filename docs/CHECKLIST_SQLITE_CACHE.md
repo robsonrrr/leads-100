@@ -26,7 +26,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 |---|--------|-------------|--------|
 | 1.2.1 | Endpoint de sync incremental (delta) | Backend | ⏳ |
 | 1.2.2 | Controle de timestamp última sync | Frontend | ✅ |
-| 1.2.3 | Background sync com Service Worker | Frontend | ⏳ |
+| 1.2.3 | Background sync com Service Worker | Frontend | ✅ |
 | 1.2.4 | Indicador visual de sincronização | Frontend | ✅ |
 | 1.2.5 | Resolução de conflitos (servidor ganha) | Backend | ⏳ |
 
@@ -191,14 +191,14 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | Categoria | Total | Concluídas | Pendentes |
 |-----------|-------|------------|-----------|
-| 1. Infraestrutura | 10 | 7 | 3 |
+| 1. Infraestrutura | 10 | 8 | 2 |
 | 2. Produtos | 16 | 15 | 1 |
 | 3. Clientes | 10 | 9 | 1 |
 | 4. Leads | 10 | 9 | 1 |
 | 5. Integração | 10 | 10 | 0 |
 | 6. Limites | 4 | 4 | 0 |
 | 7. Métricas | 4 | 2 | 2 |
-| **TOTAL** | **64** | **56** | **8** |
+| **TOTAL** | **64** | **57** | **7** |
 
 ---
 
