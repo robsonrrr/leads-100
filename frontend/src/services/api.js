@@ -217,6 +217,7 @@ export const analyticsService = {
   getTeamMetrics: (params) => api.get('/analytics/team-metrics', { params }),
   getSellerPerformance: (params) => api.get('/analytics/seller-performance', { params }),
   getSalesTrend: (params) => api.get('/analytics/sales-trend', { params }),
+  getLeadsMetrics: (params) => api.get('/analytics/leads-metrics', { params }),
 }
 
 export const alertsService = {

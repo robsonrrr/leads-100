@@ -50,4 +50,16 @@ router.get('/seller-performance', authenticateToken, analyticsController.getSell
  */
 router.get('/sales-trend', authenticateToken, analyticsController.getSalesTrend);
 
+/**
+ * @swagger
+ * /analytics/leads-metrics:
+ *   get:
+ *     summary: Métricas detalhadas de leads (total, conversão, funil, tendência)
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/leads-metrics', authenticateToken, analyticsController.getLeadsMetrics);
+
 export default router;
+

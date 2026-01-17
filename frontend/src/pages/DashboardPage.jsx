@@ -44,6 +44,7 @@ import PenetrationWidget from '../components/PenetrationWidget'
 import PipelineWidget from '../components/PipelineWidget'
 import InventoryHealthWidget from '../components/InventoryHealthWidget'
 import CustomerGoalsWidget from '../components/CustomerGoalsWidget'
+import LeadsAnalyticsWidget from '../components/LeadsAnalyticsWidget'
 
 function DashboardPage() {
   const navigate = useNavigate()
@@ -70,6 +71,7 @@ function DashboardPage() {
     'ranking': { component: RankingWidget, title: 'Ranking', grid: 6, category: 0 },
 
     // CATEGORIA: IA & BI
+    'leads-analytics': { component: LeadsAnalyticsWidget, title: '📊 Métricas de Leads', grid: 12, category: 1, priority: true },
     'forecast': { component: ForecastWidget, title: 'Previsão de Vendas (IA)', grid: 6, category: 1 },
     'deviation': { component: DeviationWidget, title: 'Análise de Desvio (IA)', grid: 6, category: 1 },
     'risk': { component: AtRiskCustomers, title: 'Risco Churn (IA)', grid: 6, category: 1 },

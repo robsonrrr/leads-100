@@ -859,3 +859,207 @@ export async function getSalesTrend(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Métricas detalhadas de Leads
+ * GET /api/analytics/leads-metrics
+ * Retorna: total de leads, conversão, funil por status, tendência mensal
+ */
+export async function getLeadsMetrics(req, res, next) {
+  try {
+    const userLevel = req.user?.level || 0;
+    const manager = userLevel > 4;
+
+    let sellerId = req.user?.userId;
+    let sellerSegmento = null;
+
+    if (manager) {
+      if (req.query.sellerId) {
+        sellerId = parseInt(req.query.sellerId);
+      } else if (req.query.sellerSegmento) {
+        sellerSegmento = req.query.sellerSegmento;
+        sellerId = null;
+      } else {
+        sellerId = null; // Gerente sem filtro = todos
+      }
+    }
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+
+    // Construir filtro de vendedor
+    let vendorFilterSql = '';
+    const vendorParams = [];
+    if (sellerId) {
+      vendorFilterSql = ' AND s.cSeller = ?';
+      vendorParams.push(sellerId);
+    } else if (sellerSegmento) {
+      vendorFilterSql = ` AND s.cSeller IN (
+        SELECT id FROM rolemak_users
+        WHERE depto = 'VENDAS' AND segmento = ?
+      )`;
+      vendorParams.push(sellerSegmento);
+    }
+
+    // 1. Resumo geral de leads (mês atual)
+    const summaryQuery = `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN s.cType = 1 THEN 1 ELSE 0 END) as open_leads,
+        SUM(CASE WHEN s.cType = 2 THEN 1 ELSE 0 END) as converted,
+        SUM(CASE WHEN s.cType = 3 THEN 1 ELSE 0 END) as cancelled,
+        COALESCE(SUM(s.total_value), 0) as total_value,
+        COALESCE(SUM(CASE WHEN s.cType = 1 THEN s.total_value ELSE 0 END), 0) as open_value,
+        COALESCE(SUM(CASE WHEN s.cType = 2 THEN s.total_value ELSE 0 END), 0) as converted_value
+      FROM staging.staging_queries s
+      WHERE YEAR(s.dCart) = ? AND MONTH(s.dCart) = ?
+        ${vendorFilterSql}
+    `;
+    const summaryParams = [year, month, ...vendorParams];
+
+    // 2. Resumo do mês anterior (para comparação)
+    const prevSummaryQuery = `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN s.cType = 2 THEN 1 ELSE 0 END) as converted
+      FROM staging.staging_queries s
+      WHERE YEAR(s.dCart) = ? AND MONTH(s.dCart) = ?
+        ${vendorFilterSql}
+    `;
+    const prevSummaryParams = [prevYear, prevMonth, ...vendorParams];
+
+    // 3. Tendência mensal (últimos 6 meses)
+    const trendQuery = `
+      SELECT
+        YEAR(s.dCart) as year,
+        MONTH(s.dCart) as month,
+        COUNT(*) as total,
+        SUM(CASE WHEN s.cType = 1 THEN 1 ELSE 0 END) as open_leads,
+        SUM(CASE WHEN s.cType = 2 THEN 1 ELSE 0 END) as converted,
+        COALESCE(SUM(s.total_value), 0) as total_value
+      FROM staging.staging_queries s
+      WHERE s.dCart >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        ${vendorFilterSql}
+      GROUP BY YEAR(s.dCart), MONTH(s.dCart)
+      ORDER BY year, month
+    `;
+    const trendParams = [...vendorParams];
+
+    // 4. Leads por vendedor (top 10 - apenas para gerentes)
+    let bySellerData = [];
+    if (manager && !sellerId) {
+      let bySellerQuery = `
+        SELECT
+          u.id as seller_id,
+          COALESCE(u.nick, u.user) as seller_name,
+          COUNT(*) as total,
+          SUM(CASE WHEN s.cType = 1 THEN 1 ELSE 0 END) as open_leads,
+          SUM(CASE WHEN s.cType = 2 THEN 1 ELSE 0 END) as converted,
+          COALESCE(SUM(s.total_value), 0) as total_value
+        FROM staging.staging_queries s
+        INNER JOIN rolemak_users u ON s.cSeller = u.id
+        WHERE YEAR(s.dCart) = ? AND MONTH(s.dCart) = ?
+          AND u.depto = 'VENDAS'
+      `;
+      const bySellerParams = [year, month];
+
+      if (sellerSegmento) {
+        bySellerQuery += ` AND u.segmento = ?`;
+        bySellerParams.push(sellerSegmento);
+      }
+
+      bySellerQuery += ` GROUP BY u.id, u.nick, u.user ORDER BY total DESC LIMIT 10`;
+
+      const [bySellerRows] = await db().execute(bySellerQuery, bySellerParams);
+      bySellerData = bySellerRows.map(r => ({
+        sellerId: r.seller_id,
+        sellerName: r.seller_name,
+        total: parseInt(r.total) || 0,
+        openLeads: parseInt(r.open_leads) || 0,
+        converted: parseInt(r.converted) || 0,
+        totalValue: parseFloat(r.total_value) || 0,
+        conversionRate: r.total > 0 ? Math.round((parseInt(r.converted) / parseInt(r.total)) * 100) : 0
+      }));
+    }
+
+    // Executar queries
+    const [[summaryRows], [prevSummaryRows], [trendRows]] = await Promise.all([
+      db().execute(summaryQuery, summaryParams),
+      db().execute(prevSummaryQuery, prevSummaryParams),
+      db().execute(trendQuery, trendParams)
+    ]);
+
+    const summary = summaryRows[0] || {};
+    const prevSummary = prevSummaryRows[0] || {};
+
+    const total = parseInt(summary.total) || 0;
+    const openLeads = parseInt(summary.open_leads) || 0;
+    const converted = parseInt(summary.converted) || 0;
+    const cancelled = parseInt(summary.cancelled) || 0;
+    const totalValue = parseFloat(summary.total_value) || 0;
+    const openValue = parseFloat(summary.open_value) || 0;
+    const convertedValue = parseFloat(summary.converted_value) || 0;
+    const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
+
+    const prevTotal = parseInt(prevSummary.total) || 0;
+    const prevConverted = parseInt(prevSummary.converted) || 0;
+    const prevConversionRate = prevTotal > 0 ? Math.round((prevConverted / prevTotal) * 100) : 0;
+
+    const totalVariation = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : 0;
+    const conversionVariation = prevConversionRate > 0 ? conversionRate - prevConversionRate : 0;
+
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const trend = (trendRows || []).map(r => ({
+      period: `${monthNames[(parseInt(r.month) || 1) - 1]}`,
+      year: parseInt(r.year),
+      month: parseInt(r.month),
+      total: parseInt(r.total) || 0,
+      openLeads: parseInt(r.open_leads) || 0,
+      converted: parseInt(r.converted) || 0,
+      totalValue: parseFloat(r.total_value) || 0,
+      conversionRate: r.total > 0 ? Math.round((parseInt(r.converted) / parseInt(r.total)) * 100) : 0
+    }));
+
+    // Funil de conversão
+    const funnel = [
+      { stage: 'Total Leads', count: total, value: totalValue, percentage: 100 },
+      { stage: 'Em Aberto', count: openLeads, value: openValue, percentage: total > 0 ? Math.round((openLeads / total) * 100) : 0 },
+      { stage: 'Convertidos', count: converted, value: convertedValue, percentage: conversionRate },
+      { stage: 'Cancelados', count: cancelled, value: 0, percentage: total > 0 ? Math.round((cancelled / total) * 100) : 0 }
+    ];
+
+    res.json({
+      success: true,
+      data: {
+        period: { year, month, monthName: monthNames[month - 1] },
+        summary: {
+          total,
+          openLeads,
+          converted,
+          cancelled,
+          conversionRate,
+          totalValue,
+          openValue,
+          convertedValue,
+          avgTicket: converted > 0 ? convertedValue / converted : 0
+        },
+        comparison: {
+          prevTotal,
+          prevConverted,
+          prevConversionRate,
+          totalVariation,
+          conversionVariation
+        },
+        funnel,
+        trend,
+        bySeller: bySellerData
+      }
+    });
+  } catch (error) {
+    console.error('[getLeadsMetrics] Error:', error.message);
+    next(error);
+  }
+}
