@@ -105,7 +105,7 @@
 |---|--------|-------------|--------|
 | 2.2.1 | Página /products com listagem | Frontend | ✅ |
 | 2.2.2 | Filtro por categoria/segmento | Frontend | ✅ |
-| 2.2.3 | Filtro por marca | Frontend | ⏳ |
+| 2.2.3 | Filtro por marca | Frontend | ✅ |
 | 2.2.4 | Filtro por faixa de preço | Frontend | ✅ |
 | 2.2.5 | Filtro por disponibilidade (em estoque) | Frontend | ✅ |
 | 2.2.6 | Ordenação por preço, nome, estoque | Frontend | ✅ |

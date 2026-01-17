@@ -73,6 +73,7 @@ function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
     const [selectedSegment, setSelectedSegment] = useState(searchParams.get('segment') || '')
     const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
+    const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '')
     const [priceRange, setPriceRange] = useState([0, 50000])
     const [inStockOnly, setInStockOnly] = useState(searchParams.get('inStock') === 'true')
     const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'name')
@@ -158,6 +159,11 @@ function ProductsPage() {
                     prods = prods.filter(p => p.stock > 0)
                 }
 
+                // Filtrar por marca
+                if (selectedBrand) {
+                    prods = prods.filter(p => p.brand === selectedBrand)
+                }
+
                 // Filtrar por faixa de preço
                 prods = prods.filter(p => {
                     const price = p.price || p.preco_tabela || 0
@@ -188,7 +194,7 @@ function ProductsPage() {
         } finally {
             setLoading(false)
         }
-    }, [page, searchTerm, selectedSegment, selectedCategory, inStockOnly, priceRange, sortBy])
+    }, [page, searchTerm, selectedSegment, selectedCategory, selectedBrand, inStockOnly, priceRange, sortBy])
 
     useEffect(() => {
         loadProducts()
@@ -200,6 +206,7 @@ function ProductsPage() {
         if (searchTerm) params.set('search', searchTerm)
         if (selectedSegment) params.set('segment', selectedSegment)
         if (selectedCategory) params.set('category', selectedCategory)
+        if (selectedBrand) params.set('brand', selectedBrand)
         if (inStockOnly) params.set('inStock', 'true')
         if (sortBy !== 'name') params.set('sort', sortBy)
         setSearchParams(params, { replace: true })
@@ -232,13 +239,14 @@ function ProductsPage() {
         setSearchTerm('')
         setSelectedSegment('')
         setSelectedCategory('')
+        setSelectedBrand('')
         setPriceRange([0, 50000])
         setInStockOnly(false)
         setSortBy('name')
         setPage(1)
     }
 
-    const hasActiveFilters = searchTerm || selectedSegment || selectedCategory || inStockOnly || priceRange[0] > 0 || priceRange[1] < 50000
+    const hasActiveFilters = searchTerm || selectedSegment || selectedCategory || selectedBrand || inStockOnly || priceRange[0] > 0 || priceRange[1] < 50000
 
     // Componente de filtros
     const FiltersContent = () => (
@@ -283,6 +291,23 @@ function ProductsPage() {
                     {categories.map(cat => (
                         <MenuItem key={cat.id || cat.categoria} value={cat.categoria || cat.id}>
                             {cat.categoria || cat.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            {/* Marca */}
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                <InputLabel>Marca</InputLabel>
+                <Select
+                    value={selectedBrand}
+                    onChange={(e) => { setSelectedBrand(e.target.value); setPage(1) }}
+                    label="Marca"
+                >
+                    <MenuItem value="">Todas</MenuItem>
+                    {[...new Set(products.map(p => p.brand).filter(Boolean))].sort().map(brand => (
+                        <MenuItem key={brand} value={brand}>
+                            {brand}
                         </MenuItem>
                     ))}
                 </Select>
