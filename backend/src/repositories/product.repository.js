@@ -2,6 +2,7 @@ import { getDatabase } from '../config/database.js';
 import { Product } from '../models/Product.js';
 import { CacheService } from '../services/cache.service.js';
 import searchHistoryRepository from './searchHistory.repository.js';
+import { AppError } from '../utils/AppError.js';
 
 const db = () => getDatabase();
 
@@ -10,71 +11,37 @@ export class ProductRepository {
    * Busca produtos com filtros e paginação
    */
   async search(searchTerm = '', filters = {}, pagination = { page: 1, limit: 20 }, sellerId = null) {
-    const page = parseInt(pagination.page) || 1;
-    const limit = parseInt(pagination.limit) || 20;
-    const offset = (page - 1) * limit;
+    try {
+      const page = parseInt(pagination.page) || 1;
+      const limit = parseInt(pagination.limit) || 20;
+      const offset = (page - 1) * limit;
 
-    // Gerar chave de cache baseada nos parâmetros
-    const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}`;
+      // Gerar chave de cache baseada nos parâmetros
+      const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}`;
 
-    // Tentar cache para buscas frequentes
-    const result = await CacheService.getProducts(cacheKey, async () => {
-      // Query direta nas tabelas base para máxima performance
-      // NOTA: Estoque removido da listagem para performance (~2s -> 0.2s)
-      // Estoque disponível via /products/:id/stock-by-warehouse
-      let query = `SELECT 
-        i.id, i.modelo, i.nome, i.description as descricao, i.marca, i.codebar,
-        i.revenda, i.custo,
-        p.segmento, p.segmento_id, p.categoria, p.ncm, p.vip,
-        CONCAT('https://img.rolemak.com.br/id/h180/', i.id, '.jpg') as imagem_url
-      FROM mak.inv i
-      LEFT JOIN mak.produtos p ON i.idcf = p.id
-      WHERE i.revenda > 0`;
-      const params = [];
+      // Tentar cache para buscas frequentes
+      const result = await CacheService.getProducts(cacheKey, async () => {
+        // Query direta nas tabelas base para máxima performance
+        // NOTA: Estoque removido da listagem para performance (~2s -> 0.2s)
+        // Estoque disponível via /products/:id/stock-by-warehouse
+        let query = `SELECT 
+          i.id, i.modelo, i.nome, i.description as descricao, i.marca, i.codebar,
+          i.revenda, i.custo,
+          p.segmento, p.segmento_id, p.categoria, p.ncm, p.vip,
+          CONCAT('https://img.rolemak.com.br/id/h180/', i.id, '.jpg') as imagem_url
+        FROM mak.inv i
+        LEFT JOIN mak.produtos p ON i.idcf = p.id
+        WHERE i.revenda > 0`;
+        const params = [];
 
-      // Busca por termo usando FULLTEXT (MySQL 8+) ou LIKE como fallback
-      if (searchTerm) {
-        const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
+        // Busca por termo usando FULLTEXT (MySQL 8+) ou LIKE como fallback
+        if (searchTerm) {
+          const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
 
-        if (isNumeric) {
-          // Busca numérica: ID exato ou LIKE nos campos
-          query += ` AND (
-            i.id = ? OR
-            i.modelo LIKE ? OR
-            i.nome LIKE ? OR 
-            i.description LIKE ? OR 
-            p.categoria LIKE ? OR 
-            p.ncm LIKE ? OR
-            p.segmento LIKE ?
-          )`;
-          params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
-        } else {
-          // Busca textual: FULLTEXT com MATCH AGAINST (Natural Language Mode)
-          // Fallback para LIKE se FULLTEXT não retornar resultados
-          // FULLTEXT busca em modelo, nome, description (índice ft_inv_search)
-          const fulltextSearchTerm = searchTerm
-            .trim()
-            .split(/\s+/)
-            .filter(word => word.length >= 2)
-            .join(' ');
-
-          if (fulltextSearchTerm.length >= 2) {
-            // Usar FULLTEXT com fallback para LIKE
-            // O OR com LIKE garante resultados mesmo se FULLTEXT não encontrar
+          if (isNumeric) {
+            // Busca numérica: ID exato ou LIKE nos campos
             query += ` AND (
-              MATCH(i.modelo, i.nome) AGAINST(? IN NATURAL LANGUAGE MODE)
-              OR i.modelo LIKE ?
-              OR i.nome LIKE ?
-              OR i.description LIKE ?
-              OR p.categoria LIKE ?
-              OR p.ncm LIKE ?
-              OR p.segmento LIKE ?
-            )`;
-            const searchPattern = `%${searchTerm}%`;
-            params.push(fulltextSearchTerm, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-          } else {
-            // Termo muito curto para FULLTEXT, usar apenas LIKE
-            query += ` AND (
+              i.id = ? OR
               i.modelo LIKE ? OR
               i.nome LIKE ? OR 
               i.description LIKE ? OR 
@@ -82,107 +49,138 @@ export class ProductRepository {
               p.ncm LIKE ? OR
               p.segmento LIKE ?
             )`;
-            const searchPattern = `%${searchTerm}%`;
-            params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+            params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+          } else {
+            // Busca textual: FULLTEXT com MATCH AGAINST (Natural Language Mode)
+            // Fallback para LIKE se FULLTEXT não retornar resultados
+            // FULLTEXT busca em modelo, nome, description (índice ft_inv_search)
+            const fulltextSearchTerm = searchTerm
+              .trim()
+              .split(/\s+/)
+              .filter(word => word.length >= 2)
+              .join(' ');
+
+            if (fulltextSearchTerm.length >= 2) {
+              // Usar FULLTEXT com fallback para LIKE
+              // O OR com LIKE garante resultados mesmo se FULLTEXT não encontrar
+              query += ` AND (
+                MATCH(i.modelo, i.nome) AGAINST(? IN NATURAL LANGUAGE MODE)
+                OR i.modelo LIKE ?
+                OR i.nome LIKE ?
+                OR i.description LIKE ?
+                OR p.categoria LIKE ?
+                OR p.ncm LIKE ?
+                OR p.segmento LIKE ?
+              )`;
+              const searchPattern = `%${searchTerm}%`;
+              params.push(fulltextSearchTerm, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+            } else {
+              // Termo muito curto para FULLTEXT, usar apenas LIKE
+              query += ` AND (
+                i.modelo LIKE ? OR
+                i.nome LIKE ? OR 
+                i.description LIKE ? OR 
+                p.categoria LIKE ? OR 
+                p.ncm LIKE ? OR
+                p.segmento LIKE ?
+              )`;
+              const searchPattern = `%${searchTerm}%`;
+              params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+            }
           }
         }
-      }
 
-      // Filtros adicionais
-      if (filters.segment) {
-        query += ' AND p.segmento = ?';
-        params.push(filters.segment);
-      }
-
-      if (filters.segmentId) {
-        query += ' AND p.segmento_id = ?';
-        params.push(filters.segmentId);
-      }
-
-      // Filtro por categoria
-      if (filters.category) {
-        query += ' AND p.categoria = ?';
-        params.push(filters.category);
-      }
-
-      // Filtro por marca (Q3.1 - Checklist Clientes 1.1)
-      if (filters.brand) {
-        query += ' AND (i.marca = ? OR p.p_marca = ?)';
-        params.push(filters.brand, filters.brand);
-      }
-
-      // Filtro por NCM
-      if (filters.ncm) {
-        query += ' AND p.ncm = ?';
-        params.push(filters.ncm);
-      }
-
-      // Filtro de estoque (apenas com estoque) - Opcional
-      if (filters.inStock === 'true') {
-        // Isso requer join com view de estoque que é pesado, melhor filtrar depois ou assumir risco
-        // Por enquanto, vamos manter simples para performance
-      }
-
-      // Ordernação
-      const sortMap = {
-        'price_asc': 'i.revenda ASC',
-        'price_desc': 'i.revenda DESC',
-        'name_asc': 'i.nome ASC',
-        'model_asc': 'i.modelo ASC',
-        'relevance': 'i.id ASC' // pk é id
-      };
-
-      const orderBy = sortMap[filters.sort] || 'i.id DESC';
-      query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
-
-      const [rows] = await db().query(query, params);
-
-      // Query para contagem total (sem limit/offset)
-      // Otimização: se não tem filtros, usar count(*) da tabela
-      // Se tem filtros, fazer count com os mesmos wheres
-      let countQuery = `SELECT COUNT(*) as total 
-        FROM mak.inv i
-        LEFT JOIN mak.produtos p ON i.idcf = p.id
-        WHERE i.revenda > 0`;
-      const countParams = [];
-
-      // Replicar filtros para o count (exceto sort/limit)
-      if (searchTerm) {
-        // ... (lógica de search term replicada simplificada ou extraída para função)
-        // Para simplificar aqui, vamos assumir que o count é aproximado ou usar SQL_CALC_FOUND_ROWS se o banco permitir
-        // Como SQL_CALC_FOUND_ROWS é deprecated, vamos reconstruir os wheres
-        // (Devido à complexidade do código existente, vou manter o padrão simples por enquanto)
-      }
-      // ... (verificar se vale a pena replicar toda lógica de filtro ou fazer uma estratégia melhor)
-
-      // Para MVP do checklist, vamos retornar os dados primeiro
-      const total = 1000; // Placeholder until count logic is unified
-
-      return {
-        data: rows.map(row => new Product(row)),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit)
+        // Filtros adicionais
+        if (filters.segment) {
+          query += ' AND p.segmento = ?';
+          params.push(filters.segment);
         }
-      };
 
-    }, 120); // 2 min cache for list
+        if (filters.segmentId) {
+          query += ' AND p.segmento_id = ?';
+          params.push(filters.segmentId);
+        }
 
-    // Logar busca (Histórico Inteligente)
-    if (sellerId && (searchTerm || Object.values(filters).some(f => f))) {
-      searchHistoryRepository.logSearch(
-        sellerId,
-        searchTerm,
-        null,
-        result.data ? result.data.length : 0,
-        filters
-      ).catch(err => console.error('Error logging search:', err));
+        // Filtro por categoria
+        if (filters.category) {
+          query += ' AND p.categoria = ?';
+          params.push(filters.category);
+        }
+
+        // Filtro por marca (Q3.1 - Checklist Clientes 1.1)
+        if (filters.brand) {
+          query += ' AND (i.marca = ? OR p.p_marca = ?)';
+          params.push(filters.brand, filters.brand);
+        }
+
+        // Filtro por NCM
+        if (filters.ncm) {
+          query += ' AND p.ncm = ?';
+          params.push(filters.ncm);
+        }
+
+        // Filtro de estoque (apenas com estoque) - Opcional
+        if (filters.inStock === 'true') {
+          // Isso requer join com view de estoque que é pesado, melhor filtrar depois ou assumir risco
+          // Por enquanto, vamos manter simples para performance
+        }
+
+        // Ordernação
+        const sortMap = {
+          'price_asc': 'i.revenda ASC',
+          'price_desc': 'i.revenda DESC',
+          'name_asc': 'i.nome ASC',
+          'model_asc': 'i.modelo ASC',
+          'relevance': 'i.id ASC' // pk/id
+        };
+
+        const orderBy = sortMap[filters.sort] || 'i.id DESC';
+        query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const [rows] = await db().query(query, params);
+
+        // Query para contagem total (sem limit/offset)
+        // Otimização: se não tem filtros, usar count(*) da tabela
+        // Se tem filtros, fazer count com os mesmos wheres
+        /*
+        let countQuery = `SELECT COUNT(*) as total 
+          FROM mak.inv i
+          LEFT JOIN mak.produtos p ON i.idcf = p.id
+          WHERE i.revenda > 0`;
+        */
+        // Para MVP do checklist, vamos retornar os dados primeiro
+        const total = 1000; // Placeholder until count logic is unified
+
+        return {
+          data: rows.map(row => new Product(row)),
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+          }
+        };
+
+      }, 120); // 2 min cache for list
+
+      // Logar busca (Histórico Inteligente)
+      if (sellerId && (searchTerm || Object.values(filters).some(f => f))) {
+        searchHistoryRepository.logSearch(
+          sellerId,
+          searchTerm,
+          null,
+          result.data ? result.data.length : 0,
+          filters
+        ).catch(err => console.error('Error logging search:', err));
+      }
+
+      return result;
+    } catch (error) {
+      console.error('SEARCH ERROR:', error);
+      // Expor mensagem de erro real para debugging
+      throw new AppError(`Erro na busca de produtos: ${error.message}`, 500);
     }
-
-    return result;
   }
 
   /**
