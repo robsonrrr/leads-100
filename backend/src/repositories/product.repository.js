@@ -129,7 +129,7 @@ export class ProductRepository {
         'price_desc': 'i.revenda DESC',
         'name_asc': 'i.nome ASC',
         'model_asc': 'i.modelo ASC',
-        'relevance': 'pk ASC' // pk é id
+        'relevance': 'i.id ASC' // pk é id
       };
 
       const orderBy = sortMap[filters.sort] || 'i.id DESC';

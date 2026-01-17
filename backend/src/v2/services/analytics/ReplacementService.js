@@ -1,5 +1,5 @@
-import { getDatabase } from '../../../../config/database.js';
-import { CacheService } from '../../../../services/cache.service.js';
+import { getDatabase } from '../../../config/database.js';
+import { CacheService } from '../../../services/cache.service.js';
 
 export class ReplacementService {
     /**
