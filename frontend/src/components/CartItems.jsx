@@ -1906,6 +1906,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
             <Grid item xs={12}>
               <ProductAutocomplete
                 value={formData.product}
+                customerFixedPrices={customerFixedPrices}
                 onChange={(value) => {
                   if (import.meta.env.DEV && value) {
                     console.log('ProductAutocomplete - Produto selecionado:', value)
@@ -1916,10 +1917,12 @@ function CartItems({ leadId, lead, readOnly = false }) {
                   } else {
                     setDiscountRecommendation(null)
                   }
+                  // Usar preço fixo se disponível, senão preço normal
+                  const selectedPrice = value?.hasFixedPrice ? value.fixedPrice : (value?.price || formData.price)
                   setFormData(prev => ({
                     ...prev,
                     product: value,
-                    price: value?.price || prev.price
+                    price: selectedPrice
                   }))
                 }}
               />

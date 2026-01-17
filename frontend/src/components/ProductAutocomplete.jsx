@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Autocomplete, TextField, CircularProgress, Box, Typography, Chip } from '@mui/material'
-import { Inventory as StockIcon, LocalOffer as PromoIcon } from '@mui/icons-material'
+import { Inventory as StockIcon, LocalOffer as PromoIcon, Lock as FixedPriceIcon } from '@mui/icons-material'
 import { productsService, promotionsService } from '../services/api'
 import { formatCurrency } from '../utils'
 
 /**
  * ProductAutocomplete - Busca de produtos com preview visual
  * Inclui: thumbnail, preço, estoque, marca e badge de promoção
+ * @param {Array} customerFixedPrices - Lista de preços fixos do cliente (opcional)
  */
-function ProductAutocomplete({ value, onChange, error, helperText }) {
+function ProductAutocomplete({ value, onChange, error, helperText, customerFixedPrices = [] }) {
   const [options, setOptions] = useState([])
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -44,6 +45,20 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
     return map
   }, [promotions])
 
+  // Criar mapa de preços fixos do cliente
+  const fixedPriceMap = useMemo(() => {
+    const map = new Map()
+    if (Array.isArray(customerFixedPrices)) {
+      customerFixedPrices.forEach(fp => {
+        map.set(fp.sku_id, {
+          fixedPrice: parseFloat(fp.fixed_price),
+          discountFromPt: fp.discount_from_pt ? parseFloat(fp.discount_from_pt) : null
+        })
+      })
+    }
+    return map
+  }, [customerFixedPrices])
+
   useEffect(() => {
     if (inputValue.length >= 2) {
       const timeoutId = setTimeout(() => {
@@ -66,18 +81,35 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
       })
 
       if (response.data.success) {
-        // Enriquecer com dados de promoção
+        // Enriquecer com dados de promoção e preço fixo
         const enrichedData = response.data.data.map(product => {
+          let enriched = { ...product }
+
+          // Verificar preço fixo do cliente (prioridade máxima)
+          const fixedPrice = fixedPriceMap.get(product.id)
+          if (fixedPrice) {
+            enriched = {
+              ...enriched,
+              hasFixedPrice: true,
+              fixedPrice: fixedPrice.fixedPrice,
+              fixedPriceDiscount: fixedPrice.discountFromPt,
+              originalPrice: product.price, // Guardar preço original
+              price: fixedPrice.fixedPrice // Substituir preço pelo fixo
+            }
+          }
+
+          // Verificar promoção
           const promo = promotionMap.get(product.id)
           if (promo) {
-            return {
-              ...product,
+            enriched = {
+              ...enriched,
               onPromotion: true,
               promoPrice: promo.promoPrice,
               promoDiscount: promo.promoDiscount
             }
           }
-          return product
+
+          return enriched
         })
         setOptions(enrichedData)
       }
@@ -238,6 +270,21 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
 
                 {/* Linha 3: Preço e Estoque */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                  {/* Badge Preço Fixo do Cliente */}
+                  {option.hasFixedPrice && (
+                    <Chip
+                      icon={<FixedPriceIcon sx={{ fontSize: 14 }} />}
+                      label={option.fixedPriceDiscount ? `Seu: -${Math.round(option.fixedPriceDiscount)}%` : 'Seu Preço'}
+                      color="warning"
+                      size="small"
+                      sx={{
+                        height: 20,
+                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                        '& .MuiChip-icon': { ml: 0.5 }
+                      }}
+                    />
+                  )}
+
                   {/* Badge Promoção */}
                   {option.onPromotion && (
                     <Chip
@@ -257,7 +304,29 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                   {/* Preço */}
                   {(option.price || option.preco_venda) && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {option.onPromotion && option.promoPrice ? (
+                      {option.hasFixedPrice ? (
+                        // Preço fixo do cliente
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              textDecoration: 'line-through',
+                              color: 'text.disabled',
+                              fontSize: '0.7rem'
+                            }}
+                          >
+                            {formatCurrency(option.originalPrice || option.preco_venda)}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="warning.main"
+                            sx={{ fontWeight: 'bold' }}
+                          >
+                            {formatCurrency(option.fixedPrice)}
+                          </Typography>
+                        </>
+                      ) : option.onPromotion && option.promoPrice ? (
+                        // Preço promocional
                         <>
                           <Typography
                             variant="caption"
@@ -278,6 +347,7 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                           </Typography>
                         </>
                       ) : (
+                        // Preço normal
                         <Typography
                           variant="body2"
                           color="primary.main"
