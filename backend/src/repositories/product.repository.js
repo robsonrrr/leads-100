@@ -20,15 +20,20 @@ export class ProductRepository {
     return CacheService.getProducts(cacheKey, async () => {
       // Tabela principal é inv, JOIN com produtos para segmento e NCM
       // JOIN com produtos_estoque para trazer estoque disponível
+      // JOIN com pricing_active_promotions para verificar se está em promoção
       let query = `SELECT DISTINCT 
         i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
         p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
         p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
         p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao,
-        COALESCE(e.total_disponivel, 0) as estoque
+        COALESCE(e.total_disponivel, 0) as estoque,
+        IF(pap.sku_id IS NOT NULL, 1, 0) as em_promocao,
+        pap.promo_price as preco_promocao,
+        pap.discount_percent as desconto_promocao
       FROM inv i 
       LEFT JOIN produtos p ON i.idcf = p.id 
       LEFT JOIN produtos_estoque e ON e.produto_id = i.id
+      LEFT JOIN csuite_pricing.pricing_active_promotions pap ON pap.sku_id = i.id AND pap.status = 'active'
       WHERE 1=1`;
       const params = [];
 

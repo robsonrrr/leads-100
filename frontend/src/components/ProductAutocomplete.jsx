@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Autocomplete, TextField, CircularProgress, Box, Typography, Chip } from '@mui/material'
-import { Inventory as StockIcon } from '@mui/icons-material'
+import { Inventory as StockIcon, LocalOffer as PromoIcon } from '@mui/icons-material'
 import { productsService } from '../services/api'
 import { formatCurrency } from '../utils'
 
@@ -193,16 +193,56 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                 </Typography>
 
                 {/* Linha 3: Preço e Estoque */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                  {/* Badge Promoção */}
+                  {option.onPromotion && (
+                    <Chip
+                      icon={<PromoIcon sx={{ fontSize: 14 }} />}
+                      label={option.promoDiscount ? `-${Math.round(option.promoDiscount)}%` : 'Promo'}
+                      color="error"
+                      size="small"
+                      sx={{
+                        height: 20,
+                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                        '& .MuiChip-icon': { ml: 0.5 },
+                        animation: 'pulse 2s infinite'
+                      }}
+                    />
+                  )}
+
                   {/* Preço */}
                   {(option.price || option.preco_venda) && (
-                    <Typography
-                      variant="body2"
-                      color="primary.main"
-                      sx={{ fontWeight: 'bold' }}
-                    >
-                      {formatCurrency(option.price || option.preco_venda)}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {option.onPromotion && option.promoPrice ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              textDecoration: 'line-through',
+                              color: 'text.disabled',
+                              fontSize: '0.7rem'
+                            }}
+                          >
+                            {formatCurrency(option.price || option.preco_venda)}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="error.main"
+                            sx={{ fontWeight: 'bold' }}
+                          >
+                            {formatCurrency(option.promoPrice)}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="primary.main"
+                          sx={{ fontWeight: 'bold' }}
+                        >
+                          {formatCurrency(option.price || option.preco_venda)}
+                        </Typography>
+                      )}
+                    </Box>
                   )}
 
                   {/* Estoque */}

@@ -39,6 +39,11 @@ export class Product {
 
     // Estoque (da view produtos_estoque)
     this.estoque = parseInt(data.estoque) || 0;
+
+    // Promoção (da view pricing_active_promotions)
+    this.em_promocao = data.em_promocao === 1 || data.em_promocao === '1' || data.em_promocao === true;
+    this.preco_promocao = parseFloat(data.preco_promocao) || null;
+    this.desconto_promocao = parseFloat(data.desconto_promocao) || null;
   }
 
   toJSON() {
@@ -85,7 +90,7 @@ export class Product {
   }
 
   toSimpleJSON() {
-    return {
+    const result = {
       id: this.id,
       model: this.modelo,
       name: this.nome,
@@ -97,6 +102,15 @@ export class Product {
       description: this.descricao,
       stock: this.estoque
     };
+
+    // Adicionar campos de promoção se o produto está em promoção
+    if (this.em_promocao) {
+      result.onPromotion = true;
+      result.promoPrice = this.preco_promocao;
+      result.promoDiscount = this.desconto_promocao;
+    }
+
+    return result;
   }
 }
 
