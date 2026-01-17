@@ -44,10 +44,14 @@ import OfflineIndicator from './OfflineIndicator'
 import InAppNotification from './InAppNotification'
 import NotificationBell from './NotificationBell'
 import SyncErrorNotifications from './SyncErrorNotifications'
+import useServiceWorker from '../hooks/useServiceWorker'
 
 const drawerWidth = 240
 
 function Layout({ children }) {
+  // Inicializar Service Worker
+  useServiceWorker()
+
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [followUpCount, setFollowUpCount] = useState(0)

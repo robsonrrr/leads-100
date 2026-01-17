@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'fs'
 
 // Ler versão do package.json
@@ -13,7 +14,43 @@ export default defineConfig(({ mode }) => {
   const base = process.env.VITE_BASE_PATH || '/'
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
+        registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true
+        },
+        manifest: {
+          name: 'Leads Agent',
+          short_name: 'Leads',
+          description: 'Gestão de Leads Offline-First',
+          theme_color: '#1976d2',
+          background_color: '#ffffff',
+          display: 'standalone',
+          orientation: 'portrait',
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5MB limit
+        }
+      })
+    ],
     base: base,
     // Expor versão do package.json para o frontend
     define: {

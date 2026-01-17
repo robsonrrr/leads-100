@@ -26,7 +26,8 @@
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.21.1",
     "recharts": "^3.6.0",
-    "sql.js": "^1.13.0"
+    "sql.js": "^1.13.0",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.48",
@@ -36,6 +37,7 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
-    "vite": "^5.0.11"
+    "vite": "^5.0.11",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

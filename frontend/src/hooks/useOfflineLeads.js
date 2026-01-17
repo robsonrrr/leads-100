@@ -8,10 +8,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { sqliteService } from '../services/sqliteService'
 import { leadsService } from '../services/api'
 import { v4 as uuidv4 } from 'uuid'
+import useServiceWorker from './useServiceWorker'
 
 export function useOfflineLeads({
     enabled = true
 } = {}) {
+    const { registerBackgroudSync } = useServiceWorker()
     const [drafts, setDrafts] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -100,6 +102,9 @@ export function useOfflineLeads({
             ])
 
             await sqliteService.persist()
+            if ('serviceWorker' in navigator) {
+                await registerBackgroudSync('sync-leads')
+            }
             await loadDrafts()
 
             return id
@@ -107,7 +112,7 @@ export function useOfflineLeads({
             console.error('Erro ao criar rascunho:', err)
             throw err
         }
-    }, [loadDrafts])
+    }, [loadDrafts, registerBackgroudSync])
 
     /**
      * Atualiza um rascunho existente
@@ -132,12 +137,15 @@ export function useOfflineLeads({
             ])
 
             await sqliteService.persist()
+            if ('serviceWorker' in navigator) {
+                await registerBackgroudSync('sync-leads')
+            }
             await loadDrafts()
         } catch (err) {
             console.error('Erro ao atualizar rascunho:', err)
             throw err
         }
-    }, [loadDrafts])
+    }, [loadDrafts, registerBackgroudSync])
 
     /**
      * Remove um rascunho
