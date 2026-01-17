@@ -41,7 +41,7 @@ export async function calculatePrice(req, res, next) {
   try {
     // Validação
     const { error, value } = calculatePriceSchema.validate(req.body);
-    
+
     if (error) {
       return res.status(400).json({
         success: false,
@@ -142,11 +142,21 @@ export async function listQuantityDiscounts(req, res, next) {
   try {
     const [rows] = await db().execute(`
       SELECT 
-        pqd.*,
+        pqd.id,
+        pqd.sku_id,
+        pqd.brand_id,
+        pqd.product_family,
+        pqd.min_quantity,
+        pqd.max_quantity,
+        pqd.price,
+        pqd.discount_pct,
+        pqd.description,
         i.marca as product_brand,
         i.modelo as product_model
       FROM csuite_pricing.pricing_quantity_discounts pqd
       LEFT JOIN inv i ON pqd.sku_id = i.id
+      WHERE pqd.is_active = 1
+      ORDER BY pqd.priority DESC, pqd.min_quantity ASC
     `);
 
     res.json({

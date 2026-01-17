@@ -1,11 +1,8 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import * as pricingController from '../controllers/pricing.controller.js';
 
 const router = express.Router();
-
-// All routes require authentication
-router.use(authenticateToken);
 
 /**
  * @swagger
@@ -54,10 +51,11 @@ router.use(authenticateToken);
  *                       type: string
  *                       example: Pricing API unavailable
  */
-router.post('/calculate', pricingController.calculatePrice);
+router.post('/calculate', authenticateToken, pricingController.calculatePrice);
 
-router.get('/quantity-discounts', pricingController.listQuantityDiscounts);
-
-router.get('/launch-products', pricingController.listLaunchProducts);
+// Rotas de leitura - optionalAuth para acesso do frontend
+router.get('/quantity-discounts', optionalAuth, pricingController.listQuantityDiscounts);
+router.get('/launch-products', optionalAuth, pricingController.listLaunchProducts);
 
 export default router;
+

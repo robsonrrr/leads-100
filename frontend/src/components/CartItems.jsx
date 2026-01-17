@@ -103,6 +103,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [favorites, setFavorites] = useState(new Set()) // Set de IDs de produtos favoritos
   const [loadingFavorite, setLoadingFavorite] = useState({}) // { productId: boolean }
   const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
+  const [quantityDiscounts, setQuantityDiscounts] = useState([]) // Lista de descontos por quantidade
 
   // Mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
@@ -117,6 +118,29 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
     return map
   }, [promotions])
+
+  // Mapa de descontos por quantidade (SKU -> tem desconto)
+  const quantityDiscountMap = useMemo(() => {
+    const map = new Map()
+    if (Array.isArray(quantityDiscounts)) {
+      quantityDiscounts.forEach(qd => {
+        if (qd.sku_id) {
+          // Desconto por SKU específico
+          if (!map.has(qd.sku_id)) {
+            map.set(qd.sku_id, [])
+          }
+          map.get(qd.sku_id).push({
+            minQty: qd.min_quantity,
+            maxQty: qd.max_quantity,
+            discount: qd.discount_pct,
+            price: qd.price,
+            description: qd.description
+          })
+        }
+      })
+    }
+    return map
+  }, [quantityDiscounts])
 
   const [formData, setFormData] = useState({
     product: null,
@@ -138,10 +162,11 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
   }, [leadId])
 
-  // Carregar favoritos e promoções do vendedor
+  // Carregar favoritos, promoções e descontos por quantidade
   useEffect(() => {
     loadFavorites()
     loadPromotions()
+    loadQuantityDiscounts()
   }, [])
 
   const loadFavorites = async () => {
@@ -164,6 +189,17 @@ function CartItems({ leadId, lead, readOnly = false }) {
       }
     } catch (err) {
       console.debug('Erro ao carregar promoções:', err)
+    }
+  }
+
+  const loadQuantityDiscounts = async () => {
+    try {
+      const response = await pricingService.getQuantityDiscounts()
+      if (response.data.success) {
+        setQuantityDiscounts(response.data.data || [])
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar descontos por quantidade:', err)
     }
   }
 
@@ -1169,6 +1205,35 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                     '& .MuiChip-icon': { ml: 0.5 }
                                   }}
                                 />
+                              )}
+                              {/* Badge de desconto por quantidade */}
+                              {quantityDiscountMap.has(item.productId || item.product?.id) && (
+                                <Tooltip
+                                  title={
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Descontos por Quantidade:</Typography>
+                                      {quantityDiscountMap.get(item.productId || item.product?.id).map((qd, idx) => (
+                                        <Typography key={idx} variant="caption" display="block">
+                                          • {qd.minQty}+ un: {qd.discount ? `-${qd.discount}%` : formatCurrency(qd.price)}
+                                        </Typography>
+                                      ))}
+                                    </Box>
+                                  }
+                                  arrow
+                                >
+                                  <Chip
+                                    icon={<CalculateIcon sx={{ fontSize: 14 }} />}
+                                    label="Desc. Qtde"
+                                    color="info"
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                      '& .MuiChip-icon': { ml: 0.5 },
+                                      cursor: 'help'
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                               {/* Chip de estoque */}
                               {item.product?.stock !== undefined && (
