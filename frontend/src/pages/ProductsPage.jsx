@@ -77,8 +77,8 @@ function ProductsPage() {
     const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
     const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '')
     const [priceRange, setPriceRange] = useState([0, 50000])
-    const [inStockOnly, setInStockOnly] = useState(searchParams.get('inStock') === 'true')
-    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'name')
+    const [inStockOnly, setInStockOnly] = useState(searchParams.get('inStock') !== 'false')
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'stock')
     const [viewMode, setViewMode] = useState('grid')
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
 
@@ -220,8 +220,8 @@ function ProductsPage() {
         if (selectedSegment) params.set('segment', selectedSegment)
         if (selectedCategory) params.set('category', selectedCategory)
         if (selectedBrand) params.set('brand', selectedBrand)
-        if (inStockOnly) params.set('inStock', 'true')
-        if (sortBy !== 'name') params.set('sort', sortBy)
+        if (!inStockOnly) params.set('inStock', 'false')
+        if (sortBy !== 'stock') params.set('sort', sortBy)
         setSearchParams(params, { replace: true })
     }, [searchTerm, selectedSegment, selectedCategory, inStockOnly, sortBy, setSearchParams])
 
@@ -254,8 +254,8 @@ function ProductsPage() {
         setSelectedCategory('')
         setSelectedBrand('')
         setPriceRange([0, 50000])
-        setInStockOnly(false)
-        setSortBy('name')
+        setInStockOnly(true)
+        setSortBy('stock')
         setPage(1)
     }
 
