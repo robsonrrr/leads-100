@@ -2,9 +2,10 @@
 
 ## Sistema de Gestão de Leads - Rolemak
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Criado em:** 17 de Janeiro 2026  
-**Status:** Em Planejamento 📋
+**Atualizado em:** 17 de Janeiro 2026  
+**Status:** Em Implementação 🔄
 
 ---
 
@@ -32,7 +33,7 @@
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 1.1.1 | Thumbnail de produto na tabela de itens do carrinho | Frontend | ✅ |
-| 1.1.2 | Modal de visualização ampliada ao clicar na imagem | Frontend | ⏳ |
+| 1.1.2 | Modal de visualização ampliada ao clicar na imagem | Frontend | ✅ |
 | 1.1.3 | Galeria de múltiplas imagens do produto (se disponíveis) | Frontend | ⏳ |
 | 1.1.4 | Fallback para imagem padrão quando não encontrada | Frontend | ✅ |
 | 1.1.5 | Lazy loading de imagens com Intersection Observer | Frontend | ⏳ |
@@ -54,13 +55,13 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.2.1 | Componente ProductDetailModal | Frontend | ⏳ |
+| 1.2.1 | Componente ProductDetailModal | Frontend | ✅ |
 | 1.2.2 | Exibir especificações técnicas | Frontend | ⏳ |
 | 1.2.3 | Exibir marca com logo | Frontend | ✅ |
-| 1.2.4 | Exibir categoria/segmento | Frontend | ⏳ |
-| 1.2.5 | Exibir NCM e informações fiscais | Frontend | ⏳ |
-| 1.2.6 | Exibir preço de tabela e margem | Frontend | ⏳ |
-| 1.2.7 | Exibir estoque disponível em tempo real | Frontend | ⏳ |
+| 1.2.4 | Exibir categoria/segmento | Frontend | ✅ |
+| 1.2.5 | Exibir NCM e informações fiscais | Frontend | ✅ |
+| 1.2.6 | Exibir preço de tabela e margem | Frontend | ✅ |
+| 1.2.7 | Exibir estoque disponível em tempo real | Frontend | ✅ |
 | 1.2.8 | Histórico de preços do produto (gráfico) | Frontend | ⏳ |
 
 **Critério de Aceite:**
@@ -83,9 +84,9 @@
 | 2.1.3 | Busca por descrição | Backend | ✅ |
 | 2.1.4 | Busca por NCM | Backend | ✅ |
 | 2.1.5 | Highlight de match nos resultados | Frontend | ⏳ |
-| 2.1.6 | Mostrar thumbnail no autocomplete | Frontend | ⏳ |
-| 2.1.7 | Mostrar estoque no autocomplete | Frontend | ⏳ |
-| 2.1.8 | Mostrar preço de tabela no autocomplete | Frontend | ⏳ |
+| 2.1.6 | Mostrar thumbnail no autocomplete | Frontend | ✅ |
+| 2.1.7 | Mostrar estoque no autocomplete | Frontend | ✅ |
+| 2.1.8 | Mostrar preço de tabela no autocomplete | Frontend | ✅ |
 | 2.1.9 | Debounce otimizado (300ms) | Frontend | ✅ |
 | 2.1.10 | Cache de buscas recentes | Frontend | ⏳ |
 
@@ -300,15 +301,15 @@ CREATE TABLE seller_favorite_products (
 
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
-| 1. Visualização | 14 | 3 | 11 |
-| 2. Busca | 20 | 5 | 15 |
+| 1. Visualização | 14 | 8 | 6 |
+| 2. Busca | 20 | 8 | 12 |
 | 3. Personalização | 14 | 2 | 12 |
 | 4. Estoque | 9 | 1 | 8 |
 | 5. Preços | 11 | 4 | 7 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **15** | **72** |
+| **Total** | **87** | **23** | **64** |
 
 ---
 
