@@ -50,6 +50,7 @@ import {
 import { productsService, pricingService } from '../services/api'
 import { useToast } from '../contexts/ToastContext'
 import ProductDetailModal from '../components/ProductDetailModal'
+import AddToLeadModal from '../components/AddToLeadModal'
 import { formatCurrency } from '../utils'
 
 const ITEMS_PER_PAGE = 24
@@ -89,6 +90,9 @@ function ProductsPage() {
 
     // Modal de detalhes
     const [detailModal, setDetailModal] = useState({ open: false, product: null })
+
+    // Modal de adicionar ao lead
+    const [addToLeadModal, setAddToLeadModal] = useState({ open: false, product: null })
 
     // Carregar segmentos e categorias
     useEffect(() => {
@@ -485,7 +489,7 @@ function ProductsPage() {
                         variant="contained"
                         startIcon={<AddCartIcon />}
                         disabled={stock <= 0}
-                        onClick={() => toast.info('Selecione um lead para adicionar o produto')}
+                        onClick={() => setAddToLeadModal({ open: true, product })}
                     >
                         Adicionar
                     </Button>
@@ -568,7 +572,7 @@ function ProductsPage() {
                         size="small"
                         startIcon={<AddCartIcon />}
                         disabled={stock <= 0}
-                        onClick={() => toast.info('Selecione um lead para adicionar o produto')}
+                        onClick={() => setAddToLeadModal({ open: true, product })}
                     >
                         Adicionar
                     </Button>
@@ -740,6 +744,14 @@ function ProductsPage() {
                 open={detailModal.open}
                 onClose={() => setDetailModal({ open: false, product: null })}
                 product={detailModal.product}
+            />
+
+            {/* Modal de adicionar ao lead */}
+            <AddToLeadModal
+                open={addToLeadModal.open}
+                onClose={() => setAddToLeadModal({ open: false, product: null })}
+                product={addToLeadModal.product}
+                onSuccess={() => toast.success('Produto adicionado ao lead!')}
             />
         </Box>
     )

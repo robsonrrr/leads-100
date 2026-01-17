@@ -112,13 +112,13 @@
 | 2.2.7 | Visualização grid/lista | Frontend | ✅ |
 | 2.2.8 | Paginação | Frontend | ✅ |
 | 2.2.9 | Busca full-text (FULLTEXT MySQL) | Backend | ⏳ |
-| 2.2.10 | Botão "Adicionar ao Lead" direto do catálogo | Frontend | ⏳ |
+| 2.2.10 | Botão "Adicionar ao Lead" direto do catálogo | Frontend | ✅ |
 
 **Critério de Aceite:**
 ```
 ✅ Catálogo carrega em < 1s
 ✅ Filtros combinam sem lag
-⏳ Vendedor adiciona produto ao lead em 2 cliques
+✅ Vendedor adiciona produto ao lead em 2 cliques
 ```
 
 ---
