@@ -1552,31 +1552,70 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                   </Tooltip>
                                 )
                               })()}
-                              {/* Chip de estoque */}
+                              {/* Chip de estoque com detalhamento por depósito */}
                               {item.product?.stock !== undefined && (
-                                <Chip
-                                  icon={<InventoryIcon sx={{ fontSize: 14 }} />}
-                                  label={
-                                    item.product.stock <= 0
-                                      ? 'Sem estoque'
-                                      : item.product.stock < 5
-                                        ? `Baixo: ${item.product.stock} un.`
-                                        : `${item.product.stock} un.`
+                                <Tooltip
+                                  title={
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>📦 Estoque por Depósito</Typography>
+                                      {item.product.stockByWarehouse ? (
+                                        <>
+                                          <Typography variant="caption" display="block">
+                                            109: {item.product.stockByWarehouse['109'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block">
+                                            370: {item.product.stockByWarehouse['370'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block">
+                                            613: {item.product.stockByWarehouse['613'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block">
+                                            613 TTD: {item.product.stockByWarehouse['613_TTD'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block">
+                                            885: {item.product.stockByWarehouse['885'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block">
+                                            966: {item.product.stockByWarehouse['966'] || 0} un.
+                                          </Typography>
+                                          <Typography variant="caption" display="block" sx={{ mt: 0.5, fontWeight: 'bold', borderTop: '1px solid rgba(255,255,255,0.3)', pt: 0.5 }}>
+                                            Total: {item.product.stock} un.
+                                          </Typography>
+                                        </>
+                                      ) : (
+                                        <Typography variant="caption" display="block">
+                                          Total: {item.product.stock} un.
+                                        </Typography>
+                                      )}
+                                    </Box>
                                   }
-                                  color={
-                                    item.product.stock <= 0
-                                      ? 'error'
-                                      : item.product.stock < 5
-                                        ? 'warning'
-                                        : 'success'
-                                  }
-                                  size="small"
-                                  sx={{
-                                    height: 20,
-                                    '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
-                                    '& .MuiChip-icon': { ml: 0.5 }
-                                  }}
-                                />
+                                  arrow
+                                >
+                                  <Chip
+                                    icon={<InventoryIcon sx={{ fontSize: 14 }} />}
+                                    label={
+                                      item.product.stock <= 0
+                                        ? 'Sem estoque'
+                                        : item.product.stock < 5
+                                          ? `Baixo: ${item.product.stock} un.`
+                                          : `${item.product.stock} un.`
+                                    }
+                                    color={
+                                      item.product.stock <= 0
+                                        ? 'error'
+                                        : item.product.stock < 5
+                                          ? 'warning'
+                                          : 'success'
+                                    }
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                      '& .MuiChip-icon': { ml: 0.5 },
+                                      cursor: 'help'
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                             </Box>
                           </Box>
