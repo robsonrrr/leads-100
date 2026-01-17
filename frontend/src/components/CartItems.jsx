@@ -1010,7 +1010,26 @@ function CartItems({ leadId, lead, readOnly = false }) {
                   {filteredAndSortedItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                          {/* Imagem do produto */}
+                          <Box
+                            component="img"
+                            src={`https://img.rolemak.com.br/id/h80/${item.productId || item.product?.id}.jpg?version=9.02`}
+                            alt={item.product?.model || 'Produto'}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              objectFit: 'contain',
+                              borderRadius: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: 'background.paper',
+                              flexShrink: 0
+                            }}
+                          />
                           <Box sx={{ flex: 1 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                               {item.product?.model && (
