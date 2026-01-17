@@ -713,4 +713,50 @@ router.post('/:id/taxes', leadsController.calculateLeadTaxes);
  */
 router.post('/:id/convert', leadsController.convertToOrder);
 
+/**
+ * @swagger
+ * /leads/{id}/history:
+ *   get:
+ *     summary: Busca o histórico de alterações de um lead
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do lead
+ *     responses:
+ *       200:
+ *         description: Histórico de alterações
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       action:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       userName:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       changes:
+ *                         type: array
+ */
+router.get('/:id/history', leadsController.getLeadHistory);
+
 export default router;

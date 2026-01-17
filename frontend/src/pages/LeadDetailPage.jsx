@@ -55,6 +55,7 @@ import CustomerGoalCard from '../components/CustomerGoalCard'
 import { formatDate, formatCurrency, getPaymentTypeLabel, getFreightTypeLabel } from '../utils'
 import { LeadDetailSkeleton } from '../components/skeletons'
 import { useToast } from '../contexts/ToastContext'
+import LeadHistoryTimeline from '../components/LeadHistoryTimeline'
 
 function LeadDetailPage() {
   const { id } = useParams()
@@ -1076,6 +1077,11 @@ function LeadDetailPage() {
         {/* Carrinho de Produtos */}
         <Grid item xs={12}>
           <CartItems leadId={parseInt(id)} lead={lead} readOnly={!!lead.orderWeb} />
+        </Grid>
+
+        {/* Histórico de Alterações */}
+        <Grid item xs={12}>
+          <LeadHistoryTimeline leadId={parseInt(id)} />
         </Grid>
       </Grid >
 

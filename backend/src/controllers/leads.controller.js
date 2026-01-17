@@ -440,6 +440,16 @@ export async function updateLead(req, res, next) {
 
     const lead = await leadRepository.update(id, leadData);
 
+    // Audit log - registrar alteração
+    await auditLog.logLeadUpdate(
+      id,
+      req.user?.userId,
+      req.user?.username,
+      req,
+      existingLead.toJSON ? existingLead.toJSON() : existingLead,
+      lead.toJSON()
+    );
+
     res.json({
       success: true,
       data: lead.toJSON(),
@@ -1467,6 +1477,116 @@ export async function exportLeads(req, res, next) {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Busca o histórico de alterações de um lead
+ * GET /api/leads/:id/history
+ */
+export async function getLeadHistory(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return next(Errors.invalidId('lead'));
+    }
+
+    // Verificar se o lead existe
+    const lead = await leadRepository.findById(id);
+    if (!lead) {
+      return next(Errors.leadNotFound(id));
+    }
+
+    // Verificar permissões
+    const userLevel = req.user?.level || 0;
+    const currentUserId = req.user?.userId;
+    if (userLevel <= 4 && lead.cUser !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Sem permissão para acessar este lead' }
+      });
+    }
+
+    // Buscar logs do audit
+    const logs = await auditLog.findLogs({
+      resourceType: 'lead',
+      resourceId: String(id),
+      limit: 100
+    });
+
+    // Formatar logs para timeline
+    const actionLabels = {
+      'LEAD_CREATE': { label: 'Lead criado', icon: 'add_circle', color: 'success' },
+      'LEAD_UPDATE': { label: 'Lead atualizado', icon: 'edit', color: 'primary' },
+      'LEAD_DELETE': { label: 'Lead excluído', icon: 'delete', color: 'error' },
+      'LEAD_CONVERT': { label: 'Convertido em pedido', icon: 'check_circle', color: 'success' },
+      'ITEM_ADD': { label: 'Item adicionado', icon: 'add_shopping_cart', color: 'info' },
+      'ITEM_UPDATE': { label: 'Item atualizado', icon: 'shopping_cart', color: 'primary' },
+      'ITEM_DELETE': { label: 'Item removido', icon: 'remove_shopping_cart', color: 'warning' }
+    };
+
+    const history = logs.map(log => {
+      const actionInfo = actionLabels[log.action] || { label: log.action, icon: 'info', color: 'default' };
+
+      // Tentar parsear os valores JSON
+      let oldValue = null;
+      let newValue = null;
+      let metadata = null;
+      let changes = [];
+
+      try { oldValue = log.old_value ? JSON.parse(log.old_value) : null; } catch (e) { }
+      try { newValue = log.new_value ? JSON.parse(log.new_value) : null; } catch (e) { }
+      try { metadata = log.metadata ? JSON.parse(log.metadata) : null; } catch (e) { }
+
+      // Calcular mudanças específicas
+      if (oldValue && newValue && log.action === 'LEAD_UPDATE') {
+        const fieldsToTrack = [
+          { key: 'customerId', label: 'Cliente' },
+          { key: 'freight', label: 'Frete' },
+          { key: 'paymentType', label: 'Tipo de Pagamento' },
+          { key: 'paymentTerms', label: 'Condições de Pagamento' },
+          { key: 'deliveryDate', label: 'Data de Entrega' },
+          { key: 'remarks', label: 'Observações' },
+          { key: 'buyer', label: 'Comprador' },
+          { key: 'purchaseOrder', label: 'Pedido de Compra' }
+        ];
+
+        for (const field of fieldsToTrack) {
+          const oldVal = oldValue[field.key];
+          const newVal = newValue[field.key];
+          if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+            changes.push({
+              field: field.label,
+              oldValue: oldVal,
+              newValue: newVal
+            });
+          }
+        }
+      }
+
+      return {
+        id: log.id,
+        action: log.action,
+        label: actionInfo.label,
+        icon: actionInfo.icon,
+        color: actionInfo.color,
+        userName: log.user_name,
+        userId: log.user_id,
+        createdAt: log.created_at,
+        ipAddress: log.ip_address,
+        changes,
+        metadata,
+        hasDetails: changes.length > 0 || metadata !== null
+      };
+    });
+
+    res.json({
+      success: true,
+      data: history
+    });
   } catch (error) {
     next(error);
   }

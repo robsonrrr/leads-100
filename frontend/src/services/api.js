@@ -181,6 +181,8 @@ export const leadsService = {
   // Exportação para Excel
   exportToExcel: (params) => api.get('/leads/export', { params, responseType: 'blob' }),
   exportLeadToExcel: (leadId) => api.get('/leads/export', { params: { leadId }, responseType: 'blob' }),
+  // Histórico de alterações
+  getHistory: (id) => api.get(`/leads/${id}/history`),
 }
 
 export const ordersService = {
