@@ -20,6 +20,7 @@ Sistema CRM completo para canal de revenda B2B, focado nas necessidades do vende
 | Fase 2: Histórico e Relacionamento | ✅ Concluída | 12-13/01/2025 |
 | Fase 3: Inteligência e Alertas | ✅ Concluída | 13/01/2025 |
 | Fase 4: Analytics e Metas | ✅ Concluída | 13/01/2025 |
+| Fase 5: Catálogo de Produtos | ✅ Concluída (96%) | 17/01/2026 |
 
 ---
 
@@ -159,7 +160,73 @@ Sistema CRM completo para canal de revenda B2B, focado nas necessidades do vende
 - Minha Carteira
 - Analytics
 - Promoções
+- Produtos
 - Novo Lead
+
+---
+
+### Fase 5: Catálogo de Produtos (17/01/2026)
+
+**Página de Produtos (`/products`)**
+- Grid/Lista de produtos com visualização híbrida
+- Filtros: segmento, categoria, marca, preço, estoque
+- Ordenação: estoque, preço, nome
+- Favoritos do vendedor
+- Filtro de promoções
+
+**Modal de Detalhes do Produto**
+- Galeria de imagens com zoom
+- Gráfico de histórico de preços (12 meses)
+- Estoque por depósito/unidade
+- Preços: tabela, sugerido, margem
+- Produtos relacionados, acessórios, comprados juntos
+
+**Autocomplete de Produtos**
+- Seção "Meus Favoritos" com badge ⭐
+- Seção "Usados Recentemente" com badge
+- Badges de promoção, lançamento, preço fixo
+- Preview com imagem, preço, estoque
+
+**Scanner de Código de Barras**
+- Acesso à câmera (BarcodeDetector API)
+- Entrada manual como fallback
+- Busca por EAN/UPC/Code128
+
+**Comparador de Produtos**
+- Selecionar até 4 produtos
+- Tabela comparativa lado a lado
+- Destaque de diferenças
+- Ícone de melhor valor (preço/estoque)
+
+**Analytics de Produtos**
+- Produtos mais vendidos por período
+- Produtos mais buscados
+- Taxa de conversão (busca → venda)
+- Margem média por produto
+- Dashboard consolidado
+
+**Otimizações Mobile**
+- Layout responsivo (2 colunas mobile)
+- Swipe para navegar imagens
+- Touch-friendly (44x44px targets)
+- Sticky search bar
+
+**APIs Implementadas (Produtos):**
+- `GET /api/products/search` - Busca de produtos
+- `GET /api/products/:id/details` - Detalhes completos
+- `GET /api/products/:id/stock-by-warehouse` - Estoque por unidade
+- `GET /api/products/:id/price-history` - Histórico de preços
+- `GET /api/products/:id/replenishment` - Previsão de reposição
+- `GET /api/products/:id/related` - Produtos relacionados
+- `GET /api/products/barcode/:barcode` - Busca por código de barras
+- `GET /api/products/favorites` - Favoritos do vendedor
+- `GET /api/products/recent` - Produtos recentes (max 20)
+- `GET /api/products/delivery-time` - Tempo de entrega por UF
+- `GET /api/products/analytics/dashboard` - Dashboard de métricas
+- `GET /api/products/analytics/top-selling` - Mais vendidos
+- `GET /api/products/analytics/most-searched` - Mais buscados
+- `GET /api/products/analytics/conversion-rates` - Taxa de conversão
+- `GET /api/products/analytics/margins` - Margem média
 
 ---
 
@@ -314,5 +381,5 @@ Apenas pedidos com `nop IN (27, 28, 51, 76)` são considerados vendas nas métri
 
 ---
 
-*Documento atualizado em: 13/01/2025*
-*Versão: 2.0 - CRM Completo*
+*Documento atualizado em: 17/01/2026*
+*Versão: 3.0 - CRM Completo + Catálogo de Produtos*
