@@ -110,6 +110,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [launchProducts, setLaunchProducts] = useState([]) // Lista de produtos em lançamento
   const [customerFixedPrices, setCustomerFixedPrices] = useState([]) // Preços fixos do cliente
   const [bundles, setBundles] = useState([]) // Lista de combos/bundles
+  const [warehouseStock, setWarehouseStock] = useState({}) // { productId: { warehouses: [], loading: boolean } }
 
   // Mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
@@ -365,6 +366,38 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
   }
 
+  // Carregar estoque por unidade (sob demanda ao passar mouse)
+  const loadWarehouseStock = async (productId) => {
+    // Se já tem dados ou está carregando, não buscar novamente
+    if (warehouseStock[productId]?.warehouses?.length > 0 || warehouseStock[productId]?.loading) {
+      return
+    }
+
+    setWarehouseStock(prev => ({
+      ...prev,
+      [productId]: { warehouses: [], loading: true }
+    }))
+
+    try {
+      const response = await productsService.getStockByWarehouse(productId)
+      if (response.data.success) {
+        setWarehouseStock(prev => ({
+          ...prev,
+          [productId]: {
+            warehouses: response.data.data.warehouses || [],
+            totalAvailable: response.data.data.totalAvailable || 0,
+            loading: false
+          }
+        }))
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar estoque por unidade:', err)
+      setWarehouseStock(prev => ({
+        ...prev,
+        [productId]: { warehouses: [], loading: false }
+      }))
+    }
+  }
   // Carregar preços fixos do cliente quando o lead mudar
   useEffect(() => {
     const customerId = lead?.customerId || lead?.customer_id
@@ -421,6 +454,12 @@ function CartItems({ leadId, lead, readOnly = false }) {
       const response = await leadsService.getItems(leadId)
       if (response.data.success) {
         setItems(response.data.data)
+
+        // Carregar estoques por unidade para todos os produtos
+        const productIds = [...new Set(response.data.data.map(item => item.productId).filter(Boolean))]
+        productIds.forEach(productId => {
+          loadWarehouseStock(productId)
+        })
       }
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Erro ao carregar itens')
@@ -1552,7 +1591,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                   </Tooltip>
                                 )
                               })()}
-                              {/* Chip de estoque */}
+                              {/* Chip de estoque total */}
                               {item.product?.stock !== undefined && (
                                 <Chip
                                   icon={<InventoryIcon sx={{ fontSize: 14 }} />}
@@ -1577,6 +1616,31 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                     '& .MuiChip-icon': { ml: 0.5 }
                                   }}
                                 />
+                              )}
+
+                              {/* Estoques por unidade */}
+                              {warehouseStock[item.productId]?.warehouses?.length > 0 && (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  {warehouseStock[item.productId].warehouses.map((wh, idx) => (
+                                    <Chip
+                                      key={idx}
+                                      label={`${wh.name}: ${wh.available}`}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 18,
+                                        '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' },
+                                        borderColor: 'divider',
+                                        color: 'text.secondary'
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
+                              {warehouseStock[item.productId]?.loading && (
+                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', ml: 0.5 }}>
+                                  Carregando unidades...
+                                </Typography>
                               )}
                             </Box>
                           </Box>

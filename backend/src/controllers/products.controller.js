@@ -342,6 +342,7 @@ export async function getStockByWarehouse(req, res, next) {
       data: stockData
     });
   } catch (error) {
+    console.error('Erro getStockByWarehouse:', error);
     next(error);
   }
 }
