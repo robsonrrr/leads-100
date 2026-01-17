@@ -22,8 +22,8 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
   const loadPromotions = async () => {
     try {
       const response = await promotionsService.getActive()
-      if (response.data.success) {
-        setPromotions(response.data.data || [])
+      if (response.data.success && response.data.data?.promotions) {
+        setPromotions(response.data.data.promotions)
       }
     } catch (err) {
       console.debug('Erro ao carregar promoções:', err)

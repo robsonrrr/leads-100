@@ -1,14 +1,15 @@
 import express from 'express';
 import { getActivePromotions } from '../controllers/promotions.controller.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 /**
  * @route GET /api/promotions/active
  * @desc Busca todas as promoções ativas
- * @access Private
+ * @access Public (com optionalAuth para contexto)
  */
-router.get('/active', authenticateToken, getActivePromotions);
+router.get('/active', optionalAuth, getActivePromotions);
 
 export default router;
+
