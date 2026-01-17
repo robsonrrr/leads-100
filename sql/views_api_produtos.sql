@@ -77,9 +77,6 @@ SELECT
     
     -- Dados fiscais
     p.ncm,
-    p.icms,
-    p.ipi,
-    p.st,
     
     -- Estoque total agregado
     COALESCE((
@@ -178,8 +175,10 @@ ORDER BY p.segmento, p.categoria;
 
 -- =====================================================
 -- 6. View para Produtos em Promoção
--- Para destaque na listagem
+-- NOTA: Tabela mak.promocao_lista não existe atualmente
+-- Descomentar quando a tabela for criada
 -- =====================================================
+/*
 CREATE OR REPLACE VIEW Ecommerce.vw_produtos_promocao AS
 SELECT 
     pl.produto_id as id,
@@ -198,6 +197,7 @@ INNER JOIN mak.promocao_cabecalho pc ON pc.id = pl.promocao_id
 WHERE pc.ativo = 1
   AND CURDATE() BETWEEN COALESCE(pl.data_inicio, '2000-01-01') 
                     AND COALESCE(pl.data_fim, '2099-12-31');
+*/
 
 -- =====================================================
 -- Exemplos de uso:
