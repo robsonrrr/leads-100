@@ -281,6 +281,7 @@ export const pricingService = {
   getLaunchProducts: () => api.get('/pricing/launch-products'),
   getCustomerFixedPrices: (customerId) => api.get(`/pricing/customer-fixed-prices/${customerId}`),
   getBundles: () => api.get('/pricing/bundles'),
+  getPromotions: () => api.get('/promotions/active'),
 }
 
 export const promotionsService = {

@@ -103,14 +103,14 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.2.1 | Página /products com listagem | Frontend | ⏳ |
-| 2.2.2 | Filtro por categoria/segmento | Frontend | ⏳ |
+| 2.2.1 | Página /products com listagem | Frontend | ✅ |
+| 2.2.2 | Filtro por categoria/segmento | Frontend | ✅ |
 | 2.2.3 | Filtro por marca | Frontend | ⏳ |
-| 2.2.4 | Filtro por faixa de preço | Frontend | ⏳ |
-| 2.2.5 | Filtro por disponibilidade (em estoque) | Frontend | ⏳ |
-| 2.2.6 | Ordenação por preço, nome, popularidade | Frontend | ⏳ |
-| 2.2.7 | Visualização grid/lista | Frontend | ⏳ |
-| 2.2.8 | Paginação cursor-based | Backend | ⏳ |
+| 2.2.4 | Filtro por faixa de preço | Frontend | ✅ |
+| 2.2.5 | Filtro por disponibilidade (em estoque) | Frontend | ✅ |
+| 2.2.6 | Ordenação por preço, nome, estoque | Frontend | ✅ |
+| 2.2.7 | Visualização grid/lista | Frontend | ✅ |
+| 2.2.8 | Paginação | Frontend | ✅ |
 | 2.2.9 | Busca full-text (FULLTEXT MySQL) | Backend | ⏳ |
 | 2.2.10 | Botão "Adicionar ao Lead" direto do catálogo | Frontend | ⏳ |
 
@@ -118,7 +118,7 @@
 ```
 ✅ Catálogo carrega em < 1s
 ✅ Filtros combinam sem lag
-✅ Vendedor adiciona produto ao lead em 2 cliques
+⏳ Vendedor adiciona produto ao lead em 2 cliques
 ```
 
 ---

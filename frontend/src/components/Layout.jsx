@@ -33,7 +33,8 @@ import {
   Description as ReportsIcon,
   Security as SecurityIcon,
   ListAlt as ListAltIcon,
-  GpsFixed as TargetIcon
+  GpsFixed as TargetIcon,
+  Inventory as ProductsIcon
 } from '@mui/icons-material'
 import { logout } from '../store/slices/authSlice'
 import { interactionsService } from '../services/api'
@@ -150,6 +151,7 @@ function Layout({ children }) {
   const menuItems = [
     ...(!isRestricted ? [{ text: 'Dashboard', icon: <Badge badgeContent={followUpCount} color="error" max={9}><DashboardIcon /></Badge>, path: '/' }] : []),
     { text: 'Leads', icon: <ListAltIcon />, path: '/leads' },
+    { text: 'Produtos', icon: <ProductsIcon />, path: '/products' },
     { text: 'Minha Carteira', icon: <PeopleIcon />, path: '/customers' },
     ...(!isRestricted ? [{ text: 'Analytics', icon: <BarChartIcon />, path: '/analytics' }] : []),
     { text: 'Metas por Cliente', icon: <TargetIcon />, path: '/metas-por-cliente' },

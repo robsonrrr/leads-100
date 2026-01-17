@@ -27,6 +27,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'))
 const SecurityPage = lazy(() => import('./pages/SecurityPage'))
 const LeadMailView = lazy(() => import('./pages/LeadMailView'))
 const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
+const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 
 const theme = createTheme({
   palette: {
@@ -100,6 +101,7 @@ function App() {
                 }
               />
               <Route path="/promotions" element={<ProtectedRoute><Layout><PromotionsPage /></Layout></ProtectedRoute>} />
+              <Route path="/products" element={<ProtectedRoute><Layout><ProductsPage /></Layout></ProtectedRoute>} />
               <Route path="/pricing/quantity-discounts" element={<ProtectedRoute><Layout><QuantityDiscountsPage /></Layout></ProtectedRoute>} />
               <Route path="/pricing/launch-products" element={<ProtectedRoute><Layout><LaunchProductsPage /></Layout></ProtectedRoute>} />
               <Route path="/goals" element={<ProtectedRoute><Layout><GoalsPage /></Layout></ProtectedRoute>} />
