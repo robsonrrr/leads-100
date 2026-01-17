@@ -40,6 +40,7 @@ import ManagerFilters from '../components/ManagerFilters'
 import PullToRefresh from '../components/PullToRefresh'
 import { useToast } from '../contexts/ToastContext'
 import LeadsMetrics from '../components/LeadsMetrics'
+import AdvancedFilters, { FilterButton } from '../components/AdvancedFilters'
 import { CheckCircle as ConvertedIcon, HourglassEmpty as PendingIcon, WhatsApp as WhatsAppIcon, Print as PrintIcon } from '@mui/icons-material'
 
 function LeadsPage() {
@@ -115,6 +116,8 @@ function LeadsPage() {
     const [sellers, setSellers] = useState([])
     const [sellerFilter, setSellerFilter] = useState('')
     const [exporting, setExporting] = useState(false)
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+    const [advancedFilters, setAdvancedFilters] = useState({})
 
     const { isManager, selectedSellerSegment, selectedSeller, getFilterParams } = useManagerFilter()
 
@@ -274,9 +277,37 @@ function LeadsPage() {
                         >
                             {exporting ? 'Exportando...' : 'Excel'}
                         </Button>
+                        <FilterButton
+                            onClick={() => setShowAdvancedFilters(true)}
+                            activeCount={Object.values(advancedFilters).filter(v => v !== '' && v !== null && v !== undefined && v !== 0 && v !== 100000).length}
+                        />
                         <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/leads/new')}>Novo Lead</Button>
                     </Box>
                 </Box>
+
+                {/* Advanced Filters Drawer */}
+                <AdvancedFilters
+                    open={showAdvancedFilters}
+                    onClose={() => setShowAdvancedFilters(false)}
+                    filters={{
+                        dateFrom,
+                        dateTo,
+                        status: statusFilter,
+                        sellerId: sellerFilter,
+                        segment: selectedSegment
+                    }}
+                    onApply={(filters) => {
+                        if (filters.dateFrom) setDateFrom(filters.dateFrom)
+                        if (filters.dateTo) setDateTo(filters.dateTo)
+                        if (filters.status !== undefined) setStatusFilter(filters.status)
+                        if (filters.sellerId !== undefined) setSellerFilter(filters.sellerId)
+                        if (filters.segment !== undefined) setSelectedSegment(filters.segment)
+                        setAdvancedFilters(filters)
+                        setPage(0)
+                    }}
+                    sellers={sellers}
+                    isManager={isManager}
+                />
 
                 <LeadsMetrics metrics={metrics} loading={loading} />
 
