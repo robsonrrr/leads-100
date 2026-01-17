@@ -33,20 +33,28 @@ export function authenticateToken(req, res, next) {
 /**
  * Middleware de autenticação opcional
  * Se o token existir e for válido, adiciona user ao request
+ * NUNCA deve lançar erro - apenas prossegue sem autenticação se token inválido
  */
 export function optionalAuth(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (!err) {
-        req.user = user;
-      }
-    });
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (!err && user) {
+          req.user = user;
+        }
+        // Se erro ou token inválido, simplesmente não define req.user
+        next();
+      });
+    } else {
+      next();
+    }
+  } catch (error) {
+    // Qualquer erro é silenciado - opcional significa opcional
+    next();
   }
-
-  next();
 }
 
 /**
@@ -60,7 +68,7 @@ export function requireLevel(minLevel) {
     }
 
     const userLevel = req.user.level || 0;
-    
+
     if (userLevel < minLevel) {
       return next(Errors.insufficientPermissions());
     }
@@ -78,7 +86,7 @@ export function requireAdmin(req, res, next) {
   }
 
   const userLevel = req.user.level || 0;
-  
+
   if (userLevel <= 4) {
     return next(Errors.insufficientPermissions('acesso administrativo'));
   }
@@ -97,7 +105,7 @@ export function checkResourceAccess(ownerIdField = 'userId') {
     }
 
     const userLevel = req.user.level || 0;
-    
+
     // Admins podem acessar qualquer recurso
     if (userLevel > 4) {
       return next();
@@ -107,7 +115,7 @@ export function checkResourceAccess(ownerIdField = 'userId') {
     // O campo de owner será verificado no controller/repository
     req.restrictToOwner = true;
     req.ownerId = req.user.userId;
-    
+
     next();
   };
 }
