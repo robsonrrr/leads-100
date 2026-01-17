@@ -1292,10 +1292,10 @@ function CartItems({ leadId, lead, readOnly = false }) {
                     <SortableHeader columnKey="product">Produto</SortableHeader>
                     <SortableHeader columnKey="quantity" align="right">Quantidade</SortableHeader>
                     <SortableHeader columnKey="times" align="center">Vezes</SortableHeader>
-                    <SortableHeader columnKey="originalPrice" align="right">Preço Tela</SortableHeader>
                     <SortableHeader columnKey="price" align="right">Preço Unit.</SortableHeader>
-                    <TableCell align="right">Preço Pricing</TableCell>
                     <SortableHeader columnKey="subtotal" align="right">Subtotal</SortableHeader>
+                    <SortableHeader columnKey="originalPrice" align="right">Preço Tela</SortableHeader>
+                    <TableCell align="right">Preço Pricing</TableCell>
                     {!hasMachinesSegment && (
                       <>
                         <SortableHeader columnKey="ipi" align="right">IPI</SortableHeader>
@@ -1664,11 +1664,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
                           </Tooltip>
                         )}
                       </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" color="text.secondary">
-                          {formatCurrency(item.originalPrice || item.product?.price || 0)}
-                        </Typography>
-                      </TableCell>
+                      {/* Preço Unit. */}
                       <TableCell align="right">
                         <Box>
                           <Typography variant="body2">{formatCurrency(item.price)}</Typography>
@@ -1687,6 +1683,15 @@ function CartItems({ leadId, lead, readOnly = false }) {
                           })()}
                         </Box>
                       </TableCell>
+                      {/* Subtotal */}
+                      <TableCell align="right">{formatCurrency(item.subtotal)}</TableCell>
+                      {/* Preço Tela */}
+                      <TableCell align="right">
+                        <Typography variant="body2" color="text.secondary">
+                          {formatCurrency(item.originalPrice || item.product?.price || 0)}
+                        </Typography>
+                      </TableCell>
+                      {/* Preço Pricing */}
                       <TableCell align="right">
                         {calculatingPricing[item.id] ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
@@ -1756,7 +1761,6 @@ function CartItems({ leadId, lead, readOnly = false }) {
                           return null;
                         })()}
                       </TableCell>
-                      <TableCell align="right">{formatCurrency(item.subtotal)}</TableCell>
                       {!hasMachinesSegment && (
                         <>
                           <TableCell align="right">{formatCurrency(item.ipi)}</TableCell>
