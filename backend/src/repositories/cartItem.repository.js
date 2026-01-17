@@ -19,13 +19,7 @@ export class CartItemRepository {
         inv.description as product_description,
         p.segmento as product_segment,
         p.categoria as product_category,
-        COALESCE(e.total_disponivel, 0) as product_stock,
-        COALESCE(e.e09_disponivel, 0) as stock_109,
-        COALESCE(e.e70_disponivel, 0) as stock_370,
-        COALESCE(e.e13_disponivel, 0) as stock_613,
-        COALESCE(e.e13_ttd_disponivel, 0) as stock_613_ttd,
-        COALESCE(e.e85_disponivel, 0) as stock_885,
-        COALESCE(e.e66_disponivel, 0) as stock_966
+        COALESCE(e.total_disponivel, 0) as product_stock
       FROM icart i
       LEFT JOIN inv inv ON i.cProduct = inv.id
       LEFT JOIN produtos p ON inv.idcf = p.id
@@ -46,15 +40,7 @@ export class CartItemRepository {
           description: row.product_description,
           segment: row.product_segment,
           category: row.product_category,
-          stock: parseInt(row.product_stock) || 0,
-          stockByWarehouse: {
-            '109': parseInt(row.stock_109) || 0,
-            '370': parseInt(row.stock_370) || 0,
-            '613': parseInt(row.stock_613) || 0,
-            '613_TTD': parseInt(row.stock_613_ttd) || 0,
-            '885': parseInt(row.stock_885) || 0,
-            '966': parseInt(row.stock_966) || 0
-          }
+          stock: parseInt(row.product_stock) || 0
         };
       }
       return item;
