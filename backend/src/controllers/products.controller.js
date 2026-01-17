@@ -1,4 +1,5 @@
 import { ProductRepository } from '../repositories/product.repository.js';
+import FavoriteProductRepository from '../repositories/favoriteProduct.repository.js';
 import Joi from 'joi';
 
 const productRepository = new ProductRepository();
@@ -23,7 +24,7 @@ export async function searchProducts(req, res, next) {
   try {
     // Validação
     const { error, value } = searchSchema.validate(req.query);
-    
+
     if (error) {
       return res.status(400).json({
         success: false,
@@ -51,7 +52,7 @@ export async function searchProducts(req, res, next) {
 
     res.json({
       success: true,
-      data: result.data.map(product => 
+      data: result.data.map(product =>
         simple ? product.toSimpleJSON() : product.toJSON()
       ),
       pagination: result.pagination
@@ -68,7 +69,7 @@ export async function searchProducts(req, res, next) {
 export async function getProductById(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({
         success: false,
@@ -102,7 +103,7 @@ export async function getProductsByCategory(req, res, next) {
   try {
     const { category } = req.params;
     const limit = parseInt(req.query.limit) || 50;
-    
+
     if (limit < 1 || limit > 100) {
       return res.status(400).json({
         success: false,
@@ -129,7 +130,7 @@ export async function getProductsBySegment(req, res, next) {
   try {
     const { segment } = req.params;
     const limit = parseInt(req.query.limit) || 50;
-    
+
     if (limit < 1 || limit > 100) {
       return res.status(400).json({
         success: false,
@@ -181,3 +182,103 @@ export async function getSegments(req, res, next) {
     next(error);
   }
 }
+
+// ========== FAVORITOS ==========
+
+/**
+ * Lista produtos favoritos do vendedor
+ * GET /api/products/favorites
+ */
+export async function getFavorites(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    const favorites = await FavoriteProductRepository.getFavorites(sellerId);
+
+    res.json({
+      success: true,
+      data: favorites,
+      total: favorites.length
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Adiciona produto aos favoritos
+ * POST /api/products/:id/favorite
+ */
+export async function addFavorite(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+    const productId = parseInt(req.params.id);
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    await FavoriteProductRepository.addFavorite(sellerId, productId);
+
+    res.json({
+      success: true,
+      message: 'Produto adicionado aos favoritos',
+      data: { productId, isFavorite: true }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Remove produto dos favoritos
+ * DELETE /api/products/:id/favorite
+ */
+export async function removeFavorite(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+    const productId = parseInt(req.params.id);
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    await FavoriteProductRepository.removeFavorite(sellerId, productId);
+
+    res.json({
+      success: true,
+      message: 'Produto removido dos favoritos',
+      data: { productId, isFavorite: false }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

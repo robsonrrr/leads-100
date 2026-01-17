@@ -267,6 +267,10 @@ export const productsService = {
   getSegments: () => api.get('/products/segments'),
   getByCategory: (category, limit = 50) => api.get(`/products/category/${category}`, { params: { limit } }),
   getBySegment: (segment, limit = 50) => api.get(`/products/segment/${segment}`, { params: { limit } }),
+  // Favoritos
+  getFavorites: () => api.get('/products/favorites'),
+  addFavorite: (productId) => api.post(`/products/${productId}/favorite`),
+  removeFavorite: (productId) => api.delete(`/products/${productId}/favorite`),
 }
 
 export const pricingService = {

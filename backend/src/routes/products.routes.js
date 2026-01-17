@@ -194,6 +194,60 @@ router.get('/', optionalAuth, productsController.searchProducts);
 
 /**
  * @swagger
+ * /products/favorites:
+ *   get:
+ *     summary: Lista produtos favoritos do vendedor
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de produtos favoritos
+ */
+router.get('/favorites', optionalAuth, productsController.getFavorites);
+
+/**
+ * @swagger
+ * /products/{id}/favorite:
+ *   post:
+ *     summary: Adiciona produto aos favoritos
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Produto adicionado aos favoritos
+ */
+router.post('/:id/favorite', optionalAuth, productsController.addFavorite);
+
+/**
+ * @swagger
+ * /products/{id}/favorite:
+ *   delete:
+ *     summary: Remove produto dos favoritos
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Produto removido dos favoritos
+ */
+router.delete('/:id/favorite', optionalAuth, productsController.removeFavorite);
+
+/**
+ * @swagger
  * /products/{id}:
  *   get:
  *     summary: Busca produto por ID
@@ -224,3 +278,4 @@ router.get('/', optionalAuth, productsController.searchProducts);
 router.get('/:id', optionalAuth, productsController.getProductById);
 
 export default router;
+

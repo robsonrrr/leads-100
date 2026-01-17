@@ -47,9 +47,11 @@ import {
   Info as InfoIcon,
   ExpandMore as ExpandMoreIcon,
   ShoppingCart as ShoppingCartIcon,
-  AutoFixHigh as AutoFixHighIcon
+  AutoFixHigh as AutoFixHighIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon
 } from '@mui/icons-material'
-import { leadsService, pricingService } from '../services/api'
+import { leadsService, pricingService, productsService } from '../services/api'
 import aiService from '../services/ai.service'
 import { formatCurrency } from '../utils'
 import ProductAutocomplete from './ProductAutocomplete'
@@ -96,6 +98,8 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [inlineEdit, setInlineEdit] = useState({}) // { itemId: { field: 'quantity' | 'times', value: number } }
   const [savingInline, setSavingInline] = useState({}) // { itemId: boolean }
   const [productDetailModal, setProductDetailModal] = useState({ open: false, product: null }) // Modal de detalhes do produto
+  const [favorites, setFavorites] = useState(new Set()) // Set de IDs de produtos favoritos
+  const [loadingFavorite, setLoadingFavorite] = useState({}) // { productId: boolean }
 
   const [formData, setFormData] = useState({
     product: null,
@@ -116,6 +120,52 @@ function CartItems({ leadId, lead, readOnly = false }) {
       loadTotals()
     }
   }, [leadId])
+
+  // Carregar favoritos do vendedor
+  useEffect(() => {
+    loadFavorites()
+  }, [])
+
+  const loadFavorites = async () => {
+    try {
+      const response = await productsService.getFavorites()
+      if (response.data.success) {
+        const favoriteIds = new Set(response.data.data.map(p => p.id))
+        setFavorites(favoriteIds)
+      }
+    } catch (err) {
+      // Silently fail - favoritos são opcionais
+      console.debug('Erro ao carregar favoritos:', err)
+    }
+  }
+
+  const toggleFavorite = async (productId) => {
+    if (!productId || loadingFavorite[productId]) return
+
+    setLoadingFavorite(prev => ({ ...prev, [productId]: true }))
+
+    try {
+      const isFavorite = favorites.has(productId)
+
+      if (isFavorite) {
+        await productsService.removeFavorite(productId)
+        setFavorites(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(productId)
+          return newSet
+        })
+        toast.info('Removido dos favoritos')
+      } else {
+        await productsService.addFavorite(productId)
+        setFavorites(prev => new Set([...prev, productId]))
+        toast.success('Adicionado aos favoritos ❤️')
+      }
+    } catch (err) {
+      toast.error('Erro ao atualizar favoritos')
+    } finally {
+      setLoadingFavorite(prev => ({ ...prev, [productId]: false }))
+    }
+  }
 
   const loadItems = async () => {
     try {
@@ -1283,6 +1333,24 @@ function CartItems({ leadId, lead, readOnly = false }) {
                           disabled={readOnly}
                         >
                           <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleFavorite(item.productId || item.product?.id)}
+                          title={favorites.has(item.productId || item.product?.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                          disabled={loadingFavorite[item.productId || item.product?.id]}
+                          sx={{
+                            color: favorites.has(item.productId || item.product?.id) ? 'error.main' : 'action.active',
+                            transition: 'color 0.2s ease'
+                          }}
+                        >
+                          {loadingFavorite[item.productId || item.product?.id] ? (
+                            <CircularProgress size={16} />
+                          ) : favorites.has(item.productId || item.product?.id) ? (
+                            <FavoriteIcon fontSize="small" />
+                          ) : (
+                            <FavoriteBorderIcon fontSize="small" />
+                          )}
                         </IconButton>
                         <IconButton
                           size="small"
