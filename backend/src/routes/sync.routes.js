@@ -5,10 +5,13 @@
  */
 
 import express from 'express'
-import pool from '../config/database.js'
+import { getDatabase } from '../config/database.js'
 import { authenticateToken } from '../middleware/auth.js'
 
 const router = express.Router()
+
+// Helper para obter pool
+const getPool = () => getDatabase()
 
 /**
  * GET /api/sync/products
@@ -50,7 +53,7 @@ router.get('/products', authenticateToken, async (req, res) => {
         sql += ' ORDER BY p.updated_at ASC LIMIT ?'
         params.push(maxLimit)
 
-        const [rows] = await pool.execute(sql, params)
+        const [rows] = await getPool().execute(sql, params)
 
         // Pegar timestamp do último registro para cursor
         const lastTimestamp = rows.length > 0
@@ -110,7 +113,7 @@ router.get('/customers', authenticateToken, async (req, res) => {
         sql += ' ORDER BY c.updated_at ASC LIMIT ?'
         params.push(maxLimit)
 
-        const [rows] = await pool.execute(sql, params)
+        const [rows] = await getPool().execute(sql, params)
 
         const lastTimestamp = rows.length > 0
             ? rows[rows.length - 1].updated_at
@@ -140,7 +143,7 @@ router.get('/customers', authenticateToken, async (req, res) => {
  */
 router.get('/segments', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.execute(`
+        const [rows] = await getPool().execute(`
       SELECT DISTINCT 
         segmento as id,
         segmento as name,
@@ -169,7 +172,7 @@ router.get('/segments', authenticateToken, async (req, res) => {
  */
 router.get('/categories', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.execute(`
+        const [rows] = await getPool().execute(`
       SELECT DISTINCT 
         categoria as id,
         categoria as name,
@@ -201,11 +204,11 @@ router.get('/status', authenticateToken, async (req, res) => {
     try {
         const sellerId = req.user.emitentePOID
 
-        const [[productsCount]] = await pool.execute(
+        const [[productsCount]] = await getPool().execute(
             'SELECT COUNT(*) as count FROM inv WHERE preco_tabela > 0 AND vip != 9'
         )
 
-        const [[customersCount]] = await pool.execute(
+        const [[customersCount]] = await getPool().execute(
             'SELECT COUNT(*) as count FROM clientes WHERE vendedor_id = ?',
             [sellerId]
         )
