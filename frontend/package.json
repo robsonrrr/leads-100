@@ -27,6 +27,7 @@
     "react-router-dom": "^6.21.1",
     "recharts": "^3.6.0",
     "sql.js": "^1.13.0",
+    "uuid": "^13.0.0",
     "workbox-window": "^7.4.0"
   },
   "devDependencies": {

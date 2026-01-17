@@ -76,7 +76,7 @@ export default defineConfig(({ mode }) => {
       cors: true, // Habilitar CORS para permitir acesso externo
       proxy: {
         '/api': {
-          target: process.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001',
+          target: process.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3002',
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/api/, '/api')
