@@ -13,7 +13,8 @@ import { connectRedis } from './config/redis.js';
 import { initViews } from './migrations/initViews.js';
 import { initPricing } from './migrations/initPricing.js';
 import { initSecurity } from './migrations/initSecurity.js';
-import logger, { requestLoggerMiddleware } from './config/logger.js';
+import logger from './config/logger.js';
+import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { auditLog } from './services/auditLog.service.js';
 

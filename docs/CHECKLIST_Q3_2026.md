@@ -121,9 +121,9 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.4.1 | Setup de APM (DataDog/NewRelic/CloudWatch) | Infra | ⏳ |
-| 1.4.2 | Alertas de latência (> 500ms) | Infra | ⏳ |
-| 1.4.3 | Alertas de erro rate (> 1%) | Infra | ⏳ |
+| 1.4.1 | Setup de APM (DataDog/NewRelic/CloudWatch) | Infra | ✅ |
+| 1.4.2 | Alertas de latência (> 500ms) | Infra | ✅ |
+| 1.4.3 | Alertas de erro rate (> 1%) | Infra | ✅ |
 | 1.4.4 | Dashboard de saúde do sistema | Infra | ✅ |
 | 1.4.5 | Logs centralizados | Infra | ✅ |
 

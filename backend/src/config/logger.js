@@ -5,18 +5,18 @@ const { combine, timestamp, printf, colorize, errors } = winston.format;
 // Formato customizado para logs
 const logFormat = printf(({ level, message, timestamp, requestId, ...metadata }) => {
   let msg = `${timestamp} [${level}]`;
-  
+
   if (requestId) {
     msg += ` [${requestId}]`;
   }
-  
+
   msg += `: ${message}`;
-  
+
   // Adicionar metadata se existir
   if (Object.keys(metadata).length > 0 && metadata.stack === undefined) {
     msg += ` ${JSON.stringify(metadata)}`;
   }
-  
+
   return msg;
 });
 
@@ -70,50 +70,13 @@ if (process.env.NODE_ENV === 'production') {
     level: 'error',
     format: jsonFormat
   }));
-  
+
   logger.add(new winston.transports.File({
     filename: 'logs/combined.log',
     format: jsonFormat
   }));
 }
 
-/**
- * Cria um child logger com requestId para rastreamento
- * @param {string} requestId - ID único da requisição
- */
-export const createRequestLogger = (requestId) => {
-  return logger.child({ requestId });
-};
 
-/**
- * Middleware para adicionar requestId e logger à requisição
- */
-export const requestLoggerMiddleware = (req, res, next) => {
-  // Gerar requestId único
-  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  req.requestId = requestId;
-  req.logger = createRequestLogger(requestId);
-  
-  // Log da requisição
-  req.logger.info(`${req.method} ${req.originalUrl}`, {
-    method: req.method,
-    url: req.originalUrl,
-    ip: req.ip,
-    userAgent: req.get('User-Agent')
-  });
-  
-  // Log do tempo de resposta
-  const startTime = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    const logLevel = res.statusCode >= 400 ? 'warn' : 'info';
-    req.logger[logLevel](`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`, {
-      statusCode: res.statusCode,
-      duration
-    });
-  });
-  
-  next();
-};
 
 export default logger;
