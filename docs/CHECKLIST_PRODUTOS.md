@@ -240,8 +240,8 @@ WHERE produto_id = ?
 | 5.1.2 | Exibir preço sugerido (Pricing Agent) | Frontend | ✅ |
 | 5.1.3 | Exibir desconto aplicado (%) | Frontend | ✅ |
 | 5.1.4 | Exibir margem estimada | Frontend | ✅ |
-| 5.1.5 | Histórico de preços (últimos 12 meses) | Backend | ⏳ |
-| 5.1.6 | Gráfico de evolução de preço | Frontend | ⏳ |
+| 5.1.5 | Histórico de preços (últimos 12 meses) | Backend | ✅ |
+| 5.1.6 | Gráfico de evolução de preço | Frontend | ✅ |
 
 ---
 
@@ -251,9 +251,9 @@ WHERE produto_id = ?
 |---|--------|-------------|--------|
 | 5.2.1 | Destacar produtos em promoção | Frontend | ✅ |
 | 5.2.2 | Badge "Promoção" no autocomplete | Frontend | ✅ |
-| 5.2.3 | Filtro de produtos em promoção | Frontend | ⏳ |
+| 5.2.3 | Filtro de produtos em promoção | Frontend | ✅ |
 | 5.2.4 | Mostrar economia (preço original x promo) | Frontend | ✅ |
-| 5.2.5 | Alertar quando promoção expirando | Frontend | ⏳ |
+| 5.2.5 | Alertar quando promoção expirando | Frontend | ✅ |
 
 ---
 
@@ -340,11 +340,11 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 2. Busca | 20 | 16 | 4 |
 | 3. Personalização | 15 | 15 | 0 |
 | 4. Estoque | 12 | 12 | 0 |
-| 5. Preços | 20 | 16 | 4 |
+| 5. Preços | 20 | 20 | 0 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **72** | **27** |
+| **Total** | **99** | **76** | **23** |
 
 ---
 

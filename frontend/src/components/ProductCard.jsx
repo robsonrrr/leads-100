@@ -29,12 +29,24 @@ export const ProductGridItem = memo(({
     product,
     isPromo,
     isLaunch,
+    promoExpiry, // Data de expiração da promoção
     isFavorite,
     toggleFavorite,
     setDetailModal,
     setAddToLeadModal
 }) => {
     const stock = product.estoque || product.stock || 0
+
+    // Verificar se promoção está expirando (5.2.5)
+    const isPromoExpiring = (() => {
+        if (!isPromo || !promoExpiry) return false
+        const expiryDate = new Date(promoExpiry)
+        const now = new Date()
+        const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
+        return daysLeft > 0 && daysLeft <= 3
+    })()
+
+    const promoExpiryDays = promoExpiry ? Math.ceil((new Date(promoExpiry) - new Date()) / (1000 * 60 * 60 * 24)) : null
 
     return (
         <Card
@@ -55,10 +67,18 @@ export const ProductGridItem = memo(({
                 {isPromo && (
                     <Chip
                         icon={<PromoIcon sx={{ fontSize: 14 }} />}
-                        label="Promoção"
+                        label={isPromoExpiring ? `Expira em ${promoExpiryDays}d!` : 'Promoção'}
                         size="small"
                         color="error"
-                        sx={{ height: 20, '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' } }}
+                        sx={{
+                            height: 20,
+                            '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' },
+                            animation: isPromoExpiring ? 'pulse 1s infinite' : 'none',
+                            '@keyframes pulse': {
+                                '0%, 100%': { opacity: 1 },
+                                '50%': { opacity: 0.7 }
+                            }
+                        }}
                     />
                 )}
                 {isLaunch && (

@@ -79,6 +79,7 @@ function ProductsPage() {
     const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '')
     const [priceRange, setPriceRange] = useState([0, 50000])
     const [inStockOnly, setInStockOnly] = useState(searchParams.get('inStock') !== 'false')
+    const [promoOnly, setPromoOnly] = useState(searchParams.get('promo') === 'true')
     const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'stock')
     const [viewMode, setViewMode] = useState('grid')
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
@@ -184,6 +185,12 @@ function ProductsPage() {
                     })
                 }
 
+                // Filtrar apenas promoções (5.2.3)
+                if (promoOnly && promotions.length > 0) {
+                    const promoIds = new Set(promotions.map(promo => promo.sku))
+                    prods = prods.filter(p => promoIds.has(p.id))
+                }
+
                 // Ordenar
                 prods.sort((a, b) => {
                     switch (sortBy) {
@@ -208,7 +215,7 @@ function ProductsPage() {
         } finally {
             setLoading(false)
         }
-    }, [page, searchTerm, selectedSegment, selectedCategory, selectedBrand, inStockOnly, priceRange, sortBy])
+    }, [page, searchTerm, selectedSegment, selectedCategory, selectedBrand, inStockOnly, promoOnly, priceRange, sortBy, promotions])
 
     useEffect(() => {
         loadProducts()
@@ -222,9 +229,10 @@ function ProductsPage() {
         if (selectedCategory) params.set('category', selectedCategory)
         if (selectedBrand) params.set('brand', selectedBrand)
         if (!inStockOnly) params.set('inStock', 'false')
+        if (promoOnly) params.set('promo', 'true')
         if (sortBy !== 'stock') params.set('sort', sortBy)
         setSearchParams(params, { replace: true })
-    }, [searchTerm, selectedSegment, selectedCategory, inStockOnly, sortBy, setSearchParams])
+    }, [searchTerm, selectedSegment, selectedCategory, inStockOnly, promoOnly, sortBy, setSearchParams])
 
     // Toggle favorito
     const toggleFavorite = async (productId) => {
@@ -356,6 +364,18 @@ function ProductsPage() {
                     />
                 }
                 label="Apenas em estoque"
+            />
+
+            {/* Em Promoção */}
+            <FormControlLabel
+                control={
+                    <Switch
+                        checked={promoOnly}
+                        onChange={(e) => { setPromoOnly(e.target.checked); setPage(1) }}
+                        color="error"
+                    />
+                }
+                label="🔥 Apenas em promoção"
             />
 
             <Divider sx={{ my: 2 }} />
