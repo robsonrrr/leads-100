@@ -316,5 +316,24 @@ router.get('/:id/details', optionalAuth, productsController.getEnrichedProductBy
  */
 router.get('/:id/stock-by-warehouse', optionalAuth, productsController.getStockByWarehouse);
 
+/**
+ * @swagger
+ * /api/products/{id}/price-history:
+ *   get:
+ *     tags: [Products]
+ *     summary: Histórico de preços do produto
+ *     description: Retorna histórico de preços médios dos últimos 12 meses
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Histórico de preços por mês
+ */
+router.get('/:id/price-history', optionalAuth, productsController.getPriceHistory);
+
 export default router;
 

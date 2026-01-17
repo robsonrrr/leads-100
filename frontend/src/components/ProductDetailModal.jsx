@@ -40,6 +40,16 @@ import OptimizedImage from './OptimizedImage';
 import MakPrimeLogo from './MakPrimeLogo';
 import { formatCurrency } from '../utils';
 import { productsService } from '../services/api';
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    Legend
+} from 'recharts';
 
 /**
  * ProductDetailModal - Modal para exibir detalhes completos do produto
@@ -57,6 +67,8 @@ function ProductDetailModal({
     const [enrichedData, setEnrichedData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
+    const [priceHistory, setPriceHistory] = useState([]);
+    const [selectedImageSize, setSelectedImageSize] = useState('h800'); // Para galeria
 
     const productId = product?.id || product?.productId;
 
@@ -64,6 +76,7 @@ function ProductDetailModal({
     useEffect(() => {
         if (open && productId) {
             fetchEnrichedData();
+            fetchPriceHistory();
         }
     }, [open, productId]);
 
@@ -83,13 +96,25 @@ function ProductDetailModal({
         }
     };
 
+    const fetchPriceHistory = async () => {
+        try {
+            const response = await productsService.getPriceHistory(productId);
+            if (response.data.success) {
+                setPriceHistory(response.data.data);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar histórico de preços:', error);
+            setPriceHistory([]);
+        }
+    };
+
     // Dados a exibir (enriquecidos ou básicos)
     const data = enrichedData || product || {};
 
     if (!product && !loading) return null;
 
     const imageUrl = productId
-        ? `https://img.rolemak.com.br/id/h800/${productId}.jpg?version=9.02`
+        ? `https://img.rolemak.com.br/id/${selectedImageSize}/${productId}.jpg?version=9.02`
         : null;
 
     const handleZoomIn = () => setImageZoom(prev => Math.min(prev + 0.25, 2));
@@ -214,6 +239,36 @@ function ProductDetailModal({
                                             <ZoomInIcon />
                                         </IconButton>
                                     </Box>
+
+                                    {/* Galeria de Thumbnails */}
+                                    <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                                        {['h180', 'h350', 'h500', 'h800'].map((size) => (
+                                            <Box
+                                                key={size}
+                                                onClick={() => setSelectedImageSize(size)}
+                                                sx={{
+                                                    width: 50,
+                                                    height: 50,
+                                                    border: selectedImageSize === size ? '2px solid #1976d2' : '1px solid #ddd',
+                                                    borderRadius: 1,
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    opacity: selectedImageSize === size ? 1 : 0.7,
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': { opacity: 1, borderColor: '#1976d2' }
+                                                }}
+                                            >
+                                                <OptimizedImage
+                                                    src={`https://img.rolemak.com.br/id/${size}/${productId}.jpg?version=9.02`}
+                                                    alt={`Tamanho ${size}`}
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                                        Clique para ver em diferentes resoluções
+                                    </Typography>
                                 </>
                             ) : (
                                 <Box sx={{
@@ -243,6 +298,7 @@ function ProductDetailModal({
                                 <Tab label="Geral" />
                                 <Tab label="Descrição" />
                                 {hasMeasures && <Tab label="Medidas" />}
+                                <Tab label="Preços" />
                             </Tabs>
 
                             <Box sx={{ p: 3 }}>
@@ -548,6 +604,116 @@ function ProductDetailModal({
                                                 <Typography variant="body2" color="text.secondary">
                                                     Layout: {data.medidaLayout}
                                                 </Typography>
+                                            </Box>
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Tab Preços (índice dinâmico baseado em hasMeasures) */}
+                                {activeTab === (hasMeasures ? 3 : 2) && (
+                                    <>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                            📈 Histórico de Preços (Últimos 12 meses)
+                                        </Typography>
+
+                                        {priceHistory.length > 0 ? (
+                                            <Box sx={{ width: '100%', height: 300 }}>
+                                                <ResponsiveContainer>
+                                                    <LineChart data={priceHistory}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis
+                                                            dataKey="monthName"
+                                                            tick={{ fontSize: 12 }}
+                                                        />
+                                                        <YAxis
+                                                            tickFormatter={(value) => `R$ ${value}`}
+                                                            tick={{ fontSize: 12 }}
+                                                        />
+                                                        <RechartsTooltip
+                                                            formatter={(value, name) => [
+                                                                formatCurrency(value),
+                                                                name === 'avgPrice' ? 'Preço Médio' :
+                                                                    name === 'minPrice' ? 'Mínimo' : 'Máximo'
+                                                            ]}
+                                                            labelFormatter={(label) => `Mês: ${label}`}
+                                                        />
+                                                        <Legend />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="avgPrice"
+                                                            name="Preço Médio"
+                                                            stroke="#1976d2"
+                                                            strokeWidth={2}
+                                                            dot={{ r: 4 }}
+                                                            connectNulls
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="minPrice"
+                                                            name="Mínimo"
+                                                            stroke="#4caf50"
+                                                            strokeDasharray="5 5"
+                                                            dot={false}
+                                                            connectNulls
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="maxPrice"
+                                                            name="Máximo"
+                                                            stroke="#f44336"
+                                                            strokeDasharray="5 5"
+                                                            dot={false}
+                                                            connectNulls
+                                                        />
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </Box>
+                                        ) : (
+                                            <Alert severity="info">
+                                                Não há histórico de vendas disponível para este produto.
+                                            </Alert>
+                                        )}
+
+                                        {/* Resumo de vendas */}
+                                        {priceHistory.length > 0 && (
+                                            <Box sx={{ mt: 3 }}>
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                    Resumo de Vendas
+                                                </Typography>
+                                                <Grid container spacing={2}>
+                                                    <Grid item xs={4}>
+                                                        <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, textAlign: 'center' }}>
+                                                            <Typography variant="h6" color="primary">
+                                                                {priceHistory.reduce((sum, p) => sum + (p.ordersCount || 0), 0)}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Pedidos (12m)
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, textAlign: 'center' }}>
+                                                            <Typography variant="h6" color="primary">
+                                                                {priceHistory.reduce((sum, p) => sum + (p.totalQuantity || 0), 0)}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Unidades
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                    <Grid item xs={4}>
+                                                        <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, textAlign: 'center' }}>
+                                                            <Typography variant="h6" color="primary">
+                                                                {formatCurrency(
+                                                                    priceHistory.filter(p => p.avgPrice).reduce((sum, p, _, arr) => sum + p.avgPrice / arr.length, 0)
+                                                                )}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Preço Médio
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                </Grid>
                                             </Box>
                                         )}
                                     </>

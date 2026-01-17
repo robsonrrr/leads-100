@@ -406,5 +406,67 @@ export class ProductRepository {
       }
     });
   }
+
+  /**
+   * Busca histórico de preços de um produto (últimos 12 meses)
+   * Calcula preço médio mensal baseado em vendas
+   * @param {number} productId 
+   * @returns {Promise<Array>} Array com preços por mês
+   */
+  async getPriceHistory(productId) {
+    const cacheKey = `product:price-history:${productId}`;
+
+    return CacheService.getOrSet(cacheKey, async () => {
+      // Calcular data de 12 meses atrás
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 12);
+      const startDateStr = startDate.toISOString().split('T')[0];
+
+      const query = `
+        SELECT 
+          YEAR(h.data) as year,
+          MONTH(h.data) as month,
+          ROUND(AVG(i.preco), 2) as avg_price,
+          ROUND(MIN(i.preco), 2) as min_price,
+          ROUND(MAX(i.preco), 2) as max_price,
+          COUNT(DISTINCT h.id) as orders_count,
+          SUM(i.qtde) as total_quantity
+        FROM mak.hoje h
+        INNER JOIN mak.icart i ON h.id = i.idcart
+        WHERE i.idproduto = ?
+          AND h.data >= ?
+          AND h.valor > 0
+          AND h.nop IN (27, 28, 51, 76)
+          AND i.preco > 0
+        GROUP BY YEAR(h.data), MONTH(h.data)
+        ORDER BY YEAR(h.data), MONTH(h.data)
+      `;
+
+      const [rows] = await db().execute(query, [productId, startDateStr]);
+
+      // Preencher meses sem vendas com null
+      const result = [];
+      const now = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const year = d.getFullYear();
+        const month = d.getMonth() + 1;
+
+        const found = rows.find(r => r.year === year && r.month === month);
+        result.push({
+          year,
+          month,
+          monthName: d.toLocaleString('pt-BR', { month: 'short' }),
+          avgPrice: found ? parseFloat(found.avg_price) : null,
+          minPrice: found ? parseFloat(found.min_price) : null,
+          maxPrice: found ? parseFloat(found.max_price) : null,
+          ordersCount: found ? parseInt(found.orders_count) : 0,
+          totalQuantity: found ? parseInt(found.total_quantity) : 0
+        });
+      }
+
+      return result;
+    }, 3600); // Cache de 1 hora
+  }
 }
 

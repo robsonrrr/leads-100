@@ -34,7 +34,7 @@
 |---|--------|-------------|--------|
 | 1.1.1 | Thumbnail de produto na tabela de itens do carrinho | Frontend | ✅ |
 | 1.1.2 | Modal de visualização ampliada ao clicar na imagem | Frontend | ✅ |
-| 1.1.3 | Galeria de múltiplas imagens do produto (se disponíveis) | Frontend | ⏳ |
+| 1.1.3 | Galeria de múltiplas imagens do produto (se disponíveis) | Frontend | ✅ |
 | 1.1.4 | Fallback para imagem padrão quando não encontrada | Frontend | ✅ |
 | 1.1.5 | Lazy loading de imagens com Intersection Observer | Frontend | ✅ |
 | 1.1.6 | Cache de imagens no browser (Service Worker) | Frontend | ✅ |
@@ -62,7 +62,7 @@
 | 1.2.5 | Exibir NCM e informações fiscais | Frontend | ✅ |
 | 1.2.6 | Exibir preço de tabela e margem | Frontend | ✅ |
 | 1.2.7 | Exibir estoque disponível em tempo real | Frontend | ✅ |
-| 1.2.8 | Histórico de preços do produto (gráfico) | Frontend | ⏳ |
+| 1.2.8 | Histórico de preços do produto (gráfico) | Frontend | ✅ |
 
 **Critério de Aceite:**
 ```
@@ -336,7 +336,7 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
-| 1. Visualização | 14 | 11 | 3 |
+| 1. Visualização | 14 | 14 | 0 |
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 12 | 9 | 3 |
@@ -344,7 +344,7 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **52** | **47** |
+| **Total** | **99** | **54** | **45** |
 
 ---
 

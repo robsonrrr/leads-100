@@ -265,6 +265,7 @@ export const productsService = {
   getById: (id) => api.get(`/products/${id}`),
   getDetails: (id) => api.get(`/products/${id}/details`),
   getStockByWarehouse: (productId) => api.get(`/products/${productId}/stock-by-warehouse`),
+  getPriceHistory: (productId) => api.get(`/products/${productId}/price-history`),
   getCategories: () => api.get('/products/categories'),
   getSegments: () => api.get('/products/segments'),
   getByCategory: (category, limit = 50) => api.get(`/products/category/${category}`, { params: { limit } }),

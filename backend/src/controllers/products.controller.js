@@ -352,3 +352,32 @@ export async function getStockByWarehouse(req, res, next) {
     next(error);
   }
 }
+
+// ========== HISTÓRICO DE PREÇOS ==========
+
+/**
+ * Busca histórico de preços de um produto (últimos 12 meses)
+ * GET /api/products/:id/price-history
+ */
+export async function getPriceHistory(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const priceHistory = await productRepository.getPriceHistory(productId);
+
+    res.json({
+      success: true,
+      data: priceHistory
+    });
+  } catch (error) {
+    console.error('Erro getPriceHistory:', error);
+    next(error);
+  }
+}
