@@ -83,7 +83,7 @@
 | 2.1.2 | Busca por modelo | Backend | ✅ |
 | 2.1.3 | Busca por descrição | Backend | ✅ |
 | 2.1.4 | Busca por NCM | Backend | ✅ |
-| 2.1.5 | Highlight de match nos resultados | Frontend | ⏳ |
+| 2.1.5 | Highlight de match nos resultados | Frontend | ✅ |
 | 2.1.6 | Mostrar thumbnail no autocomplete | Frontend | ✅ |
 | 2.1.7 | Mostrar estoque no autocomplete | Frontend | ✅ |
 | 2.1.8 | Mostrar preço de tabela no autocomplete | Frontend | ✅ |
@@ -302,14 +302,14 @@ CREATE TABLE seller_favorite_products (
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
 | 1. Visualização | 14 | 8 | 6 |
-| 2. Busca | 20 | 8 | 12 |
+| 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 2 | 12 |
 | 4. Estoque | 9 | 1 | 8 |
 | 5. Preços | 11 | 4 | 7 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **23** | **64** |
+| **Total** | **87** | **24** | **63** |
 
 ---
 
