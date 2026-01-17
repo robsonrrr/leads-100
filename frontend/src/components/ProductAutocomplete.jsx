@@ -33,12 +33,14 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
   // Criar mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
     const map = new Map()
-    promotions.forEach(promo => {
-      map.set(promo.sku, {
-        promoPrice: promo.preco_promo,
-        promoDiscount: promo.desconto
+    if (Array.isArray(promotions)) {
+      promotions.forEach(promo => {
+        map.set(promo.sku, {
+          promoPrice: promo.preco_promo,
+          promoDiscount: promo.desconto
+        })
       })
-    })
+    }
     return map
   }, [promotions])
 
