@@ -31,9 +31,9 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 
 | # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
 |---|--------|------------|---------------------|--------|
-| 2.1 | **Alerta de Baixo Estoque** (No cliente, baseado em média de venda) | 🔥 Alta | Evitar ruptura na ponta (Sell-out) | ⬜ |
-| 2.2 | **Status de Pedido em Tempo Real** (Push/WhatsApp) | 🔥 Alta | Reduz chamados no suporte | ⬜ |
-| 2.3 | **Lembrete de Reabastecimento** (Churn Prevention) | 🔸 Média | Manter regularidade mensal | ⬜ |
+| 2.1 | **Alerta de Baixo Estoque** (Reposição sugerida baseada em histórico) | 🔥 Alta | Penetração (Consistência de compra) | ✅ (Dashboard) |
+| 2.2 | **Histórico de Pesquisas** (Salvar "O que o cliente buscou") | 🔸 Média | Inteligência de Mercado | ⬜ |
+| 2.3 | **Newsletter Automática** (Novidades baseadas no perfil) | 🔹 Baixa | Manter marca na mente do cliente | ⬜ |
 | 2.4 | **Novidades da Marca** (Lançamentos segmentados) | 🔸 Média | Introdução de novos produtos | ⬜ |
 | 2.5 | **Ofertas Relâmpago** (Estoque parado na Rolemak) | 🔹 Baixa | Limpeza de estoque (Giro) | ⬜ |
 

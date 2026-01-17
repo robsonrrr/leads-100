@@ -45,6 +45,7 @@ import PipelineWidget from '../components/PipelineWidget'
 import InventoryHealthWidget from '../components/InventoryHealthWidget'
 import CustomerGoalsWidget from '../components/CustomerGoalsWidget'
 import LeadsAnalyticsWidget from '../components/LeadsAnalyticsWidget'
+import ReplenishmentAlert from '../components/ReplenishmentAlert'
 
 function DashboardPage() {
   const navigate = useNavigate()
@@ -79,6 +80,7 @@ function DashboardPage() {
 
     // CATEGORIA: OPERAÇÕES
     'inventory': { component: InventoryHealthWidget, title: '📦 Saúde do Inventário', grid: 12, category: 2 },
+    'replenishment': { component: ReplenishmentAlert, title: '⚠️ Reposição Sugerida', grid: 12, category: 2 },
     'followups': { component: FollowUpsWidget, title: 'Follow-ups', grid: 6, category: 2 },
     'alerts': { component: AlertsWidget, title: 'Alertas Operacionais', grid: 6, category: 2 },
     'manager-metrics': { component: ManagerMetricsWidget, title: 'Métricas de Gerente', grid: 12, category: 2 },
