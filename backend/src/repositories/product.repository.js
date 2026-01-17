@@ -342,5 +342,57 @@ export class ProductRepository {
       } : null);
     }
   }
+
+  /**
+   * Busca estoque por unidade/depósito para um produto
+   * Usa a view produtos_estoque_por_unidades
+   */
+  async getStockByWarehouse(productId) {
+    const cacheKey = `stock_by_warehouse_${productId}`;
+    const cached = await CacheService.get(cacheKey);
+    if (cached) return cached;
+
+    const query = `
+      SELECT 
+        unidade_id,
+        unidade_fantasia,
+        unidade_uf,
+        estoque_disponivel,
+        estoque_reservado,
+        estoque_temporario,
+        estoque_total
+      FROM produtos_estoque_por_unidades
+      WHERE produto_id = ?
+      ORDER BY estoque_disponivel DESC
+    `;
+
+    try {
+      const [rows] = await db().execute(query, [productId]);
+
+      const result = {
+        productId,
+        warehouses: rows.map(row => ({
+          id: row.unidade_id,
+          name: row.unidade_fantasia,
+          uf: row.unidade_uf,
+          available: parseInt(row.estoque_disponivel) || 0,
+          reserved: parseInt(row.estoque_reservado) || 0,
+          temporary: parseInt(row.estoque_temporario) || 0,
+          total: parseInt(row.estoque_total) || 0
+        })),
+        totalAvailable: rows.reduce((sum, r) => sum + (parseInt(r.estoque_disponivel) || 0), 0),
+        totalStock: rows.reduce((sum, r) => sum + (parseInt(r.estoque_total) || 0), 0)
+      };
+
+      await CacheService.set(cacheKey, result, 120); // 2 min cache
+      return result;
+    } catch (error) {
+      // Se view não existe, retorna vazio
+      if (error.code === 'ER_NO_SUCH_TABLE' || error.code === 'ER_BAD_FIELD_ERROR') {
+        return { productId, warehouses: [], totalAvailable: 0, totalStock: 0 };
+      }
+      throw error;
+    }
+  }
 }
 

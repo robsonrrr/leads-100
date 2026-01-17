@@ -297,6 +297,24 @@ router.get('/:id', optionalAuth, productsController.getProductById);
  */
 router.get('/:id/details', optionalAuth, productsController.getEnrichedProductById);
 
-export default router;
+/**
+ * @openapi
+ * /api/products/{id}/stock-by-warehouse:
+ *   get:
+ *     summary: Busca estoque por unidade/depósito
+ *     tags:
+ *       - Produtos
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Estoque detalhado por unidade
+ */
+router.get('/:id/stock-by-warehouse', optionalAuth, productsController.getStockByWarehouse);
 
+export default router;
 

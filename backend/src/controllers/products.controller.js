@@ -318,3 +318,30 @@ export async function removeFavorite(req, res, next) {
   }
 }
 
+// ========== ESTOQUE POR UNIDADE ==========
+
+/**
+ * Busca estoque de um produto por unidade/depósito
+ * GET /api/products/:id/stock-by-warehouse
+ */
+export async function getStockByWarehouse(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const stockData = await productRepository.getStockByWarehouse(productId);
+
+    res.json({
+      success: true,
+      data: stockData
+    });
+  } catch (error) {
+    next(error);
+  }
+}
