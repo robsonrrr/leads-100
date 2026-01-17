@@ -405,12 +405,17 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Lógica especial de Condições de Pagamento para máquinas (5x = 30/60/90/120/150 dias)
 - ✅ Data de Entrega oculta na home, visível apenas no dialog de conversão
 - ✅ Correção do salvamento de Unidade Logística (cLogUnity no toJSON)
+- ✅ **Dashboard com métricas de Leads** (2026-01-17)
+  - Novo endpoint GET /api/analytics/leads-metrics
+  - Widget LeadsAnalyticsWidget com gráficos Recharts
+  - Métricas: total de leads, conversão, funil, tendência mensal
+  - Cards de KPIs com comparação vs mês anterior
+  - Integrado na aba "IA & Inteligência" do Dashboard
 
 ### Pendente
 - ⏳ Envio real de email (atualmente simulado)
 - ⏳ Revendedor (cliente de cliente)
 - ⏳ Histórico de alterações do lead
-- ⏳ Dashboard com métricas e gráficos
 - ⏳ Filtros avançados na listagem de leads
 - ⏳ Exportação de leads (PDF, Excel)
 - ⏳ Notificações em tempo real
@@ -520,7 +525,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **40% - Em Andamento**
+**Status**: ⏳ **50% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
