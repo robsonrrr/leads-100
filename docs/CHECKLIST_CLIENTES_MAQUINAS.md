@@ -9,75 +9,75 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 
 ## 🛒 BLOCO 1 — EXPERIÊNCIA DE COMPRA (B2B E-COMMERCE)
 
-> **Foco:** Facilitar a reposição e descoberta de produtos.
-> **KPI Impactado:** Conversão, Giro de Estoque, Penetração
+> **Responsável:** Product Manager / Tech Lead
+> **KPI:** Taxa de Conversão (Meta: > 5%), Tempo Médio de Compra (< 5 min)
 
-| # | Tarefa | Impacto na Meta 30k | Status |
-|---|--------|---------------------|--------|
-| 1.1 | **Busca de Produtos** com filtros avançados (Segmento Máquinas) | Encontrar rápido o que precisa | ⬜ |
-| 1.2 | **Página de Detalhes da Máquina** rica (Specs, Vídeos, Manuais) | Reduzir dúvidas técnicas | ⬜ |
-| 1.3 | **Visualização de Estoque em Tempo Real** (limitada ou indicativa) | Senso de urgência e transparência | ⬜ |
-| 1.4 | **Sugestão de Bundles/Combos** na página do produto | Aumentar ticket e giro | ⬜ |
-| 1.5 | **Histórico de Compras Fácil** ("Comprar Novamente") | Agilizar reposição (Giro 6x) | ⬜ |
-| 1.6 | **Carrinho Persistente e Compartilhável** | Facilitar aprovação interna do cliente | ⬜ |
-| 1.7 | **Lista de Desejos / Cotação Rápida** | Capturar intenção de compra (Pipeline) | ⬜ |
+| # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
+|---|--------|------------|---------------------|--------|
+| 1.1 | **Busca de Produtos** com filtros avançados (Potência, Voltagem, Marca) | 🔥 Alta | Encontrar rápido = Vender rápido | ⬜ |
+| 1.2 | **Página de Detalhes** com comparativo de modelos | 🔥 Alta | Reduz indecisão técnica | ⬜ |
+| 1.3 | **Visualização de Estoque** (Semáforo: Verde/Amarelo/Vermelho) | 🔥 Alta | Urgência na decisão de compra | ⬜ |
+| 1.4 | **Sugestão de Bundles** na página (Máquina + Acessório) | 🔸 Média | Aumentar ticket médio | ⬜ |
+| 1.5 | **Recompra Rápida** (Baseada em pedidos anteriores) | 🔸 Média | Giro de estoque (Meta 6x) | ⬜ |
+| 1.6 | **Carrinho Compartilhável** (Link para aprovação) | 🔹 Baixa | Facilita B2B com múltiplos decisores | ⬜ |
+| 1.7 | **Cotação Automática** (Gerar PDF do carrinho) | 🔹 Baixa | Formalização rápida | ⬜ |
 
 ---
 
-## 🔔 BLOCO 2 — AUTOMAÇÃO E NOTIFICAÇÕES
+## 🔔 BLOCO 2 — AUTOMAÇÃO E NOTIFICAÇÕES (CRM)
 
-> **Foco:** Manter o cliente engajado e informado proativamente.
-> **KPI Impactado:** Pipeline, Churn, Penetração
+> **Responsável:** CRM Manager / Tech
+> **KPI:** Taxa de Abertura (> 20%), Retenção de Clientes
 
-| # | Tarefa | Impacto na Meta 30k | Status |
-|---|--------|---------------------|--------|
-| 2.1 | **Alertas de Reposição** (Baseado no consumo histórico) | Evitar inatividade (Penetração) | ⬜ |
-| 2.2 | **Notificação de Baixo Giro** (Alertar cliente sobre produtos parados) | Ajuda consultiva (Parceria) | ⬜ |
-| 2.3 | **Novidades e Lançamentos** (Segmentado por perfil de máquina) | Renovação de portfólio | ⬜ |
-| 2.4 | **Status do Pedido** (Aprovado, Faturado, Enviado, Entregue) | Reduzir atrito e ansiedade | ⬜ |
-| 2.5 | **Promoções Relâmpago** (Push Notification) | Giro rápido de estoque parado | ⬜ |
+| # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
+|---|--------|------------|---------------------|--------|
+| 2.1 | **Alerta de Baixo Estoque** (No cliente, baseado em média de venda) | 🔥 Alta | Evitar ruptura na ponta (Sell-out) | ⬜ |
+| 2.2 | **Status de Pedido em Tempo Real** (Push/WhatsApp) | 🔥 Alta | Reduz chamados no suporte | ⬜ |
+| 2.3 | **Lembrete de Reabastecimento** (Churn Prevention) | 🔸 Média | Manter regularidade mensal | ⬜ |
+| 2.4 | **Novidades da Marca** (Lançamentos segmentados) | 🔸 Média | Introdução de novos produtos | ⬜ |
+| 2.5 | **Ofertas Relâmpago** (Estoque parado na Rolemak) | 🔹 Baixa | Limpeza de estoque (Giro) | ⬜ |
 
 ---
 
 ## 💰 BLOCO 3 — FINANCEIRO E CRÉDITO
 
-> **Foco:** Transparência financeira para destravar vendas.
-> **KPI Impactado:** Conversão, DSO, Margem
+> **Responsável:** Financeiro / Tech
+> **KPI:** DSO (< 45 dias), % Pedidos Bloqueados (< 2%)
 
-| # | Tarefa | Impacto na Meta 30k | Status |
-|---|--------|---------------------|--------|
-| 3.1 | **Visualização de Limite de Crédito Disponível** | Evitar surpresas no checkout | ⬜ |
-| 3.2 | **Acesso Rápido a Boletos e NFs** (Autosserviço) | Reduzir DSO (Pagamento em dia) | ⬜ |
-| 3.3 | **Status de Títulos em Aberto/Vencidos** | Gestão financeira proativa | ⬜ |
-| 3.4 | **Solicitação de Aumento de Limite** via App | Desbloquear potencial de compra | ⬜ |
-
----
-
-## 🏆 BLOCO 4 — ENGAJAMENTO E METAS (PROGRAMA DE PARCERIA)
-
-> **Foco:** Alinhar objetivos do cliente com a meta da Rolemak.
-> **KPI Impactado:** Penetração, Fidelidade, Churn
-
-| # | Tarefa | Impacto na Meta 30k | Status |
-|---|--------|---------------------|--------|
-| 4.1 | **Visualização da Meta do Cliente** (Deles com Rolemak) | Transparência de expectativas | ⬜ |
-| 4.2 | **Barra de Progresso de Compras Anual/Mensal** | Gamificação do atingimento | ⬜ |
-| 4.3 | **Benefícios por Nível** (Ex: Frete Grátis, Prazo Extra) | Incentivo a atingir metas | ⬜ |
-| 4.4 | **Comparativo com Mercado** (Anônimo - "Você está no Top 10%") | Competitividade saudável | ⬜ |
+| # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
+|---|--------|------------|---------------------|--------|
+| 3.1 | **Consulta de Limite de Crédito** (Disponível vs Total) | 🔥 Alta | Transparência para fechar pedido | ⬜ |
+| 3.2 | **2ª Via de Boletos e NFs** (Portal do Cliente) | 🔥 Alta | Agilidade no pagamento | ⬜ |
+| 3.3 | **Alerta de Títulos a Vencer** | 🔸 Média | Evitar bloqueio de novos pedidos | ⬜ |
+| 3.4 | **Solicitação de Aumento de Limite** (Workflow digital) | 🔹 Baixa | Desbloquear crescimento | ⬜ |
 
 ---
 
-## 📊 BLOCO 5 — ANALYTICS PARA O CLIENTE
+## 🏆 BLOCO 4 — PROGRAMA DE PARCERIA (GAMIFICAÇÃO)
 
-> **Foco:** Empoderar o cliente com dados para ele vender mais (Sell-out).
-> **KPI Impactado:** Giro, Churn, Sucesso do Cliente
+> **Responsável:** Marketing / Comercial
+> **KPI:** Penetração (> 2.5 revendas/vendedor), Share of Wallet
 
-| # | Tarefa | Impacto na Meta 30k | Status |
-|---|--------|---------------------|--------|
-| 5.1 | **Dashboard de Compras** (O que ele mais compra) | Insights de sortimento | ⬜ |
-| 5.2 | **Sugestão de Mix Ideal** (O que ele NÃO compra mas deveria) | Aumentar mix e penetração | ⬜ |
-| 5.3 | **Curva ABC de Produtos dele** (Se tivermos dados de sell-out) | Otimização de estoque dele | ⬜ |
-| 5.4 | **Relatório de Economia** (Descontos obtidos no ano) | Percepção de valor | ⬜ |
+| # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
+|---|--------|------------|---------------------|--------|
+| 4.1 | **"Minha Meta Anual"** (Visualização progresso do cliente) | 🔥 Alta | Alinhamento de expectativas | ⬜ |
+| 4.2 | **Benefícios por Tier** (Bronze/Prata/Ouro visíveis) | 🔸 Média | Incentivo a comprar mais | ⬜ |
+| 4.3 | **Ranking de Penetração** (Anônimo: "Você está no Top X%") | 🔹 Baixa | Competitividade saudável | ⬜ |
+| 4.4 | **Badges de Conquista** (Ex: "Especialista em Corte") | 🔹 Baixa | Engajamento emocional | ⬜ |
+
+---
+
+## 📊 BLOCO 5 — INTELEGÊNCIA PARA O CLIENTE (SELL-OUT)
+
+> **Responsável:** Data Science / Comercial
+> **KPI:** Mix de Produtos (SKUs ativos por cliente)
+
+| # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
+|---|--------|------------|---------------------|--------|
+| 5.1 | **Curva ABC do Cliente** (O que ele mais compra da Rolemak) | 🔸 Média | Gestão de estoque dele | ⬜ |
+| 5.2 | **Oportunidades Perdidas** (Produtos que concorrentes vendem) | 🔥 Alta | Aumentar Mix e Penetração | ⬜ |
+| 5.3 | **Tendências de Mercado** ("Outros clientes compram também...") | 🔸 Média | Cross-selling inteligente | ⬜ |
+| 5.4 | **Relatório de Economia** (Descontos e oportunidades aproveitadas) | 🔹 Baixa | Percepção de valor | ⬜ |
 
 ---
 
