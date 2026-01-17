@@ -31,11 +31,12 @@ export class ProductRepository {
       WHERE i.revenda > 0`;
       const params = [];
 
-      // Busca por termo (ID, modelo, nome, descrição, categoria, NCM, segmento)
+      // Busca por termo usando FULLTEXT (MySQL 8+) ou LIKE como fallback
       if (searchTerm) {
         const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
 
         if (isNumeric) {
+          // Busca numérica: ID exato ou LIKE nos campos
           query += ` AND (
             i.id = ? OR
             i.modelo LIKE ? OR
@@ -47,16 +48,42 @@ export class ProductRepository {
           )`;
           params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
         } else {
-          query += ` AND (
-            i.modelo LIKE ? OR
-            i.nome LIKE ? OR 
-            i.description LIKE ? OR 
-            p.categoria LIKE ? OR 
-            p.ncm LIKE ? OR
-            p.segmento LIKE ?
-          )`;
-          const searchPattern = `%${searchTerm}%`;
-          params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+          // Busca textual: FULLTEXT com MATCH AGAINST (Natural Language Mode)
+          // Fallback para LIKE se FULLTEXT não retornar resultados
+          // FULLTEXT busca em modelo, nome, description (índice ft_inv_search)
+          const fulltextSearchTerm = searchTerm
+            .trim()
+            .split(/\s+/)
+            .filter(word => word.length >= 2)
+            .join(' ');
+
+          if (fulltextSearchTerm.length >= 2) {
+            // Usar FULLTEXT com fallback para LIKE
+            // O OR com LIKE garante resultados mesmo se FULLTEXT não encontrar
+            query += ` AND (
+              MATCH(i.modelo, i.nome) AGAINST(? IN NATURAL LANGUAGE MODE)
+              OR i.modelo LIKE ?
+              OR i.nome LIKE ?
+              OR i.description LIKE ?
+              OR p.categoria LIKE ?
+              OR p.ncm LIKE ?
+              OR p.segmento LIKE ?
+            )`;
+            const searchPattern = `%${searchTerm}%`;
+            params.push(fulltextSearchTerm, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+          } else {
+            // Termo muito curto para FULLTEXT, usar apenas LIKE
+            query += ` AND (
+              i.modelo LIKE ? OR
+              i.nome LIKE ? OR 
+              i.description LIKE ? OR 
+              p.categoria LIKE ? OR 
+              p.ncm LIKE ? OR
+              p.segmento LIKE ?
+            )`;
+            const searchPattern = `%${searchTerm}%`;
+            params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+          }
         }
       }
 

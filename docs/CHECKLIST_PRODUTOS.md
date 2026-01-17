@@ -111,7 +111,7 @@
 | 2.2.6 | Ordenação por preço, nome, estoque | Frontend | ✅ |
 | 2.2.7 | Visualização grid/lista | Frontend | ✅ |
 | 2.2.8 | Paginação | Frontend | ✅ |
-| 2.2.9 | Busca full-text (FULLTEXT MySQL) | Backend | ⏳ |
+| 2.2.9 | Busca full-text (FULLTEXT MySQL) | Backend | ✅ |
 | 2.2.10 | Botão "Adicionar ao Lead" direto do catálogo | Frontend | ✅ |
 
 **Critério de Aceite:**
@@ -337,14 +337,14 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
 | 1. Visualização | 14 | 14 | 0 |
-| 2. Busca | 20 | 12 | 8 |
+| 2. Busca | 20 | 13 | 7 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 12 | 9 | 3 |
 | 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **57** | **42** |
+| **Total** | **99** | **58** | **41** |
 
 ---
 

@@ -14,6 +14,7 @@ import { initViews } from './migrations/initViews.js';
 import { initPricing } from './migrations/initPricing.js';
 import { initSecurity } from './migrations/initSecurity.js';
 import { createSearchHistoryTable } from './migrations/createSearchHistory.js';
+import { createFulltextIndex } from './migrations/createFulltextIndex.js';
 import logger from './config/logger.js';
 import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -235,6 +236,9 @@ async function startServer() {
 
     // Initialize Search History (Q3 2026 - Bloco 2.3)
     await createSearchHistoryTable();
+
+    // Initialize FULLTEXT Index (Q3 2026 - Bloco 2.2.9)
+    await createFulltextIndex();
 
     // Start Automation Scheduler (Q2 2026)
     const { automationScheduler } = await import('./v2/services/automation/Scheduler.js');
