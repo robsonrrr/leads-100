@@ -271,9 +271,9 @@ function ProductsPage() {
                     label="Segmento"
                 >
                     <MenuItem value="">Todos</MenuItem>
-                    {segments.map((seg, idx) => (
-                        <MenuItem key={`seg-${idx}-${seg.segmento || seg.id}`} value={seg.segmento || seg.id}>
-                            {seg.segmento || seg.name}
+                    {[...new Set(segments.map(s => s.segmento || s.name))].filter(Boolean).sort().map(seg => (
+                        <MenuItem key={seg} value={seg}>
+                            {seg}
                         </MenuItem>
                     ))}
                 </Select>
@@ -288,9 +288,9 @@ function ProductsPage() {
                     label="Categoria"
                 >
                     <MenuItem value="">Todas</MenuItem>
-                    {categories.map((cat, idx) => (
-                        <MenuItem key={`cat-${idx}-${cat.categoria || cat.id}`} value={cat.categoria || cat.id}>
-                            {cat.categoria || cat.name}
+                    {[...new Set(categories.map(c => c.categoria || c.name))].filter(Boolean).sort().map(cat => (
+                        <MenuItem key={cat} value={cat}>
+                            {cat}
                         </MenuItem>
                     ))}
                 </Select>
