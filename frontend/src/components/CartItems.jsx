@@ -56,6 +56,7 @@ import ProductAutocomplete from './ProductAutocomplete'
 import MakPrimeLogo from './MakPrimeLogo'
 import EmptyState from './EmptyState'
 import CartRecommendations from './CartRecommendations'
+import ProductDetailModal from './ProductDetailModal'
 import { useToast } from '../contexts/ToastContext'
 
 // Arredonda centavos para cima (ex: 1853.10 -> 1854.00)
@@ -94,6 +95,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [loadingDiscountRec, setLoadingDiscountRec] = useState(false)
   const [inlineEdit, setInlineEdit] = useState({}) // { itemId: { field: 'quantity' | 'times', value: number } }
   const [savingInline, setSavingInline] = useState({}) // { itemId: boolean }
+  const [productDetailModal, setProductDetailModal] = useState({ open: false, product: null }) // Modal de detalhes do produto
 
   const [formData, setFormData] = useState({
     product: null,
@@ -1011,25 +1013,48 @@ function CartItems({ leadId, lead, readOnly = false }) {
                     <TableRow key={item.id}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                          {/* Imagem do produto */}
-                          <Box
-                            component="img"
-                            src={`https://img.rolemak.com.br/id/h80/${item.productId || item.product?.id}.jpg?version=9.02`}
-                            alt={item.product?.model || 'Produto'}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                            sx={{
-                              width: 50,
-                              height: 50,
-                              objectFit: 'contain',
-                              borderRadius: 1,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              bgcolor: 'background.paper',
-                              flexShrink: 0
-                            }}
-                          />
+                          {/* Imagem do produto - clicável para abrir detalhes */}
+                          <Tooltip title="Clique para ver detalhes do produto" placement="top">
+                            <Box
+                              component="img"
+                              src={`https://img.rolemak.com.br/id/h80/${item.productId || item.product?.id}.jpg?version=9.02`}
+                              alt={item.product?.model || 'Produto'}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                              onClick={() => setProductDetailModal({
+                                open: true,
+                                product: {
+                                  id: item.productId || item.product?.id,
+                                  model: item.product?.model,
+                                  name: item.product?.name,
+                                  brand: item.product?.brand,
+                                  segment: item.product?.segment,
+                                  preco_venda: item.originalPrice || item.product?.price,
+                                  stock: item.product?.stock,
+                                  ncm: item.product?.ncm,
+                                  ...item.product
+                                }
+                              })}
+                              sx={{
+                                width: 50,
+                                height: 50,
+                                objectFit: 'contain',
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'background.paper',
+                                flexShrink: 0,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.1)',
+                                  boxShadow: 2,
+                                  borderColor: 'primary.main'
+                                }
+                              }}
+                            />
+                          </Tooltip>
                           <Box sx={{ flex: 1 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                               {item.product?.model && (
@@ -1732,6 +1757,13 @@ function CartItems({ leadId, lead, readOnly = false }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Detalhes do Produto */}
+      <ProductDetailModal
+        open={productDetailModal.open}
+        onClose={() => setProductDetailModal({ open: false, product: null })}
+        product={productDetailModal.product}
+      />
     </Paper>
   )
 }
