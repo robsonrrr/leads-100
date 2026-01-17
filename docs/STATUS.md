@@ -417,11 +417,16 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Colunas estilizadas, cores, linha de totais, auto-filtro
   - Botão "Excel" na página de Leads
   - Exportação de lead individual com itens detalhados
+- ✅ **Histórico de Alterações do Lead** (2026-01-17)
+  - Novo endpoint GET /api/leads/:id/history
+  - Audit log para todas as alterações (create, update, delete, convert)
+  - Componente LeadHistoryTimeline com timeline visual
+  - Detalhes expandíveis mostrando campos alterados
+  - Integrado na página de detalhes do lead
 
 ### Pendente
 - ⏳ Envio real de email (atualmente simulado)
 - ⏳ Revendedor (cliente de cliente)
-- ⏳ Histórico de alterações do lead
 - ⏳ Filtros avançados na listagem de leads
 - ⏳ Notificações em tempo real
 - ⏳ Testes automatizados
@@ -530,7 +535,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **60% - Em Andamento**
+**Status**: ⏳ **70% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
