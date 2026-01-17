@@ -32,7 +32,7 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 | # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
 |---|--------|------------|---------------------|--------|
 | 2.1 | **Alerta de Baixo Estoque** (Reposição sugerida baseada em histórico) | 🔥 Alta | Penetração (Consistência de compra) | ✅ (Dashboard) |
-| 2.2 | **Histórico de Pesquisas** (Salvar "O que o cliente buscou") | 🔸 Média | Inteligência de Mercado | ✅ (Backend) |
+| 2.2 | **Histórico de Pesquisas** (Salvar "O que o cliente buscou") | 🔸 Média | Inteligência de Mercado | ✅ |
 | 2.3 | **Newsletter Automática** (Novidades baseadas no perfil) | 🔹 Baixa | Manter marca na mente do cliente | ⬜ |
 | 2.4 | **Novidades da Marca** (Lançamentos segmentados) | 🔸 Média | Introdução de novos produtos | ⬜ |
 | 2.5 | **Ofertas Relâmpago** (Estoque parado na Rolemak) | 🔹 Baixa | Limpeza de estoque (Giro) | ⬜ |
@@ -46,10 +46,11 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 
 | # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
 |---|--------|------------|---------------------|--------|
-| 3.1 | **Consulta de Limite de Crédito** (Disponível vs Total) | 🔥 Alta | Transparência para fechar pedido | ⬜ |
-| 3.2 | **2ª Via de Boletos e NFs** (Portal do Cliente) | 🔥 Alta | Agilidade no pagamento | ⬜ |
-| 3.3 | **Alerta de Títulos a Vencer** | 🔸 Média | Evitar bloqueio de novos pedidos | ⬜ |
-| 3.4 | **Solicitação de Aumento de Limite** (Workflow digital) | 🔹 Baixa | Desbloquear crescimento | ⬜ |
+| 3.1 | **Visualização de Limite de Crédito** (Na criação do lead) | 🔥 Alta | Evita vendas bloqueadas | ✅ |
+| 3.2 | **Simulação de Parcelamento** (Cálculo em tempo real) | 🔥 Alta | Facilita negociação | ✅ |
+| 3.3 | **2ª Via de Boletos** (Solicitação via Email) | 🔥 Alta | Agilidade no pagamento | ✅ |
+| 3.4 | **Alerta de Títulos a Vencer** | 🔸 Média | Evitar bloqueio de novos pedidos | ⬜ |
+| 3.5 | **Solicitação de Aumento de Limite** (Workflow digital) | 🔹 Baixa | Desbloquear crescimento | ⬜ |
 
 ---
 

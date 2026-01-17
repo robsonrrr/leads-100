@@ -270,6 +270,39 @@ function CreateLeadPage() {
               />
             </Grid>
 
+            {/* Crédito e Dados Financeiros */}
+            {formData.customerId && (
+              <Grid item xs={12}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    bgcolor: 'background.default',
+                    borderColor: 'divider',
+                    mb: 2
+                  }}
+                >
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Limite de Crédito</Typography>
+                    <Typography variant="h6" color={formData.customerId.limite > 0 ? 'success.main' : 'error.main'}>
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.customerId.limite || 0)}
+                    </Typography>
+                  </Box>
+                  <Box textAlign="right">
+                    <Typography variant="caption" color="text.secondary">CNPJ</Typography>
+                    <Typography variant="body2">{formData.customerId.cnpj || 'N/A'}</Typography>
+                  </Box>
+                  <Box textAlign="right">
+                    <Typography variant="caption" color="text.secondary">Cidade/UF</Typography>
+                    <Typography variant="body2">{formData.customerId.city}/{formData.customerId.state}</Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+            )}
+
             {/* Segmento */}
             <Grid item xs={12} sm={6}>
               <TextField

@@ -273,6 +273,48 @@ function LeadDetailPage() {
     }
   }
 
+  const simulateInstallments = (termId, total) => {
+    if (!termId || !total) return null
+
+    const term = paymentTermsList.find(t => t.id == termId)
+    if (!term || !term.terms) return null
+
+    // Tentar identificar o padrão 30/60/90
+    // Remove caracteres não numéricos e divide por barras ou espaços
+    const parts = term.terms.split(/[\/\s]+/).map(p => p.replace(/\D/g, '')).filter(p => p)
+
+    if (parts.length === 0) {
+      // Se não tiver números, assume à vista ou texto livre
+      return (
+        <Typography variant="caption" sx={{ fontStyle: 'italic', display: 'block', mt: 1 }}>
+          {term.terms}
+        </Typography>
+      )
+    }
+
+    const numParcelas = parts.length
+    const valorParcela = total / numParcelas
+
+    return (
+      <Box sx={{ mt: 1, p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px dashed #ccc' }}>
+        <Typography variant="caption" color="text.secondary" display="block" gutterBottom sx={{ fontWeight: 600 }}>
+          Simulação ({numParcelas}x):
+        </Typography>
+        {parts.map((days, index) => (
+          <Box key={index} display="flex" justifyContent="space-between" sx={{ mb: 0.5 }}>
+            <Typography variant="caption">{index + 1}ª ({days} dias):</Typography>
+            <Typography variant="caption" fontWeight="bold">{formatCurrency(valorParcela)}</Typography>
+          </Box>
+        ))}
+        {parts.length > 0 && (
+          <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', opacity: 0.7, fontSize: '0.65rem' }}>
+            *Valores estimados. Confirmar no faturamento.
+          </Typography>
+        )}
+      </Box>
+    )
+  }
+
   const handleLogUnityChange = async (event) => {
     try {
       const newLogUnityValue = event.target.value
@@ -765,29 +807,34 @@ function LeadDetailPage() {
                     {formatPaymentTerms()}
                   </Typography>
                 ) : (
-
-                  <FormControl fullWidth size="small" variant="standard" sx={{ ml: 4, maxWidth: 300 }}>
-                    <Select
-                      value={lead.vPaymentTerms || ''}
-                      onChange={(e) => handleFieldUpdate('vPaymentTerms', e.target.value)}
-                      displayEmpty
-                    >
-                      <MenuItem value="">
-                        <em>Selecione...</em>
-                      </MenuItem>
-                      {paymentTermsList.map((term) => (
-                        <MenuItem key={term.id} value={term.id}>
-                          {term.terms} - {term.nat_op}
+                  <Box sx={{ ml: 4, maxWidth: 300 }}>
+                    <FormControl fullWidth size="small" variant="standard">
+                      <Select
+                        value={lead.vPaymentTerms || ''}
+                        onChange={(e) => handleFieldUpdate('vPaymentTerms', e.target.value)}
+                        displayEmpty
+                      >
+                        <MenuItem value="">
+                          <em>Selecione...</em>
                         </MenuItem>
-                      ))}
-                      {/* Fallback for unmapped values */}
-                      {lead.vPaymentTerms && !paymentTermsList.find(t => t.id == lead.vPaymentTerms) && (
-                        <MenuItem value={lead.vPaymentTerms} disabled style={{ display: 'none' }}>
-                          {lead.vPaymentTerms}
-                        </MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
+                        {paymentTermsList.map((term) => (
+                          <MenuItem key={term.id} value={term.id}>
+                            {term.terms} - {term.nat_op}
+                          </MenuItem>
+                        ))}
+                        {/* Fallback for unmapped values */}
+                        {lead.vPaymentTerms && !paymentTermsList.find(t => t.id == lead.vPaymentTerms) && (
+                          <MenuItem value={lead.vPaymentTerms} disabled style={{ display: 'none' }}>
+                            {lead.vPaymentTerms}
+                          </MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+                    {/* Simulação de Parcelamento em Tempo Real */}
+                    {!lead.orderWeb && lead.vPaymentTerms && totals?.grandTotal > 0 && (
+                      simulateInstallments(lead.vPaymentTerms, totals.grandTotal)
+                    )}
+                  </Box>
                 )}
               </Grid>
               <Grid item xs={12} sm={6}>

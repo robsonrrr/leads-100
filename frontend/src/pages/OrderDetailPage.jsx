@@ -213,6 +213,18 @@ function OrderDetailPage() {
             </Button>
             <Button
               variant="contained"
+              startIcon={<EmailIcon />}
+              href={`mailto:financeiro@mak.com.br?subject=Solicitação 2a Via Pedido ${order.orderWeb || order.id}&body=Solicito envio da segunda via do boleto para o pedido ${order.orderWeb || order.id}.`}
+              sx={{
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' }
+              }}
+            >
+              2ª Via
+            </Button>
+            <Button
+              variant="contained"
               startIcon={<PrintIcon />}
               onClick={() => window.print()}
               sx={{
