@@ -1591,3 +1591,93 @@ export async function getLeadHistory(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Envia o lead por email
+ * POST /api/leads/:id/send-email
+ */
+export async function sendLeadEmail(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return next(Errors.invalidId('lead'));
+    }
+
+    // Buscar lead
+    const lead = await leadRepository.findById(id);
+    if (!lead) {
+      return next(Errors.leadNotFound(id));
+    }
+
+    // Verificar permissões
+    const userLevel = req.user?.level || 0;
+    const currentUserId = req.user?.userId;
+    if (userLevel <= 4 && lead.cUser !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Sem permissão para enviar email deste lead' }
+      });
+    }
+
+    // Validar email
+    const { email, cc, customMessage, senderName } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Email do destinatário é obrigatório' }
+      });
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Formato de email inválido' }
+      });
+    }
+
+    // Buscar itens do lead
+    const items = await cartItemRepository.findByLeadId(id);
+    const leadData = lead.toJSON();
+    leadData.items = items.map(item => item.toJSON());
+
+    // Importar serviço de email dinamicamente
+    const { sendLeadQuotation } = await import('../services/email.service.js');
+
+    // Enviar email
+    const result = await sendLeadQuotation(leadData, email, {
+      senderName: senderName || req.user?.username || 'Equipe Comercial',
+      customMessage: customMessage || '',
+      includeItems: true,
+      ccEmails: cc ? (Array.isArray(cc) ? cc : [cc]) : []
+    });
+
+    // Registrar no audit log
+    await auditLog.logEvent(
+      'EMAIL_SENT',
+      req.user?.userId,
+      req.user?.username,
+      `Cotação #${id} enviada para ${email}`,
+      req,
+      { leadId: id, recipientEmail: email, testMode: result.testMode || false }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        messageId: result.messageId,
+        recipientEmail: email,
+        testMode: result.testMode || false
+      },
+      message: result.testMode
+        ? 'Email simulado (modo de teste - configure SMTP_USER e SMTP_PASS)'
+        : `Cotação enviada com sucesso para ${email}`
+    });
+  } catch (error) {
+    logger.error('Erro ao enviar email:', error);
+    next(error);
+  }
+}

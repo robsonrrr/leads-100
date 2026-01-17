@@ -56,6 +56,7 @@ import { formatDate, formatCurrency, getPaymentTypeLabel, getFreightTypeLabel } 
 import { LeadDetailSkeleton } from '../components/skeletons'
 import { useToast } from '../contexts/ToastContext'
 import LeadHistoryTimeline from '../components/LeadHistoryTimeline'
+import SendEmailDialog from '../components/SendEmailDialog'
 
 function LeadDetailPage() {
   const { id } = useParams()
@@ -512,7 +513,7 @@ function LeadDetailPage() {
             <Button
               variant="contained"
               startIcon={<EmailIcon />}
-              onClick={() => window.open(`/leads/${id}/mail`, '_blank')}
+              onClick={() => setEmailDialogOpen(true)}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.2)',
                 color: 'white',
@@ -1537,6 +1538,20 @@ function LeadDetailPage() {
           </Button>
         </DialogActions>
       </Dialog >
+
+      {/* Dialog de Envio de Email Real */}
+      <SendEmailDialog
+        open={emailDialogOpen}
+        onClose={(success) => {
+          setEmailDialogOpen(false)
+          if (success) {
+            // Recarregar para atualizar histórico
+            loadLead()
+          }
+        }}
+        lead={lead}
+        defaultEmail={lead?.customer?.email || emailAddress}
+      />
     </Container >
   )
 }

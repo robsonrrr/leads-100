@@ -759,4 +759,69 @@ router.post('/:id/convert', leadsController.convertToOrder);
  */
 router.get('/:id/history', leadsController.getLeadHistory);
 
+/**
+ * @swagger
+ * /leads/{id}/send-email:
+ *   post:
+ *     summary: Envia o lead/cotação por email
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do lead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do destinatário
+ *               cc:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Emails em cópia
+ *               customMessage:
+ *                 type: string
+ *                 description: Mensagem personalizada
+ *               senderName:
+ *                 type: string
+ *                 description: Nome do remetente
+ *     responses:
+ *       200:
+ *         description: Email enviado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     messageId:
+ *                       type: string
+ *                     testMode:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Email inválido
+ *       404:
+ *         description: Lead não encontrado
+ */
+router.post('/:id/send-email', leadsController.sendLeadEmail);
+
 export default router;
