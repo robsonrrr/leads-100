@@ -127,7 +127,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 4.2.2 | Adicionar operações pendentes à fila | Frontend | ✅ |
 | 4.2.3 | Processar fila quando online | Frontend | ✅ |
 | 4.2.4 | Retry com backoff exponencial | Frontend | ⏳ |
-| 4.2.5 | Notificar usuário de erros de sync | Frontend | ⏳ |
+| 4.2.5 | Notificar usuário de erros de sync | Frontend | ✅ |
 
 ---
 
@@ -194,11 +194,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 1. Infraestrutura | 10 | 7 | 3 |
 | 2. Produtos | 16 | 15 | 1 |
 | 3. Clientes | 10 | 9 | 1 |
-| 4. Leads | 10 | 8 | 2 |
+| 4. Leads | 10 | 9 | 1 |
 | 5. Integração | 10 | 9 | 1 |
 | 6. Limites | 4 | 4 | 0 |
 | 7. Métricas | 4 | 2 | 2 |
-| **TOTAL** | **64** | **54** | **10** |
+| **TOTAL** | **64** | **55** | **9** |
 
 ---
 

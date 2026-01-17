@@ -44,6 +44,7 @@ import AdvancedFilters, { FilterButton } from '../components/AdvancedFilters'
 import { CheckCircle as ConvertedIcon, HourglassEmpty as PendingIcon, WhatsApp as WhatsAppIcon, Print as PrintIcon, CloudOff as CloudOffIcon, Delete as DeleteIcon, Sync as SyncIcon } from '@mui/icons-material'
 import useOfflineLeads from '../hooks/useOfflineLeads'
 import { UnsyncedBadge, UnsyncedIcon } from '../components/UnsyncedBadge'
+import { OnlineButton, OnlineIconButton } from '../hooks/useOnlineAction'
 
 function LeadsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -280,19 +281,20 @@ function LeadsPage() {
                             InputLabelProps={{ shrink: true }}
                         />
                         <ManagerFilters />
-                        <Button
+                        <OnlineButton
                             variant="outlined"
                             startIcon={<FileDownloadIcon />}
                             onClick={handleExport}
                             disabled={exporting || loading}
+                            offlineMessage="Exportar requer conexão"
                         >
                             {exporting ? 'Exportando...' : 'Excel'}
-                        </Button>
+                        </OnlineButton>
                         <FilterButton
                             onClick={() => setShowAdvancedFilters(true)}
                             activeCount={Object.values(advancedFilters).filter(v => v !== '' && v !== null && v !== undefined && v !== 0 && v !== 100000).length}
                         />
-                        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/leads/new')}>Novo Lead</Button>
+                        <OnlineButton variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/leads/new')} offlineMessage="Criar lead requer conexão">Novo Lead</OnlineButton>
                     </Box>
                 </Box>
 

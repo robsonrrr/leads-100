@@ -52,6 +52,7 @@ import { useToast } from '../contexts/ToastContext'
 import ProductDetailModal from '../components/ProductDetailModal'
 import AddToLeadModal from '../components/AddToLeadModal'
 import { formatCurrency } from '../utils'
+import { OnlineButton } from '../hooks/useOnlineAction'
 
 const ITEMS_PER_PAGE = 24
 const IMAGE_BASE_URL = 'https://img.rolemak.com.br/id/h180'
@@ -492,15 +493,16 @@ function ProductsPage() {
                     >
                         Detalhes
                     </Button>
-                    <Button
+                    <OnlineButton
                         size="small"
                         variant="contained"
                         startIcon={<AddCartIcon />}
                         disabled={stock <= 0}
                         onClick={() => setAddToLeadModal({ open: true, product })}
+                        offlineMessage="Adicionar ao lead requer conexão"
                     >
                         Adicionar
-                    </Button>
+                    </OnlineButton>
                 </CardActions>
             </Card>
         )
@@ -575,15 +577,16 @@ function ProductsPage() {
                     <IconButton onClick={() => toggleFavorite(product.id)}>
                         {isFavorite ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
                     </IconButton>
-                    <Button
+                    <OnlineButton
                         variant="contained"
                         size="small"
                         startIcon={<AddCartIcon />}
                         disabled={stock <= 0}
                         onClick={() => setAddToLeadModal({ open: true, product })}
+                        offlineMessage="Adicionar ao lead requer conexão"
                     >
                         Adicionar
-                    </Button>
+                    </OnlineButton>
                 </Box>
             </Paper>
         )
