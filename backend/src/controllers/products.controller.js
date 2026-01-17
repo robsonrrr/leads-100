@@ -730,3 +730,37 @@ export async function getBoughtTogether(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Busca produto por código de barras (7.1.2)
+ * GET /api/products/barcode/:barcode
+ */
+export async function findByBarcode(req, res, next) {
+  try {
+    const { barcode } = req.params;
+
+    if (!barcode || barcode.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Código de barras inválido (mínimo 8 dígitos)' }
+      });
+    }
+
+    const product = await productRepository.findByBarcode(barcode);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Produto não encontrado para este código de barras' }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    console.error('Erro findByBarcode:', error);
+    next(error);
+  }
+}

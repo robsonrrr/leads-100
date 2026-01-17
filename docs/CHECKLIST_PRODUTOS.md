@@ -310,11 +310,11 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 7.1.1 | Leitor de código de barras (câmera) | Frontend | ⏳ |
-| 7.1.2 | Busca por código de barras | Backend | ⏳ |
-| 7.1.3 | Layout responsivo para catálogo | Frontend | ⏳ |
-| 7.1.4 | Swipe para navegar imagens | Frontend | ⏳ |
-| 7.1.5 | Touch-friendly para seleção | Frontend | ⏳ |
+| 7.1.1 | Leitor de código de barras (câmera) | Frontend | ✅ |
+| 7.1.2 | Busca por código de barras | Backend | ✅ |
+| 7.1.3 | Layout responsivo para catálogo | Frontend | ✅ |
+| 7.1.4 | Swipe para navegar imagens | Frontend | ✅ |
+| 7.1.5 | Touch-friendly para seleção | Frontend | ✅ |
 
 ---
 
@@ -342,9 +342,9 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 4. Estoque | 12 | 12 | 0 |
 | 5. Preços | 20 | 20 | 0 |
 | 6. Relacionados | 9 | 9 | 0 |
-| 7. Mobile | 5 | 0 | 5 |
+| 7. Mobile | 5 | 5 | 0 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **85** | **14** |
+| **Total** | **99** | **90** | **9** |
 
 ---
 

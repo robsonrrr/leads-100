@@ -278,6 +278,8 @@ export const productsService = {
   getRecent: (limit = 20) => api.get('/products/recent', { params: { limit } }),
   // Relacionados
   getRelated: (productId) => api.get(`/products/${productId}/related`),
+  // Código de barras
+  getByBarcode: (barcode) => api.get(`/products/barcode/${barcode}`),
 }
 
 export const pricingService = {

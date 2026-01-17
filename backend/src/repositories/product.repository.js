@@ -635,5 +635,66 @@ export class ProductRepository {
     // Longa distância
     return { ...deliveryMatrix.far, label: 'Entrega longa distância' };
   }
+
+  /**
+   * Busca produto por código de barras (7.1.2)
+   * @param {string} barcode - Código de barras (EAN/UPC)
+   * @returns {Promise<Object|null>} Produto encontrado ou null
+   */
+  async findByBarcode(barcode) {
+    if (!barcode || barcode.length < 8) return null;
+
+    const cacheKey = `barcode:${barcode}`;
+
+    return CacheService.getOrSet(cacheKey, async () => {
+      try {
+        const [rows] = await db().execute(`
+          SELECT 
+            i.id,
+            i.modelo as model,
+            i.marca as brand,
+            i.nome as name,
+            i.codebar as barcode,
+            i.revenda as price,
+            p.categoria as category,
+            p.segmento as segment,
+            CONCAT('https://img.rolemak.com.br/id/h350/', i.id, '.jpg') as imageUrl
+          FROM mak.inv i
+          LEFT JOIN mak.produtos p ON i.idcf = p.id
+          WHERE i.codebar = ?
+            AND i.revenda > 0
+          LIMIT 1
+        `, [barcode]);
+
+        if (rows.length === 0) {
+          // Tentar busca parcial (alguns scanners podem ter dígitos verificadores diferentes)
+          const [partialRows] = await db().execute(`
+            SELECT 
+              i.id,
+              i.modelo as model,
+              i.marca as brand,
+              i.nome as name,
+              i.codebar as barcode,
+              i.revenda as price,
+              p.categoria as category,
+              p.segmento as segment,
+              CONCAT('https://img.rolemak.com.br/id/h350/', i.id, '.jpg') as imageUrl
+            FROM mak.inv i
+            LEFT JOIN mak.produtos p ON i.idcf = p.id
+            WHERE i.codebar LIKE ?
+              AND i.revenda > 0
+            LIMIT 1
+          `, [`${barcode.substring(0, barcode.length - 1)}%`]);
+
+          return partialRows.length > 0 ? partialRows[0] : null;
+        }
+
+        return rows[0];
+      } catch (error) {
+        console.error('Erro findByBarcode:', error);
+        return null;
+      }
+    }, 3600); // Cache 1 hora
+  }
 }
 

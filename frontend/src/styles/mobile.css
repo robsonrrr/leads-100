@@ -1,0 +1,247 @@
+/**
+ * Mobile Optimizations for Leads Agent
+ * Items: 7.1.3 (Responsive Layout), 7.1.4 (Swipe), 7.1.5 (Touch Friendly)
+ */
+
+/* ======== 7.1.3 - Responsive Layout for Catalog ======== */
+
+/* Mobile-first grid for products */
+@media (max-width: 600px) {
+  /* Products grid - 2 columns on mobile */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Smaller product cards on mobile */
+  .product-card {
+    min-height: auto;
+  }
+
+  .product-card img {
+    max-height: 120px !important;
+  }
+
+  .product-card .MuiCardContent-root {
+    padding: 8px !important;
+  }
+
+  .product-card .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+
+  /* Hide secondary info on very small screens */
+  @media (max-width: 400px) {
+    .product-card .product-brand {
+      display: none;
+    }
+  }
+
+  /* Full width filters on mobile */
+  .filter-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Sticky search bar */
+  .search-bar-container {
+    position: sticky;
+    top: 56px;
+    z-index: 100;
+    background: inherit;
+    padding: 8px;
+  }
+
+  /* Bottom sheet style for product actions */
+  .product-actions-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 12px 16px;
+    z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ======== 7.1.4 - Swipe for Image Navigation ======== */
+
+/* Image gallery with horizontal scroll */
+.image-gallery-swipe {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.image-gallery-swipe::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.image-gallery-swipe .gallery-item {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+}
+
+/* Swipe indicator dots */
+.swipe-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.swipe-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.swipe-indicator.active {
+  background: var(--primary-color, #1976d2);
+  transform: scale(1.2);
+}
+
+/* ======== 7.1.5 - Touch Friendly Selection ======== */
+
+/* Larger touch targets */
+@media (pointer: coarse) {
+  /* Minimum touch target 44x44px (Apple HIG) */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Larger buttons on touch devices */
+  .MuiButton-root {
+    min-height: 44px;
+  }
+
+  .MuiIconButton-root {
+    padding: 12px !important;
+  }
+
+  /* More padding on list items */
+  .MuiListItem-root,
+  .MuiListItemButton-root {
+    min-height: 56px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* Larger checkboxes and switches */
+  .MuiCheckbox-root,
+  .MuiSwitch-root {
+    padding: 12px !important;
+  }
+
+  /* More spacing between interactive elements */
+  .touch-row {
+    gap: 12px;
+  }
+
+  /* Quantity selector with larger buttons */
+  .quantity-selector button {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.25rem;
+  }
+
+  .quantity-selector input {
+    min-width: 60px;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+}
+
+/* Active states for touch feedback */
+@media (hover: none) {
+  .touch-active:active {
+    background-color: rgba(0, 0, 0, 0.08);
+    transform: scale(0.98);
+    transition: transform 0.1s, background-color 0.1s;
+  }
+
+  /* Ripple effect on cards */
+  .product-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Disable hover effects on touch */
+@media (hover: none) and (pointer: coarse) {
+  .MuiButton-root:hover,
+  .MuiIconButton-root:hover,
+  .MuiCard-root:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+}
+
+/* ======== Pull to Refresh ======== */
+
+.pull-to-refresh {
+  position: relative;
+  overflow: hidden;
+}
+
+.pull-to-refresh-indicator {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: top 0.2s;
+}
+
+.pull-to-refresh.pulling .pull-to-refresh-indicator {
+  top: 16px;
+}
+
+/* ======== Safe Area (notch support) ======== */
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* ======== Performance Optimizations ======== */
+
+/* GPU acceleration for smooth scrolling */
+.scroll-container {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Reduce paint on scroll */
+.fixed-header {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize images */
+.lazy-image {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px;
+}

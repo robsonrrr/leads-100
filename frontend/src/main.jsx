@@ -8,6 +8,7 @@ import App from './App.jsx'
 import { store } from './store/store.js'
 import { ToastProvider } from './contexts/ToastContext.jsx'
 import './index.css'
+import './styles/mobile.css'
 
 const theme = createTheme({
   palette: {

@@ -491,5 +491,20 @@ router.get('/:id/related', optionalAuth, productsController.getRelatedProducts);
  */
 router.get('/:id/bought-together', optionalAuth, productsController.getBoughtTogether);
 
+/**
+ * @swagger
+ * /api/products/barcode/{barcode}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Busca produto por código de barras
+ *     parameters:
+ *       - in: path
+ *         name: barcode
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/barcode/:barcode', optionalAuth, productsController.findByBarcode);
+
 export default router;
 
