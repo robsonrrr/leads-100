@@ -193,10 +193,13 @@ export async function getFavorites(req, res, next) {
   try {
     const sellerId = req.user?.id;
 
+    // Se não está autenticado, retorna lista vazia (não 401)
+    // Isso evita redirect para /login no frontend
     if (!sellerId) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Autenticação necessária' }
+      return res.json({
+        success: true,
+        data: [],
+        total: 0
       });
     }
 
