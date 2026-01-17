@@ -14,6 +14,7 @@ import { initViews } from './migrations/initViews.js';
 import { initPricing } from './migrations/initPricing.js';
 import { initSecurity } from './migrations/initSecurity.js';
 import { createSearchHistoryTable } from './migrations/createSearchHistory.js';
+import { updateSearchHistoryTable } from './migrations/updateSearchHistory.js';
 import { createFulltextIndex } from './migrations/createFulltextIndex.js';
 import logger from './config/logger.js';
 import { requestLoggerMiddleware } from './middleware/requestLogger.js';
@@ -236,6 +237,7 @@ async function startServer() {
 
     // Initialize Search History (Q3 2026 - Bloco 2.3)
     await createSearchHistoryTable();
+    await updateSearchHistoryTable();
 
     // Initialize FULLTEXT Index (Q3 2026 - Bloco 2.2.9)
     await createFulltextIndex();

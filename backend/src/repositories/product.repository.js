@@ -1,6 +1,7 @@
 import { getDatabase } from '../config/database.js';
 import { Product } from '../models/Product.js';
 import { CacheService } from '../services/cache.service.js';
+import searchHistoryRepository from './searchHistory.repository.js';
 
 const db = () => getDatabase();
 
@@ -8,7 +9,7 @@ export class ProductRepository {
   /**
    * Busca produtos com filtros e paginação
    */
-  async search(searchTerm = '', filters = {}, pagination = { page: 1, limit: 20 }) {
+  async search(searchTerm = '', filters = {}, pagination = { page: 1, limit: 20 }, sellerId = null) {
     const page = parseInt(pagination.page) || 1;
     const limit = parseInt(pagination.limit) || 20;
     const offset = (page - 1) * limit;
@@ -17,7 +18,7 @@ export class ProductRepository {
     const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}`;
 
     // Tentar cache para buscas frequentes
-    return CacheService.getProducts(cacheKey, async () => {
+    const result = await CacheService.getProducts(cacheKey, async () => {
       // Query direta nas tabelas base para máxima performance
       // NOTA: Estoque removido da listagem para performance (~2s -> 0.2s)
       // Estoque disponível via /products/:id/stock-by-warehouse
@@ -169,6 +170,19 @@ export class ProductRepository {
       };
 
     }, 120); // 2 min cache for list
+
+    // Logar busca (Histórico Inteligente)
+    if (sellerId && (searchTerm || Object.values(filters).some(f => f))) {
+      searchHistoryRepository.logSearch(
+        sellerId,
+        searchTerm,
+        null,
+        result.data ? result.data.length : 0,
+        filters
+      ).catch(err => console.error('Error logging search:', err));
+    }
+
+    return result;
   }
 
   /**

@@ -10,12 +10,13 @@ export class SearchHistoryRepository {
   /**
    * Registra uma busca do vendedor
    */
-  async logSearch(sellerId, searchTerm, productId = null) {
+  async logSearch(sellerId, searchTerm, productId = null, resultsCount = 0, filters = null) {
     const query = `
-      INSERT INTO seller_search_history (seller_id, search_term, product_id, searched_at)
-      VALUES (?, ?, ?, NOW())
+      INSERT INTO seller_search_history (seller_id, search_term, product_id, searched_at, results_count, filters_json)
+      VALUES (?, ?, ?, NOW(), ?, ?)
     `;
-    await db().execute(query, [sellerId, searchTerm, productId]);
+    const filtersStr = filters ? JSON.stringify(filters) : null;
+    await db().execute(query, [sellerId, searchTerm, productId, resultsCount, filtersStr]);
   }
 
   /**

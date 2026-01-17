@@ -45,10 +45,13 @@ export async function searchProducts(req, res, next) {
     if (value.ncm) filters.ncm = value.ncm;
     if (value.sort) filters.sort = value.sort;
 
+    const sellerId = req.user?.id || null;
+
     const result = await productRepository.search(
       value.search || '',
       filters,
-      { page: value.page, limit: value.limit }
+      { page: value.page, limit: value.limit },
+      sellerId // Logar busca
     );
 
     // Buscar estoque em lote para os produtos retornados
