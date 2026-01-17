@@ -430,9 +430,15 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Slider de faixa de valor com presets
   - Opções para leads com/sem itens ou pedidos
   - Badge indicando quantidade de filtros ativos
+- ✅ **Envio Real de Email para Cotações** (2026-01-17)
+  - Serviço de email com Nodemailer (SMTP configurável)
+  - Template HTML profissional com tabela de itens
+  - Endpoint POST /api/leads/:id/send-email
+  - Dialog SendEmailDialog com CC, mensagem personalizada
+  - Registro de envio no Audit Log
+  - Modo de teste quando SMTP não configurado
 
 ### Pendente
-- ⏳ Envio real de email (atualmente simulado)
 - ⏳ Revendedor (cliente de cliente)
 - ⏳ Notificações em tempo real
 - ⏳ Testes automatizados
@@ -541,7 +547,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **80% - Em Andamento**
+**Status**: ⏳ **90% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
