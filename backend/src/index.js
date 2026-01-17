@@ -13,6 +13,7 @@ import { connectRedis } from './config/redis.js';
 import { initViews } from './migrations/initViews.js';
 import { initPricing } from './migrations/initPricing.js';
 import { initSecurity } from './migrations/initSecurity.js';
+import { createSearchHistoryTable } from './migrations/createSearchHistory.js';
 import logger from './config/logger.js';
 import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -231,6 +232,9 @@ async function startServer() {
 
     // Initialize Security Q1 2026 updates
     await initSecurity();
+
+    // Initialize Search History (Q3 2026 - Bloco 2.3)
+    await createSearchHistoryTable();
 
     // Start Automation Scheduler (Q2 2026)
     const { automationScheduler } = await import('./v2/services/automation/Scheduler.js');

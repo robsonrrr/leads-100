@@ -335,5 +335,47 @@ router.get('/:id/stock-by-warehouse', optionalAuth, productsController.getStockB
  */
 router.get('/:id/price-history', optionalAuth, productsController.getPriceHistory);
 
+// ========== HISTÓRICO DE BUSCAS E TRENDING ==========
+
+/**
+ * @swagger
+ * /api/products/log-search:
+ *   post:
+ *     tags: [Products]
+ *     summary: Registra uma busca do vendedor
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/log-search', authenticateToken, productsController.logSearch);
+
+/**
+ * @swagger
+ * /api/products/search-history:
+ *   get:
+ *     tags: [Products]
+ *     summary: Histórico de buscas do vendedor
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/search-history', authenticateToken, productsController.getSearchHistory);
+
+/**
+ * @swagger
+ * /api/products/trending:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos mais buscados (trending)
+ */
+router.get('/trending', optionalAuth, productsController.getTrendingProducts);
+
+/**
+ * @swagger
+ * /api/products/trending-terms:
+ *   get:
+ *     tags: [Products]
+ *     summary: Termos mais buscados
+ */
+router.get('/trending-terms', optionalAuth, productsController.getTrendingTerms);
+
 export default router;
 

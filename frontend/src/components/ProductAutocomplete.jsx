@@ -14,6 +14,19 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
   const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
+  const [recentSearches, setRecentSearches] = useState([]) // Cache de buscas recentes
+
+  // Carregar buscas recentes do localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('product_recent_searches')
+      if (saved) {
+        setRecentSearches(JSON.parse(saved))
+      }
+    } catch (e) {
+      console.debug('Erro ao carregar buscas recentes:', e)
+    }
+  }, [])
 
   // Carregar promoções ativas uma vez
   useEffect(() => {
@@ -66,10 +79,30 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
       }, 300)
 
       return () => clearTimeout(timeoutId)
+    } else if (inputValue.length === 0 && recentSearches.length > 0) {
+      // Mostrar buscas recentes quando campo vazio
+      setOptions(recentSearches.map(p => ({ ...p, isRecent: true })))
     } else {
       setOptions([])
     }
-  }, [inputValue])
+  }, [inputValue, recentSearches])
+
+  // Função para salvar produto nas buscas recentes
+  const saveToRecentSearches = (product) => {
+    if (!product?.id) return
+
+    const updated = [
+      product,
+      ...recentSearches.filter(p => p.id !== product.id)
+    ].slice(0, 10) // Manter apenas os 10 últimos
+
+    setRecentSearches(updated)
+    try {
+      localStorage.setItem('product_recent_searches', JSON.stringify(updated))
+    } catch (e) {
+      console.debug('Erro ao salvar buscas recentes:', e)
+    }
+  }
 
   const searchProducts = async (searchTerm) => {
     try {
@@ -169,6 +202,9 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
       options={options}
       value={value}
       onChange={(event, newValue) => {
+        if (newValue) {
+          saveToRecentSearches(newValue)
+        }
         onChange(newValue)
       }}
       onInputChange={(event, newInputValue) => {
@@ -249,6 +285,17 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
                     <Typography variant="caption" color="text.secondary" component="span">
                       {highlightMatch(option.brand, inputValue)}
                     </Typography>
+                  )}
+                  {option.isRecent && (
+                    <Chip
+                      label="Recente"
+                      size="small"
+                      color="default"
+                      sx={{
+                        height: 16,
+                        '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' }
+                      }}
+                    />
                   )}
                 </Box>
 

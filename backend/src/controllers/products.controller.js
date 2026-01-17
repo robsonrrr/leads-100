@@ -381,3 +381,99 @@ export async function getPriceHistory(req, res, next) {
     next(error);
   }
 }
+
+// ========== HISTÓRICO DE BUSCAS E TRENDING ==========
+
+import searchHistoryRepository from '../repositories/searchHistory.repository.js';
+
+/**
+ * Registra uma busca do vendedor
+ * POST /api/products/log-search
+ */
+export async function logSearch(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+    const { searchTerm, productId } = req.body;
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    await searchHistoryRepository.logSearch(sellerId, searchTerm, productId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro logSearch:', error);
+    next(error);
+  }
+}
+
+/**
+ * Busca histórico de buscas do vendedor
+ * GET /api/products/search-history
+ */
+export async function getSearchHistory(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    const history = await searchHistoryRepository.getSellerHistory(sellerId);
+
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error('Erro getSearchHistory:', error);
+    next(error);
+  }
+}
+
+/**
+ * Busca produtos mais buscados (trending)
+ * GET /api/products/trending
+ */
+export async function getTrendingProducts(req, res, next) {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const trending = await searchHistoryRepository.getTrendingProducts(limit);
+
+    res.json({
+      success: true,
+      data: trending
+    });
+  } catch (error) {
+    console.error('Erro getTrendingProducts:', error);
+    next(error);
+  }
+}
+
+/**
+ * Busca termos mais buscados
+ * GET /api/products/trending-terms
+ */
+export async function getTrendingTerms(req, res, next) {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const trending = await searchHistoryRepository.getTrendingTerms(limit);
+
+    res.json({
+      success: true,
+      data: trending
+    });
+  } catch (error) {
+    console.error('Erro getTrendingTerms:', error);
+    next(error);
+  }
+}
