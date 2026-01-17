@@ -1,5 +1,6 @@
 import { CustomerRepository, CUSTOMER_STATUS } from '../repositories/customer.repository.js';
 import Joi from 'joi';
+import clientOpportunitiesService from '../services/clientOpportunities.service.js';
 
 const customerRepository = new CustomerRepository();
 
@@ -29,9 +30,9 @@ function isManager(user) {
 async function checkCustomerAccess(req, res, customerId) {
   const userLevel = req.user?.level || 0;
   const userId = req.user?.userId;
-  
+
   if (userLevel >= 4) return true; // Gerentes podem acessar qualquer cliente
-  
+
   const customer = await customerRepository.findById(customerId);
   if (!customer) {
     res.status(404).json({
@@ -40,7 +41,7 @@ async function checkCustomerAccess(req, res, customerId) {
     });
     return false;
   }
-  
+
   if (customer.vendedor !== userId) {
     res.status(403).json({
       success: false,
@@ -48,7 +49,7 @@ async function checkCustomerAccess(req, res, customerId) {
     });
     return false;
   }
-  
+
   return true;
 }
 
@@ -246,7 +247,7 @@ export async function searchCustomers(req, res, next) {
   try {
     // Validação
     const { error, value } = searchSchema.validate(req.query);
-    
+
     if (error) {
       return res.status(400).json({
         success: false,
@@ -274,7 +275,7 @@ export async function searchCustomers(req, res, next) {
 
     res.json({
       success: true,
-      data: result.data.map(customer => 
+      data: result.data.map(customer =>
         simple ? customer.toSimpleJSON() : customer.toJSON()
       ),
       pagination: result.pagination
@@ -293,7 +294,7 @@ export async function searchCustomers(req, res, next) {
 export async function getCustomerById(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({
         success: false,
@@ -336,7 +337,7 @@ export async function getCustomerById(req, res, next) {
 export async function getCustomerByCnpj(req, res, next) {
   try {
     const { cnpj } = req.params;
-    
+
     if (!cnpj) {
       return res.status(400).json({
         success: false,
@@ -369,7 +370,7 @@ export async function getCustomerByCnpj(req, res, next) {
 export async function getRecentCustomers(req, res, next) {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    
+
     if (limit < 1 || limit > 50) {
       return res.status(400).json({
         success: false,
@@ -395,7 +396,7 @@ export async function getRecentCustomers(req, res, next) {
 export async function getCustomerOrders(req, res, next) {
   try {
     const customerId = parseInt(req.params.id);
-    
+
     if (isNaN(customerId)) {
       return res.status(400).json({
         success: false,
@@ -439,7 +440,7 @@ export async function getCustomerOrders(req, res, next) {
 export async function getCustomerLeads(req, res, next) {
   try {
     const customerId = parseInt(req.params.id);
-    
+
     if (isNaN(customerId)) {
       return res.status(400).json({
         success: false,
@@ -475,7 +476,7 @@ export async function getCustomerLeads(req, res, next) {
 export async function getCustomerMetrics(req, res, next) {
   try {
     const customerId = parseInt(req.params.id);
-    
+
     if (isNaN(customerId)) {
       return res.status(400).json({
         success: false,
@@ -509,7 +510,7 @@ export async function getCustomerMetrics(req, res, next) {
 export async function getCustomerTopProducts(req, res, next) {
   try {
     const customerId = parseInt(req.params.id);
-    
+
     if (isNaN(customerId)) {
       return res.status(400).json({
         success: false,
@@ -565,7 +566,7 @@ export async function exportPortfolio(req, res, next) {
 
     // Gerar CSV
     const headers = ['CNPJ', 'Nome', 'Fantasia', 'Cidade', 'UF', 'Telefone', 'Email', 'Status', 'Último Pedido', 'Total Ano', 'Total Mês', 'Limite'];
-    
+
     const statusLabels = {
       active: 'Ativo',
       at_risk: 'Em Risco',
@@ -597,6 +598,34 @@ export async function exportPortfolio(req, res, next) {
     res.send(bom + csv);
   } catch (error) {
     console.error('[exportPortfolio] Error:', error.message, error.stack);
+    next(error);
+  }
+}
+
+/**
+ * Obtém oportunidades perdidas (produtos que o cliente não compra mas segmento compra)
+ * GET /api/customers/:id/opportunities
+ */
+export async function getLostOpportunities(req, res, next) {
+  try {
+    const customerId = parseInt(req.params.id);
+    if (isNaN(customerId)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid customer ID' } });
+    }
+
+    // Verificar permissão
+    const hasAccess = await checkCustomerAccess(req, res, customerId);
+    if (!hasAccess) return;
+
+    const limit = parseInt(req.query.limit) || 5;
+
+    const opportunities = await clientOpportunitiesService.getLostOpportunities(customerId, limit);
+
+    res.json({
+      success: true,
+      data: opportunities
+    });
+  } catch (error) {
     next(error);
   }
 }

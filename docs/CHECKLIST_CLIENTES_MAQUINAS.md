@@ -75,8 +75,8 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 
 | # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
 |---|--------|------------|---------------------|--------|
-| 5.1 | **Curva ABC do Cliente** (O que ele mais compra da Rolemak) | 🔸 Média | Gestão de estoque dele | ⬜ |
-| 5.2 | **Oportunidades Perdidas** (Produtos que concorrentes vendem) | 🔥 Alta | Aumentar Mix e Penetração | ⬜ |
+| 5.1 | **Curva ABC do Cliente** (O que ele mais compra da Rolemak) | 🔸 Média | Gestão de estoque dele | ✅ (Backend) |
+| 5.2 | **Oportunidades Perdidas** (Sugestão na criação do lead) | 🔥 Alta | Aumentar Mix e Penetração | ✅ |
 | 5.3 | **Tendências de Mercado** ("Outros clientes compram também...") | 🔸 Média | Cross-selling inteligente | ⬜ |
 | 5.4 | **Relatório de Economia** (Descontos e oportunidades aproveitadas) | 🔹 Baixa | Percepção de valor | ⬜ |
 

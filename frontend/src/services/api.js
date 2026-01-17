@@ -213,6 +213,7 @@ export const customersService = {
   getLeads: (id, params) => api.get(`/customers/${id}/leads`, { params }),
   getMetrics: (id) => api.get(`/customers/${id}/metrics`),
   getTopProducts: (id, limit = 10) => api.get(`/customers/${id}/products`, { params: { limit } }),
+  getOpportunities: (id, limit = 5) => api.get(`/customers/${id}/opportunities`, { params: { limit } }),
 }
 
 export const analyticsService = {

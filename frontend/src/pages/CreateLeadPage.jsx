@@ -12,7 +12,8 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material'
 import {
   Save as SaveIcon,
@@ -21,6 +22,8 @@ import {
 import { leadsService } from '../services/api'
 import { offlineSyncService } from '../services/offlineSync.service'
 import CustomerAutocomplete from '../components/CustomerAutocomplete'
+import ClientOpportunities from '../components/ClientOpportunities'
+import { formatCurrency } from '../utils'
 
 function CreateLeadPage() {
   const navigate = useNavigate()
@@ -202,7 +205,22 @@ function CreateLeadPage() {
       const response = await leadsService.create(leadData)
 
       if (response.data.success) {
-        navigate(`/leads/${response.data.data.id}`)
+        const newLeadId = response.data.data.id
+
+        // Adicionar itens pré-selecionados
+        if (preSelectedItems.length > 0) {
+          // Mostrar loading ou toast?
+          // Como é rápido, vamos fazer async sem bloquear UI visualmente além do loading geral
+          await Promise.all(preSelectedItems.map(item =>
+            leadsService.addItem(newLeadId, {
+              productId: item.id,
+              quantity: 1,
+              price: item.price
+            }).catch(e => console.error('Falha ao adicionar item automático', e))
+          ))
+        }
+
+        navigate(`/leads/${newLeadId}`)
       } else {
         setError(response.data.error?.message || 'Erro ao criar lead')
       }
@@ -227,6 +245,19 @@ function CreateLeadPage() {
 
   const handleCancel = () => {
     navigate('/')
+  }
+
+  const [preSelectedItems, setPreSelectedItems] = useState([])
+
+  const handleAddOpportunity = (product) => {
+    setPreSelectedItems(prev => {
+      if (prev.find(p => p.id === product.id)) return prev
+      return [...prev, { ...product, quantity: 1 }]
+    })
+  }
+
+  const handleRemovePreSelected = (id) => {
+    setPreSelectedItems(prev => prev.filter(p => p.id !== id))
   }
 
   return (
@@ -300,6 +331,33 @@ function CreateLeadPage() {
                     <Typography variant="body2">{formData.customerId.city}/{formData.customerId.state}</Typography>
                   </Box>
                 </Paper>
+              </Grid>
+            )}
+
+            {/* Oportunidades e Pré-seleção */}
+            {formData.customerId && (
+              <Grid item xs={12}>
+                {preSelectedItems.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>Itens adicionados ao pedido:</Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {preSelectedItems.map(item => (
+                        <Chip
+                          key={item.id}
+                          label={`${item.model} (${formatCurrency(item.price)})`}
+                          onDelete={() => handleRemovePreSelected(item.id)}
+                          color="primary"
+                          variant="outlined"
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
+                <ClientOpportunities
+                  customerId={formData.customerId.id}
+                  onAddProduct={handleAddOpportunity}
+                />
               </Grid>
             )}
 

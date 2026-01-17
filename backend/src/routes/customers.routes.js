@@ -416,4 +416,29 @@ router.get('/:id/metrics', authenticateToken, customersController.getCustomerMet
  */
 router.get('/:id/products', authenticateToken, customersController.getCustomerTopProducts);
 
+/**
+ * @swagger
+ * /customers/{id}/opportunities:
+ *   get:
+ *     summary: Oportunidades de Venda (Produtos do segmento não comprados)
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *     responses:
+ *       200:
+ *         description: Lista de oportunidades
+ */
+router.get('/:id/opportunities', authenticateToken, customersController.getLostOpportunities);
+
 export default router;
