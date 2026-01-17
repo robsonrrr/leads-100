@@ -56,7 +56,7 @@
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 1.2.1 | Componente ProductDetailModal | Frontend | ✅ |
-| 1.2.2 | Exibir especificações técnicas | Frontend | ⏳ |
+| 1.2.2 | Exibir especificações técnicas | Frontend | ✅ |
 | 1.2.3 | Exibir marca com logo | Frontend | ✅ |
 | 1.2.4 | Exibir categoria/segmento | Frontend | ✅ |
 | 1.2.5 | Exibir NCM e informações fiscais | Frontend | ✅ |
@@ -301,7 +301,7 @@ CREATE TABLE seller_favorite_products (
 
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
-| 1. Visualização | 14 | 8 | 6 |
+| 1. Visualização | 14 | 9 | 5 |
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 9 | 4 | 5 |
@@ -309,7 +309,7 @@ CREATE TABLE seller_favorite_products (
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **32** | **55** |
+| **Total** | **87** | **33** | **54** |
 
 ---
 
