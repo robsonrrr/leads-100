@@ -2,184 +2,240 @@
 -- Q3.1 - PERFORMANCE OPTIMIZATION: DATABASE INDEXES
 -- Sistema de Gestão de Leads - Rolemak
 -- Created: 2026-01-17
+-- MySQL Version: 8.4.7
 -- ============================================================
+
+-- NOTA: MySQL 8 não suporta "CREATE INDEX IF NOT EXISTS"
+-- Este script usa DROP INDEX IF EXISTS antes de criar
+-- Execute com cuidado em produção
+
+DELIMITER $$
+
+-- ============================================================
+-- PROCEDURE PARA CRIAR ÍNDICE SE NÃO EXISTIR
+-- ============================================================
+DROP PROCEDURE IF EXISTS create_index_if_not_exists$$
+
+CREATE PROCEDURE create_index_if_not_exists(
+    IN p_table_schema VARCHAR(64),
+    IN p_table_name VARCHAR(64),
+    IN p_index_name VARCHAR(64),
+    IN p_index_columns VARCHAR(512)
+)
+BEGIN
+    DECLARE v_index_exists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO v_index_exists
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = p_table_schema
+      AND TABLE_NAME = p_table_name
+      AND INDEX_NAME = p_index_name;
+    
+    IF v_index_exists = 0 THEN
+        SET @sql = CONCAT('CREATE INDEX ', p_index_name, ' ON ', p_table_schema, '.', p_table_name, ' (', p_index_columns, ')');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        SELECT CONCAT('✅ Índice criado: ', p_index_name, ' em ', p_table_name) AS resultado;
+    ELSE
+        SELECT CONCAT('⏭️ Índice já existe: ', p_index_name, ' em ', p_table_name) AS resultado;
+    END IF;
+END$$
+
+DELIMITER ;
 
 -- ============================================================
 -- ÍNDICES PARA TABELA sCart (Leads)
 -- ============================================================
 
--- Índice para busca por vendedor (queries frequentes de listagem)
-CREATE INDEX IF NOT EXISTS idx_scart_cuser ON mak.sCart(cUser);
-
--- Índice para busca por cliente
-CREATE INDEX IF NOT EXISTS idx_scart_customer ON mak.sCart(cCustomer);
-
--- Índice para filtros por tipo e status
-CREATE INDEX IF NOT EXISTS idx_scart_type ON mak.sCart(cType);
-
--- Índice composto para ordenação por data (very frequent)
-CREATE INDEX IF NOT EXISTS idx_scart_created ON mak.sCart(cCreated DESC);
-
--- Índice composto para queries de listagem (vendedor + data)
-CREATE INDEX IF NOT EXISTS idx_scart_user_created ON mak.sCart(cUser, cCreated DESC);
-
--- Índice para busca por pedido convertido
-CREATE INDEX IF NOT EXISTS idx_scart_orderweb ON mak.sCart(orderWeb);
-
--- Índice para filtros de período (analytics)
-CREATE INDEX IF NOT EXISTS idx_scart_date_range ON mak.sCart(cCreated, cUser);
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_cuser', 'cUser');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_customer', 'cCustomer');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_type', 'cType');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_created', 'cCreated DESC');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_user_created', 'cUser, cCreated DESC');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_orderweb', 'orderWeb');
+CALL create_index_if_not_exists('mak', 'sCart', 'idx_scart_date_range', 'cCreated, cUser');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA icart (Itens do Lead)
 -- ============================================================
 
--- Índice para busca por lead (join frequente)
-CREATE INDEX IF NOT EXISTS idx_icart_lead ON mak.icart(cCart);
-
--- Índice para busca por produto
-CREATE INDEX IF NOT EXISTS idx_icart_product ON mak.icart(cProduct);
-
--- Índice composto para cálculos de total
-CREATE INDEX IF NOT EXISTS idx_icart_cart_product ON mak.icart(cCart, cProduct);
+CALL create_index_if_not_exists('mak', 'icart', 'idx_icart_lead', 'cCart');
+CALL create_index_if_not_exists('mak', 'icart', 'idx_icart_product', 'cProduct');
+CALL create_index_if_not_exists('mak', 'icart', 'idx_icart_cart_product', 'cCart, cProduct');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA clientes (Customers)
 -- ============================================================
 
--- Índice para busca textual por nome
-CREATE INDEX IF NOT EXISTS idx_clientes_nome ON mak.clientes(nome(100));
+CALL create_index_if_not_exists('mak', 'clientes', 'idx_clientes_vendedor', 'vendedor');
+CALL create_index_if_not_exists('mak', 'clientes', 'idx_clientes_estado', 'estado');
+CALL create_index_if_not_exists('mak', 'clientes', 'idx_clientes_status', 'status');
 
--- Índice para busca por vendedor
-CREATE INDEX IF NOT EXISTS idx_clientes_vendedor ON mak.clientes(vendedor);
+-- Índices com prefixo para campos TEXT/VARCHAR longos
+-- MySQL 8.4 suporta functional indexes, mas para compatibilidade usamos prefix
+DELIMITER $$
+DROP PROCEDURE IF EXISTS create_prefix_index$$
+CREATE PROCEDURE create_prefix_index(
+    IN p_table_schema VARCHAR(64),
+    IN p_table_name VARCHAR(64),
+    IN p_index_name VARCHAR(64),
+    IN p_column_name VARCHAR(64),
+    IN p_prefix_length INT
+)
+BEGIN
+    DECLARE v_index_exists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO v_index_exists
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = p_table_schema
+      AND TABLE_NAME = p_table_name
+      AND INDEX_NAME = p_index_name;
+    
+    IF v_index_exists = 0 THEN
+        SET @sql = CONCAT('CREATE INDEX ', p_index_name, ' ON ', p_table_schema, '.', p_table_name, ' (', p_column_name, '(', p_prefix_length, '))');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        SELECT CONCAT('✅ Índice criado: ', p_index_name) AS resultado;
+    ELSE
+        SELECT CONCAT('⏭️ Índice já existe: ', p_index_name) AS resultado;
+    END IF;
+END$$
+DELIMITER ;
 
--- Índice para busca por cidade/estado
-CREATE INDEX IF NOT EXISTS idx_clientes_cidade ON mak.clientes(cidade(50));
-CREATE INDEX IF NOT EXISTS idx_clientes_estado ON mak.clientes(estado);
-
--- Índice para filtro de status
-CREATE INDEX IF NOT EXISTS idx_clientes_status ON mak.clientes(status);
-
--- Índice composto para listagem de carteira
-CREATE INDEX IF NOT EXISTS idx_clientes_vendedor_nome ON mak.clientes(vendedor, nome(50));
+CALL create_prefix_index('mak', 'clientes', 'idx_clientes_nome', 'nome', 100);
+CALL create_prefix_index('mak', 'clientes', 'idx_clientes_cidade', 'cidade', 50);
 
 -- ============================================================
 -- ÍNDICES PARA TABELA produtos (Products)
 -- ============================================================
 
--- Índice para busca por modelo (SKU)
-CREATE INDEX IF NOT EXISTS idx_produtos_modelo ON mak.produtos(modelo);
-
--- Índice para busca textual
-CREATE INDEX IF NOT EXISTS idx_produtos_descricao ON mak.produtos(descricao(100));
-
--- Índice para filtro por marca
-CREATE INDEX IF NOT EXISTS idx_produtos_marca ON mak.produtos(marca);
+CALL create_index_if_not_exists('mak', 'produtos', 'idx_produtos_modelo', 'modelo');
+CALL create_index_if_not_exists('mak', 'produtos', 'idx_produtos_marca', 'marca');
+CALL create_prefix_index('mak', 'produtos', 'idx_produtos_descricao', 'descricao', 100);
 
 -- ============================================================
 -- ÍNDICES PARA TABELA inv (Inventário)
 -- ============================================================
 
--- Índice para busca por produto
-CREATE INDEX IF NOT EXISTS idx_inv_produto ON mak.inv(codigo);
+CALL create_index_if_not_exists('mak', 'inv', 'idx_inv_produto', 'codigo');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA hoje (Pedidos)
 -- ============================================================
 
--- Índice para busca por vendedor
-CREATE INDEX IF NOT EXISTS idx_hoje_vendedor ON mak.hoje(vendedor);
-
--- Índice para busca por cliente
-CREATE INDEX IF NOT EXISTS idx_hoje_cliente ON mak.hoje(cliente);
-
--- Índice para ordenação por data
-CREATE INDEX IF NOT EXISTS idx_hoje_data ON mak.hoje(data DESC);
-
--- Índice composto para analytics
-CREATE INDEX IF NOT EXISTS idx_hoje_vendedor_data ON mak.hoje(vendedor, data DESC);
+CALL create_index_if_not_exists('mak', 'hoje', 'idx_hoje_vendedor', 'vendedor');
+CALL create_index_if_not_exists('mak', 'hoje', 'idx_hoje_cliente', 'cliente');
+CALL create_index_if_not_exists('mak', 'hoje', 'idx_hoje_data', 'data DESC');
+CALL create_index_if_not_exists('mak', 'hoje', 'idx_hoje_vendedor_data', 'vendedor, data DESC');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA staging.audit_log
 -- ============================================================
 
--- Índice para busca por usuário
-CREATE INDEX IF NOT EXISTS idx_audit_user ON staging.audit_log(user_id);
-
--- Índice para busca por ação
-CREATE INDEX IF NOT EXISTS idx_audit_action ON staging.audit_log(action);
-
--- Índice para busca por recurso
-CREATE INDEX IF NOT EXISTS idx_audit_resource ON staging.audit_log(resource_type, resource_id);
-
--- Índice para ordenação temporal
-CREATE INDEX IF NOT EXISTS idx_audit_created ON staging.audit_log(created_at DESC);
+CALL create_index_if_not_exists('staging', 'audit_log', 'idx_audit_user', 'user_id');
+CALL create_index_if_not_exists('staging', 'audit_log', 'idx_audit_action', 'action');
+CALL create_index_if_not_exists('staging', 'audit_log', 'idx_audit_resource', 'resource_type, resource_id');
+CALL create_index_if_not_exists('staging', 'audit_log', 'idx_audit_created', 'created_at DESC');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA staging.pricing_decision_event
 -- ============================================================
 
--- Índice para busca por lead
-CREATE INDEX IF NOT EXISTS idx_pde_lead ON staging.pricing_decision_event(lead_id);
-
--- Índice para busca por vendedor
-CREATE INDEX IF NOT EXISTS idx_pde_seller ON staging.pricing_decision_event(seller_id);
-
--- Índice para busca por cliente
-CREATE INDEX IF NOT EXISTS idx_pde_customer ON staging.pricing_decision_event(customer_id);
-
--- Índice para filtro de risco
-CREATE INDEX IF NOT EXISTS idx_pde_risk ON staging.pricing_decision_event(risk_level);
-
--- Índice temporal
-CREATE INDEX IF NOT EXISTS idx_pde_created ON staging.pricing_decision_event(created_at DESC);
+CALL create_index_if_not_exists('staging', 'pricing_decision_event', 'idx_pde_lead', 'lead_id');
+CALL create_index_if_not_exists('staging', 'pricing_decision_event', 'idx_pde_seller', 'seller_id');
+CALL create_index_if_not_exists('staging', 'pricing_decision_event', 'idx_pde_customer', 'customer_id');
+CALL create_index_if_not_exists('staging', 'pricing_decision_event', 'idx_pde_risk', 'risk_level');
+CALL create_index_if_not_exists('staging', 'pricing_decision_event', 'idx_pde_created', 'created_at DESC');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA staging.interactions
 -- ============================================================
 
--- Índice para busca por cliente
-CREATE INDEX IF NOT EXISTS idx_interactions_customer ON staging.interactions(customer_id);
-
--- Índice para busca por vendedor
-CREATE INDEX IF NOT EXISTS idx_interactions_user ON staging.interactions(user_id);
-
--- Índice para follow-ups pendentes
-CREATE INDEX IF NOT EXISTS idx_interactions_followup ON staging.interactions(follow_up_date, follow_up_status);
+CALL create_index_if_not_exists('staging', 'interactions', 'idx_interactions_customer', 'customer_id');
+CALL create_index_if_not_exists('staging', 'interactions', 'idx_interactions_user', 'user_id');
+CALL create_index_if_not_exists('staging', 'interactions', 'idx_interactions_followup', 'follow_up_date, follow_up_status');
 
 -- ============================================================
 -- ÍNDICES PARA TABELA staging.sales_goals
 -- ============================================================
 
--- Índice para busca por vendedor
-CREATE INDEX IF NOT EXISTS idx_goals_seller ON staging.sales_goals(seller_id);
-
--- Índice composto para período
-CREATE INDEX IF NOT EXISTS idx_goals_period ON staging.sales_goals(year, month, seller_id);
+CALL create_index_if_not_exists('staging', 'sales_goals', 'idx_goals_seller', 'seller_id');
+CALL create_index_if_not_exists('staging', 'sales_goals', 'idx_goals_period', 'year, month, seller_id');
 
 -- ============================================================
--- ANÁLISE DE ÍNDICES EXISTENTES
--- Execute separadamente para verificar índices criados
+-- LIMPEZA - Remover procedures temporárias
 -- ============================================================
 
--- SHOW INDEX FROM mak.sCart;
--- SHOW INDEX FROM mak.icart;
--- SHOW INDEX FROM mak.clientes;
--- SHOW INDEX FROM mak.produtos;
--- SHOW INDEX FROM mak.hoje;
--- SHOW INDEX FROM staging.audit_log;
+DROP PROCEDURE IF EXISTS create_index_if_not_exists;
+DROP PROCEDURE IF EXISTS create_prefix_index;
 
 -- ============================================================
--- ESTATÍSTICAS E OTIMIZAÇÃO
--- Execute após criar índices
+-- ANÁLISE DE TABELAS (MySQL 8.4 usa ANALYZE TABLE)
+-- Atualiza estatísticas para o otimizador de queries
 -- ============================================================
 
--- ANALYZE TABLE mak.sCart;
--- ANALYZE TABLE mak.icart;
--- ANALYZE TABLE mak.clientes;
--- ANALYZE TABLE mak.produtos;
--- ANALYZE TABLE mak.inv;
--- ANALYZE TABLE mak.hoje;
+ANALYZE TABLE mak.sCart;
+ANALYZE TABLE mak.icart;
+ANALYZE TABLE mak.clientes;
+ANALYZE TABLE mak.produtos;
+ANALYZE TABLE mak.inv;
+ANALYZE TABLE mak.hoje;
+
+-- Tabelas staging (se existirem)
 -- ANALYZE TABLE staging.audit_log;
 -- ANALYZE TABLE staging.pricing_decision_event;
 -- ANALYZE TABLE staging.interactions;
 -- ANALYZE TABLE staging.sales_goals;
+
+-- ============================================================
+-- VERIFICAÇÃO DE ÍNDICES CRIADOS
+-- ============================================================
+
+SELECT 
+    TABLE_NAME,
+    INDEX_NAME,
+    GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA IN ('mak', 'staging')
+  AND INDEX_NAME LIKE 'idx_%'
+GROUP BY TABLE_NAME, INDEX_NAME
+ORDER BY TABLE_NAME, INDEX_NAME;
+
+-- ============================================================
+-- ESTATÍSTICAS DE PERFORMANCE (MySQL 8.4)
+-- ============================================================
+
+-- Verificar queries lentas (se performance_schema estiver habilitado)
+/*
+SELECT 
+    DIGEST_TEXT,
+    COUNT_STAR as executions,
+    ROUND(AVG_TIMER_WAIT/1000000000, 2) as avg_ms,
+    ROUND(MAX_TIMER_WAIT/1000000000, 2) as max_ms,
+    ROUND(SUM_TIMER_WAIT/1000000000, 2) as total_ms
+FROM performance_schema.events_statements_summary_by_digest
+WHERE SCHEMA_NAME IN ('mak', 'staging')
+  AND AVG_TIMER_WAIT > 100000000 -- > 100ms
+ORDER BY AVG_TIMER_WAIT DESC
+LIMIT 20;
+*/
+
+-- Verificar uso de índices (MySQL 8.4)
+/*
+SELECT 
+    OBJECT_SCHEMA,
+    OBJECT_NAME,
+    INDEX_NAME,
+    COUNT_FETCH as rows_fetched,
+    COUNT_INSERT + COUNT_UPDATE + COUNT_DELETE as modifications
+FROM performance_schema.table_io_waits_summary_by_index_usage
+WHERE OBJECT_SCHEMA IN ('mak', 'staging')
+  AND INDEX_NAME IS NOT NULL
+  AND INDEX_NAME != 'PRIMARY'
+ORDER BY COUNT_FETCH DESC
+LIMIT 20;
+*/
+
+SELECT '✅ Script de índices Q3.1 executado com sucesso!' AS status;
