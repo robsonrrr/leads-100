@@ -1,0 +1,86 @@
+version: '3.8'
+
+# Este arquivo é para referência do padrão Traefik
+# Para usar com Docker Swarm, use: docker stack deploy -c docker-compose.traefik.yml leads-agent
+# OU use o script: /home/ubuntu/environment/Office/Scripts/inProduction/leads-agent.sh
+
+services:
+  backend:
+    image: node:20-alpine
+    # container_name não funciona com Swarm - removido
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.leads-agent-backend.rule=Host(`dev.office.internut.com.br`) && PathPrefix(`/leads/modern/api`)"
+      - "traefik.http.routers.leads-agent-backend.entrypoints=websecure"
+      - "traefik.http.routers.leads-agent-backend.tls=true"
+      - "traefik.http.routers.leads-agent-backend.tls.certresolver=myresolver"
+      - "traefik.http.services.leads-agent-backend.loadbalancer.server.port=3001"
+      - "traefik.http.routers.leads-agent-backend.middlewares=leads-agent-backend-stripprefix"
+      - "traefik.http.middlewares.leads-agent-backend-stripprefix.stripprefix.prefixes=/leads/modern/api"
+    volumes:
+      - ../backend:/app
+      - ../backend/.env:/app/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=vallery.catmgckfixum.sa-east-1.rds.amazonaws.com
+      - DB_USER=robsonrr
+      - DB_PASSWORD=Best94364811082
+      - DB_NAME=mak
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: sh -c "cd /app && npm install && node src/index.js"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    image: node:20-alpine
+    # container_name não funciona com Swarm - removido
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.leads-agent-frontend.rule=Host(`dev.office.internut.com.br`) && PathPrefix(`/leads/modern`)"
+      - "traefik.http.routers.leads-agent-frontend.entrypoints=websecure"
+      - "traefik.http.routers.leads-agent-frontend.tls=true"
+      - "traefik.http.routers.leads-agent-frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.leads-agent-frontend.loadbalancer.server.port=5173"
+      - "traefik.http.routers.leads-agent-frontend.middlewares=leads-agent-frontend-stripprefix"
+      - "traefik.http.middlewares.leads-agent-frontend-stripprefix.stripprefix.prefixes=/leads/modern"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=https://dev.office.internut.com.br/leads/modern/api
+      - VITE_BASE_PATH=/leads/modern/
+      - NODE_ENV=production
+    command: sh -c "cd /app && npm install && VITE_BASE_PATH=/leads/modern/ ./node_modules/.bin/vite build && npx serve -s dist -l 5173"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7-alpine
+    # container_name não funciona com Swarm - removido
+    networks:
+      - traefik-net
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  traefik-net:
+    external: true
+
+volumes:
+  redis-data:
+

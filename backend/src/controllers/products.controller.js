@@ -1,0 +1,183 @@
+import { ProductRepository } from '../repositories/product.repository.js';
+import Joi from 'joi';
+
+const productRepository = new ProductRepository();
+
+// Schema de validação para busca
+const searchSchema = Joi.object({
+  search: Joi.string().allow('').optional(),
+  segment: Joi.string().optional(),
+  segmentId: Joi.number().integer().optional(),
+  category: Joi.string().optional(),
+  ncm: Joi.string().optional(),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  simple: Joi.string().allow('1', 'true', '0', 'false').optional() // Permite formato simplificado
+});
+
+/**
+ * Busca produtos
+ * GET /api/products?search=termo&category=ROLAMENTOS&page=1&limit=20
+ */
+export async function searchProducts(req, res, next) {
+  try {
+    // Validação
+    const { error, value } = searchSchema.validate(req.query);
+    
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation error',
+          details: error.details.map(d => d.message)
+        }
+      });
+    }
+
+    const filters = {};
+    if (value.segment) filters.segment = value.segment;
+    if (value.segmentId) filters.segmentId = value.segmentId;
+    if (value.category) filters.category = value.category;
+    if (value.ncm) filters.ncm = value.ncm;
+
+    const result = await productRepository.search(
+      value.search || '',
+      filters,
+      { page: value.page, limit: value.limit }
+    );
+
+    // Usar formato simplificado para listagem
+    const simple = req.query.simple === 'true' || req.query.simple === '1';
+
+    res.json({
+      success: true,
+      data: result.data.map(product => 
+        simple ? product.toSimpleJSON() : product.toJSON()
+      ),
+      pagination: result.pagination
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Busca um produto por ID
+ * GET /api/products/:id
+ */
+export async function getProductById(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid product ID' }
+      });
+    }
+
+    const product = await productRepository.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Product not found' }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product.toJSON()
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Lista produtos por categoria
+ * GET /api/products/category/:category?limit=50
+ */
+export async function getProductsByCategory(req, res, next) {
+  try {
+    const { category } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    if (limit < 1 || limit > 100) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Limit must be between 1 and 100' }
+      });
+    }
+
+    const products = await productRepository.findByCategory(category, limit);
+
+    res.json({
+      success: true,
+      data: products.map(product => product.toSimpleJSON())
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Lista produtos por segmento
+ * GET /api/products/segment/:segment?limit=50
+ */
+export async function getProductsBySegment(req, res, next) {
+  try {
+    const { segment } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    if (limit < 1 || limit > 100) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Limit must be between 1 and 100' }
+      });
+    }
+
+    const products = await productRepository.findBySegment(segment, limit);
+
+    res.json({
+      success: true,
+      data: products.map(product => product.toSimpleJSON())
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Lista categorias disponíveis
+ * GET /api/products/categories
+ */
+export async function getCategories(req, res, next) {
+  try {
+    const categories = await productRepository.getCategories();
+
+    res.json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Lista segmentos disponíveis
+ * GET /api/products/segments
+ */
+export async function getSegments(req, res, next) {
+  try {
+    const segments = await productRepository.getSegments();
+
+    res.json({
+      success: true,
+      data: segments
+    });
+  } catch (error) {
+    next(error);
+  }
+}

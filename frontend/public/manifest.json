@@ -1,0 +1,23 @@
+{
+    "short_name": "Leads Agent",
+    "name": "Rolemak Leads Agent - IA Avançada",
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "start_url": "/",
+    "background_color": "#0a192f",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#112240",
+    "description": "Sistema Inteligente de Gestão de Leads com IA Avançada",
+    "orientation": "portrait"
+}

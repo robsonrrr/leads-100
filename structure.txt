@@ -1,0 +1,42 @@
+.
+├── QUICK_START.md
+├── README.md
+├── backend
+│   ├── package.json
+│   ├── src
+│   │   ├── config
+│   │   ├── controllers
+│   │   ├── index.js
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── repositories
+│   │   ├── routes
+│   │   ├── services
+│   │   └── utils
+│   └── tests
+├── docker
+│   ├── Dockerfile.backend
+│   ├── Dockerfile.frontend
+│   └── docker-compose.yml
+├── frontend
+│   ├── index.html
+│   ├── package.json
+│   ├── public
+│   ├── src
+│   │   ├── App.jsx
+│   │   ├── components
+│   │   ├── hooks
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── pages
+│   │   ├── services
+│   │   ├── store
+│   │   ├── types
+│   │   └── utils
+│   └── vite.config.js
+├── nginx
+│   └── nginx.conf
+├── shared
+└── structure.txt
+
+25 directories, 15 files
