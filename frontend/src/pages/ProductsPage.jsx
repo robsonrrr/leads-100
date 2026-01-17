@@ -380,7 +380,7 @@ function ProductsPage() {
         const isPromo = promotionMap.has(product.id)
         const isLaunch = launchMap.has(product.id)
         const isFavorite = favorites.has(product.id)
-        const stock = product.stock || 0
+        const stock = product.estoque || product.stock || 0
 
         return (
             <Card
@@ -511,7 +511,7 @@ function ProductsPage() {
         const isPromo = promotionMap.has(product.id)
         const isLaunch = launchMap.has(product.id)
         const isFavorite = favorites.has(product.id)
-        const stock = product.stock || 0
+        const stock = product.estoque || product.stock || 0
 
         return (
             <Paper
