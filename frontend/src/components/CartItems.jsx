@@ -74,7 +74,7 @@ const roundCentsUp = (price) => {
   return numPrice % 1 !== 0 ? Math.ceil(numPrice) : numPrice
 }
 
-function CartItems({ leadId, lead, readOnly = false }) {
+function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
   const { user } = useSelector((state) => state.auth)
   const toast = useToast()
   // Usuários nível <= 4 (vendedores) veem explicação simplificada sem Preço de Piso
@@ -418,6 +418,56 @@ function CartItems({ leadId, lead, readOnly = false }) {
       console.debug('Erro ao carregar preços fixos do cliente:', err)
     }
   }
+
+  // Mapeamento EmitentePOID -> unidade_id (da view produtos_estoque_por_unidades)
+  const EMITENTE_TO_UNIT_MAP = {
+    1: 109,   // mak_0109
+    3: 370,   // mak_0370
+    6: 613,   // mak_0613
+    8: 885,   // mak_0885
+    9: 966    // mak_0966
+  }
+
+  // Verifica estoque da unidade do lead vs quantidade dos itens
+  useEffect(() => {
+    if (!onStockIssuesChange || !items.length) {
+      onStockIssuesChange?.([])
+      return
+    }
+
+    const leadUnitId = lead?.cLogUnity
+    if (!leadUnitId) {
+      onStockIssuesChange([])
+      return
+    }
+
+    // Pega o unidade_id correspondente
+    const warehouseId = EMITENTE_TO_UNIT_MAP[leadUnitId]
+
+    const issues = []
+    items.forEach(item => {
+      if (!item.productId) return
+
+      const stock = warehouseStock[item.productId]
+      if (!stock?.warehouses) return
+
+      // Encontra o estoque na unidade do lead
+      const unitStock = stock.warehouses.find(w => w.id === warehouseId || w.id === leadUnitId)
+      const availableQty = unitStock?.available || 0
+
+      if (item.quantity > availableQty) {
+        issues.push({
+          productId: item.productId,
+          productModel: item.product?.model || item.cProduct,
+          quantity: item.quantity,
+          available: availableQty,
+          warehouseName: unitStock?.name || `Unidade ${leadUnitId}`
+        })
+      }
+    })
+
+    onStockIssuesChange(issues)
+  }, [items, warehouseStock, lead?.cLogUnity, onStockIssuesChange])
 
   const toggleFavorite = async (productId) => {
     if (!productId || loadingFavorite[productId]) return
@@ -1619,24 +1669,51 @@ function CartItems({ leadId, lead, readOnly = false }) {
                               )}
 
                               {/* Estoques por unidade */}
-                              {warehouseStock[item.productId]?.warehouses?.length > 0 && (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                  {warehouseStock[item.productId].warehouses.map((wh, idx) => (
-                                    <Chip
-                                      key={idx}
-                                      label={`${wh.name}: ${wh.available}`}
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{
-                                        height: 18,
-                                        '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' },
-                                        borderColor: 'divider',
-                                        color: 'text.secondary'
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                              )}
+                              {warehouseStock[item.productId]?.warehouses?.length > 0 && (() => {
+                                const leadUnitId = lead?.cLogUnity
+                                const warehouseId = EMITENTE_TO_UNIT_MAP[leadUnitId]
+
+                                return (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                    {warehouseStock[item.productId].warehouses.map((wh, idx) => {
+                                      const isLeadUnit = wh.id === warehouseId || wh.id === leadUnitId
+                                      const hasInsufficientStock = isLeadUnit && item.quantity > wh.available
+
+                                      return (
+                                        <Tooltip
+                                          key={idx}
+                                          title={
+                                            hasInsufficientStock
+                                              ? `⚠️ Estoque insuficiente! Pedido: ${item.quantity}, Disponível: ${wh.available}`
+                                              : isLeadUnit
+                                                ? '✓ Unidade do pedido'
+                                                : ''
+                                          }
+                                          arrow
+                                        >
+                                          <Chip
+                                            label={`${wh.name}: ${wh.available}`}
+                                            size="small"
+                                            variant={isLeadUnit ? "filled" : "outlined"}
+                                            color={hasInsufficientStock ? "error" : isLeadUnit ? "primary" : "default"}
+                                            sx={{
+                                              height: 18,
+                                              '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' },
+                                              borderColor: hasInsufficientStock ? 'error.main' : isLeadUnit ? 'primary.main' : 'divider',
+                                              fontWeight: isLeadUnit ? 'bold' : 'normal',
+                                              animation: hasInsufficientStock ? 'pulse 1.5s infinite' : 'none',
+                                              '@keyframes pulse': {
+                                                '0%, 100%': { opacity: 1 },
+                                                '50%': { opacity: 0.6 }
+                                              }
+                                            }}
+                                          />
+                                        </Tooltip>
+                                      )
+                                    })}
+                                  </Box>
+                                )
+                              })()}
                               {warehouseStock[item.productId]?.loading && (
                                 <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', ml: 0.5 }}>
                                   Carregando unidades...

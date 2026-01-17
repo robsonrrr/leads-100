@@ -80,6 +80,7 @@ function LeadDetailPage() {
   const [converting, setConverting] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [emailAddress, setEmailAddress] = useState('')
+  const [stockIssues, setStockIssues] = useState([]) // Lista de itens com estoque insuficiente na unidade
 
   const [conversionFormData, setConversionFormData] = useState({
     cTransporter: '',
@@ -526,16 +527,22 @@ function LeadDetailPage() {
               variant="contained"
               startIcon={<ShoppingCartIcon />}
               onClick={handleOpenConvertDialog}
-              disabled={!!lead.orderWeb || lead.type === 2}
-              title={lead.orderWeb ? 'Este lead já foi convertido' : 'Converter em pedido real'}
+              disabled={!!lead.orderWeb || lead.type === 2 || stockIssues.length > 0}
+              title={
+                lead.orderWeb
+                  ? 'Este lead já foi convertido'
+                  : stockIssues.length > 0
+                    ? `Estoque insuficiente: ${stockIssues.map(i => i.productModel).join(', ')}`
+                    : 'Converter em pedido real'
+              }
               sx={{
-                bgcolor: 'success.main',
+                bgcolor: stockIssues.length > 0 ? 'warning.main' : 'success.main',
                 color: 'white',
-                '&:hover': { bgcolor: 'success.dark' },
+                '&:hover': { bgcolor: stockIssues.length > 0 ? 'warning.dark' : 'success.dark' },
                 '&.Mui-disabled': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255, 255, 255, 0.5)' }
               }}
             >
-              Converter
+              {stockIssues.length > 0 ? `Converter (${stockIssues.length} sem estoque)` : 'Converter'}
             </Button>
             <Button
               variant="contained"
@@ -1077,7 +1084,7 @@ function LeadDetailPage() {
 
         {/* Carrinho de Produtos */}
         <Grid item xs={12}>
-          <CartItems leadId={parseInt(id)} lead={lead} readOnly={!!lead.orderWeb} />
+          <CartItems leadId={parseInt(id)} lead={lead} readOnly={!!lead.orderWeb} onStockIssuesChange={setStockIssues} />
         </Grid>
 
         {/* Histórico de Alterações */}
