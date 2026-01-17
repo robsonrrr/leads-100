@@ -423,11 +423,17 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Componente LeadHistoryTimeline com timeline visual
   - Detalhes expandíveis mostrando campos alterados
   - Integrado na página de detalhes do lead
+- ✅ **Filtros Avançados na Listagem de Leads** (2026-01-17)
+  - Drawer lateral com múltiplas opções de filtro
+  - Presets de data rápidos (Hoje, Ontem, 7/30/90 dias)
+  - Filtros por status, segmento, vendedor, cliente
+  - Slider de faixa de valor com presets
+  - Opções para leads com/sem itens ou pedidos
+  - Badge indicando quantidade de filtros ativos
 
 ### Pendente
 - ⏳ Envio real de email (atualmente simulado)
 - ⏳ Revendedor (cliente de cliente)
-- ⏳ Filtros avançados na listagem de leads
 - ⏳ Notificações em tempo real
 - ⏳ Testes automatizados
 
@@ -535,7 +541,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **70% - Em Andamento**
+**Status**: ⏳ **80% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
