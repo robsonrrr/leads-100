@@ -210,3 +210,59 @@ export async function listCustomerFixedPrices(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Lista bundles ativos com seus itens
+ * GET /api/pricing/bundles
+ */
+export async function listBundles(req, res, next) {
+  try {
+    // Buscar bundles ativos
+    const [bundles] = await db().execute(`
+      SELECT 
+        pb.id,
+        pb.name,
+        pb.description,
+        pb.discount_pct,
+        pb.discount_type
+      FROM csuite_pricing.pricing_bundles pb
+      WHERE pb.is_active = 1
+      ORDER BY pb.priority DESC, pb.name
+    `);
+
+    // Buscar itens de todos os bundles ativos
+    const bundleIds = bundles.map(b => b.id);
+    let items = [];
+
+    if (bundleIds.length > 0) {
+      const placeholders = bundleIds.map(() => '?').join(',');
+      const [itemRows] = await db().execute(`
+        SELECT 
+          pbi.bundle_id,
+          pbi.sku_id,
+          pbi.product_family,
+          pbi.min_quantity,
+          i.marca as product_brand,
+          i.modelo as product_model,
+          i.nome as product_name
+        FROM csuite_pricing.pricing_bundle_items pbi
+        LEFT JOIN inv i ON pbi.sku_id = i.id
+        WHERE pbi.bundle_id IN (${placeholders})
+      `, bundleIds);
+      items = itemRows;
+    }
+
+    // Agrupar itens por bundle
+    const bundlesWithItems = bundles.map(bundle => ({
+      ...bundle,
+      items: items.filter(item => item.bundle_id === bundle.id)
+    }));
+
+    res.json({
+      success: true,
+      data: bundlesWithItems
+    });
+  } catch (error) {
+    next(error);
+  }
+}

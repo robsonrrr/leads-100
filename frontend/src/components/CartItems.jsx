@@ -53,7 +53,8 @@ import {
   Inventory as InventoryIcon,
   LocalOffer as PromoIcon,
   NewReleases as LaunchIcon,
-  Lock as FixedPriceIcon
+  Lock as FixedPriceIcon,
+  Layers as BundleIcon
 } from '@mui/icons-material'
 import { leadsService, pricingService, productsService, promotionsService } from '../services/api'
 import aiService from '../services/ai.service'
@@ -108,6 +109,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [quantityDiscounts, setQuantityDiscounts] = useState([]) // Lista de descontos por quantidade
   const [launchProducts, setLaunchProducts] = useState([]) // Lista de produtos em lançamento
   const [customerFixedPrices, setCustomerFixedPrices] = useState([]) // Preços fixos do cliente
+  const [bundles, setBundles] = useState([]) // Lista de combos/bundles
 
   // Mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
@@ -162,6 +164,63 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
     return map
   }, [customerFixedPrices])
+
+  // Mapa de produtos em combos/bundles (SKU ou família -> bundle info)
+  const { bundleSkuMap, bundleFamilies } = useMemo(() => {
+    const skuMap = new Map()
+    const familyList = []
+
+    if (Array.isArray(bundles)) {
+      bundles.forEach(bundle => {
+        if (bundle.items) {
+          bundle.items.forEach(item => {
+            const bundleInfo = {
+              bundleId: bundle.id,
+              bundleName: bundle.name,
+              bundleDescription: bundle.description,
+              discount: bundle.discount_pct,
+              discountType: bundle.discount_type,
+              minQty: item.min_quantity
+            }
+
+            if (item.sku_id) {
+              skuMap.set(item.sku_id, bundleInfo)
+            } else if (item.product_family) {
+              familyList.push({
+                family: item.product_family,
+                ...bundleInfo
+              })
+            }
+          })
+        }
+      })
+    }
+
+    return { bundleSkuMap: skuMap, bundleFamilies: familyList }
+  }, [bundles])
+
+  // Helper para verificar se produto está em um bundle
+  const getProductBundle = (productId, productModel) => {
+    // Primeiro verifica por SKU específico
+    if (bundleSkuMap.has(productId)) {
+      return bundleSkuMap.get(productId)
+    }
+
+    // Depois verifica por família (primeiros dígitos do modelo)
+    if (productModel && bundleFamilies.length > 0) {
+      const modelUpper = String(productModel).toUpperCase()
+
+      const matchingBundle = bundleFamilies.find(bf =>
+        modelUpper.startsWith(bf.family.toUpperCase())
+      )
+
+      if (matchingBundle) {
+        return matchingBundle
+      }
+    }
+
+    return null
+  }
 
   // Mapa de descontos por quantidade - separado por SKU e família
   const { skuDiscountMap, familyDiscounts } = useMemo(() => {
@@ -241,12 +300,13 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
   }, [leadId])
 
-  // Carregar favoritos, promoções, descontos e lançamentos
+  // Carregar favoritos, promoções, descontos, lançamentos e bundles
   useEffect(() => {
     loadFavorites()
     loadPromotions()
     loadQuantityDiscounts()
     loadLaunchProducts()
+    loadBundles()
   }, [])
 
   const loadFavorites = async () => {
@@ -291,6 +351,17 @@ function CartItems({ leadId, lead, readOnly = false }) {
       }
     } catch (err) {
       console.debug('Erro ao carregar produtos em lançamento:', err)
+    }
+  }
+
+  const loadBundles = async () => {
+    try {
+      const response = await pricingService.getBundles()
+      if (response.data.success) {
+        setBundles(response.data.data || [])
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar bundles:', err)
     }
   }
 
@@ -1391,6 +1462,55 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                   />
                                 </Tooltip>
                               )}
+                              {/* Badge de combo/bundle */}
+                              {(() => {
+                                const productId = item.productId || item.product?.id
+                                const productModel = item.product?.model
+                                const bundleInfo = getProductBundle(productId, productModel)
+
+                                if (!bundleInfo) return null
+
+                                return (
+                                  <Tooltip
+                                    title={
+                                      <Box>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>📦 Parte de Combo</Typography>
+                                        <Typography variant="caption" display="block">
+                                          {bundleInfo.bundleName}
+                                        </Typography>
+                                        {bundleInfo.bundleDescription && (
+                                          <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
+                                            {bundleInfo.bundleDescription}
+                                          </Typography>
+                                        )}
+                                        <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                                          Desconto: {bundleInfo.discount}%
+                                        </Typography>
+                                        {bundleInfo.minQty > 1 && (
+                                          <Typography variant="caption" display="block">
+                                            Qtde mínima: {bundleInfo.minQty}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    }
+                                    arrow
+                                  >
+                                    <Chip
+                                      icon={<BundleIcon sx={{ fontSize: 14 }} />}
+                                      label="Combo"
+                                      color="success"
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 20,
+                                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                                        '& .MuiChip-icon': { ml: 0.5 },
+                                        cursor: 'help'
+                                      }}
+                                    />
+                                  </Tooltip>
+                                )
+                              })()}
                               {/* Badge de desconto por quantidade (SKU ou família) */}
                               {(() => {
                                 const productId = item.productId || item.product?.id

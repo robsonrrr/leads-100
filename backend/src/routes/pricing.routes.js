@@ -57,6 +57,7 @@ router.post('/calculate', authenticateToken, pricingController.calculatePrice);
 router.get('/quantity-discounts', optionalAuth, pricingController.listQuantityDiscounts);
 router.get('/launch-products', optionalAuth, pricingController.listLaunchProducts);
 router.get('/customer-fixed-prices/:customerId', optionalAuth, pricingController.listCustomerFixedPrices);
+router.get('/bundles', optionalAuth, pricingController.listBundles);
 
 export default router;
 
