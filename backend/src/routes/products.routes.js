@@ -277,5 +277,26 @@ router.delete('/:id/favorite', optionalAuth, productsController.removeFavorite);
  */
 router.get('/:id', optionalAuth, productsController.getProductById);
 
+/**
+ * @swagger
+ * /products/{id}/details:
+ *   get:
+ *     summary: Busca dados enriquecidos do produto (para modal de detalhes)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Dados completos do produto com informações de catálogo
+ */
+router.get('/:id/details', optionalAuth, productsController.getEnrichedProductById);
+
 export default router;
+
 

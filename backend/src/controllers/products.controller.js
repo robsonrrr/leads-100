@@ -96,6 +96,39 @@ export async function getProductById(req, res, next) {
 }
 
 /**
+ * Busca dados enriquecidos de um produto (para modal de detalhes)
+ * GET /api/products/:id/details
+ */
+export async function getEnrichedProductById(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const product = await productRepository.findEnrichedById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Produto não encontrado' }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Lista produtos por categoria
  * GET /api/products/category/:category?limit=50
  */

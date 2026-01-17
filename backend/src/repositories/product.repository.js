@@ -246,5 +246,100 @@ export class ProductRepository {
     const [rows] = await db().execute(query);
     return rows;
   }
+
+  /**
+   * Busca dados enriquecidos do produto para modal de detalhes
+   * Usa a view Ecommerce.produtos_ecommerce para dados completos
+   */
+  async findEnrichedById(id) {
+    try {
+      const query = `
+        SELECT 
+          pe.id,
+          pe.produtoModelo as modelo,
+          pe.produtoNome as nome,
+          pe.produtoNomeOriginal as nomeOriginal,
+          pe.produtoTitulo as titulo,
+          pe.produtoDescricaoCurta as descricaoCurta,
+          pe.produtoCDescricao as descricaoCompleta,
+          pe.produtoComplemento as complemento,
+          pe.produtoRevendedor as textoRevendedor,
+          pe.produtoConsumidor as textoConsumidor,
+          pe.produtoMarca as marca,
+          pe.produtoOrigem as origem,
+          pe.produtoEmbalagem as embalagem,
+          pe.produtoPeso as peso,
+          pe.produtoKeywords as keywords,
+          pe.produtoURLCatalogo as urlCatalogo,
+          pe.produtoURLVideo as urlVideo,
+          pe.segmentoNome as segmento,
+          pe.segmentoTitulo as segmentoTitulo,
+          pe.categoriaNome as categoria,
+          pe.categoriaTitulo as categoriaTitulo,
+          pe.produtoAtivo as ativo,
+          pe.produtoFeature as destaque,
+          pe.produtoVarejo as varejo,
+          pe.produtoOutlet as outlet,
+          pe.produtoArrivals as lancamento,
+          pe.produtoMedidaDzao as medidaD,
+          pe.produtoMedidaDzinho as medidaD2,
+          pe.produtoMedidaB as medidaB,
+          pe.produtoMedidaDM as medidaDM,
+          pe.produtoMedidaL as medidaL,
+          pe.produtoMedidaFW as medidaFW,
+          pe.produtoMedidaNDE as medidaNDE,
+          pe.produtoMedidaNDI as medidaNDI,
+          pe.produtoMedidaLayout as medidaLayout,
+          i.revenda as preco,
+          i.custo,
+          COALESCE(e.total_disponivel, 0) as estoque,
+          p.ncm
+        FROM Ecommerce.produtos_ecommerce pe
+        INNER JOIN inv i ON i.id = pe.id
+        LEFT JOIN produtos p ON i.idcf = p.id
+        LEFT JOIN produtos_estoque e ON e.produto_id = i.id
+        WHERE pe.id = ?
+        LIMIT 1
+      `;
+      const [rows] = await db().execute(query, [id]);
+
+      if (rows.length === 0) {
+        // Fallback para dados básicos se não estiver no catálogo ecommerce
+        const basicProduct = await this.findById(id);
+        if (basicProduct) {
+          return {
+            id: basicProduct.id,
+            modelo: basicProduct.modelo,
+            nome: basicProduct.nome,
+            nomeOriginal: basicProduct.nome,
+            descricaoCurta: basicProduct.descricao,
+            marca: basicProduct.marca,
+            origem: null,
+            segmento: basicProduct.segmento,
+            categoria: basicProduct.categoria,
+            preco: basicProduct.revenda,
+            estoque: basicProduct.estoque,
+            ncm: basicProduct.ncm,
+            isBasicData: true
+          };
+        }
+        return null;
+      }
+
+      return rows[0];
+    } catch (error) {
+      console.error('Erro ao buscar dados enriquecidos:', error);
+      // Fallback silencioso para dados básicos
+      return this.findById(id).then(p => p ? {
+        id: p.id,
+        modelo: p.modelo,
+        nome: p.nome,
+        marca: p.marca,
+        preco: p.revenda,
+        estoque: p.estoque,
+        isBasicData: true
+      } : null);
+    }
+  }
 }
 

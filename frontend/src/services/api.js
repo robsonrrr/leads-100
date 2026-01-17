@@ -263,6 +263,7 @@ export const reportsService = {
 export const productsService = {
   search: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
+  getDetails: (id) => api.get(`/products/${id}/details`),
   getCategories: () => api.get('/products/categories'),
   getSegments: () => api.get('/products/segments'),
   getByCategory: (category, limit = 50) => api.get(`/products/category/${category}`, { params: { limit } }),
