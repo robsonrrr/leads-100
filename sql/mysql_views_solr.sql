@@ -7,7 +7,7 @@
 -- =====================================================
 -- 1. View para Dados Básicos do Produto (Vallery)
 -- =====================================================
-CREATE OR REPLACE VIEW vw_produto_dados_basicos AS
+CREATE OR REPLACE VIEW Catalogo.vw_produto_dados_basicos AS
 SELECT 
     inv.id as produto_id,
     inv.idcf,
@@ -30,37 +30,37 @@ LEFT JOIN mak.produtos ON produtos.id = inv.idcf;
 -- =====================================================
 -- 2. View para Códigos Similares
 -- =====================================================
-CREATE OR REPLACE VIEW vw_catalogo_similar AS
+CREATE OR REPLACE VIEW Catalogo.vw_catalogo_similar AS
 SELECT 
     c.product_id,
     c.code as similarID,
     s.similar_code as similarCodigo,
     sb.id as similarMarcaPOID,
     sb.brand as similarMarca
-FROM catalog.catalog_codes c 
-LEFT JOIN catalog.auto_similar_codes s ON c.code = s.id 
-LEFT JOIN catalog.auto_similar_brands sb ON s.similar_brand_id = sb.id 
+FROM Catalogo.catalog_codes c 
+LEFT JOIN Catalogo.auto_similar_codes s ON c.code = s.id 
+LEFT JOIN Catalogo.auto_similar_brands sb ON s.similar_brand_id = sb.id 
 WHERE c.type = 1;
 
 -- =====================================================
 -- 3. View para Códigos Originais
 -- =====================================================
-CREATE OR REPLACE VIEW vw_catalogo_original AS
+CREATE OR REPLACE VIEW Catalogo.vw_catalogo_original AS
 SELECT 
     c.product_id,
     c.code as originalID,
     s.original_code as originalCodigo,
     sb.id as originalMarcaPOID,
     sb.brand as originalMarca
-FROM catalog.catalog_codes c 
-LEFT JOIN catalog.auto_original_codes s ON c.code = s.id 
-LEFT JOIN catalog.auto_original_brands sb ON s.original_brand_id = sb.id 
+FROM Catalogo.catalog_codes c 
+LEFT JOIN Catalogo.auto_original_codes s ON c.code = s.id 
+LEFT JOIN Catalogo.auto_original_brands sb ON s.original_brand_id = sb.id 
 WHERE c.type = 2;
 
 -- =====================================================
 -- 4. View para Características dos Produtos
 -- =====================================================
-CREATE OR REPLACE VIEW vw_catalogo_caracteristicas AS
+CREATE OR REPLACE VIEW Catalogo.vw_catalogo_caracteristicas AS
 SELECT 
     cf.product_id,
     cf.feature,
@@ -71,15 +71,15 @@ SELECT
     f.f_name as caracteristicaNome,
     f.segments,
     a.attribute as atributoNome
-FROM catalog.catalog_features cf 
-LEFT JOIN catalog.features f ON cf.feature = f.id 
-LEFT JOIN catalog.features_attributes a ON cf.attributes = a.id
+FROM Catalogo.catalog_features cf 
+LEFT JOIN Catalogo.features f ON cf.feature = f.id 
+LEFT JOIN Catalogo.features_attributes a ON cf.attributes = a.id
 ORDER BY cf.product_id, f.f_order;
 
 -- =====================================================
 -- 5. View para Aplicações em Motos
 -- =====================================================
-CREATE OR REPLACE VIEW vw_catalogo_motos AS
+CREATE OR REPLACE VIEW Catalogo.vw_catalogo_motos AS
 SELECT 
     am.product_id,
     am.id as moto_aplicacao_id,
@@ -95,23 +95,23 @@ SELECT
     ma.name as moto_aplicacao,
     am.year,
     am.layout
-FROM catalog.auto_motos am
-LEFT JOIN catalog.moto_cc mc ON am.cc = mc.id
-LEFT JOIN catalog.moto_features mf ON am.feature = mf.id
-LEFT JOIN catalog.moto_models ml ON am.model = ml.id
-LEFT JOIN catalog.moto_models_sub ms ON am.submodel = ms.id
-LEFT JOIN catalog.moto_obs mo ON am.obs = mo.id
-LEFT JOIN catalog.moto_positions mp ON am.position = mp.id
-LEFT JOIN catalog.moto_group mg ON am.group = mg.id
-LEFT JOIN catalog.moto_group_sub mb ON am.subgroup = mb.id
-LEFT JOIN catalog.moto_applications ma ON am.app = ma.id
-LEFT JOIN catalog.auto_makers maker ON ml.maker_id = maker.id
+FROM Catalogo.auto_motos am
+LEFT JOIN Catalogo.moto_cc mc ON am.cc = mc.id
+LEFT JOIN Catalogo.moto_features mf ON am.feature = mf.id
+LEFT JOIN Catalogo.moto_models ml ON am.model = ml.id
+LEFT JOIN Catalogo.moto_models_sub ms ON am.submodel = ms.id
+LEFT JOIN Catalogo.moto_obs mo ON am.obs = mo.id
+LEFT JOIN Catalogo.moto_positions mp ON am.position = mp.id
+LEFT JOIN Catalogo.moto_group mg ON am.group = mg.id
+LEFT JOIN Catalogo.moto_group_sub mb ON am.subgroup = mb.id
+LEFT JOIN Catalogo.moto_applications ma ON am.app = ma.id
+LEFT JOIN Catalogo.auto_makers maker ON ml.maker_id = maker.id
 ORDER BY am.product_id, maker.maker, ml.model, mc.cc;
 
 -- =====================================================
 -- 6. View para Aplicações em Carros
 -- =====================================================
-CREATE OR REPLACE VIEW vw_catalogo_carros AS
+CREATE OR REPLACE VIEW Catalogo.vw_catalogo_carros AS
 SELECT 
     ca.product_id,
     ca.id as carro_aplicacao_id,
@@ -132,28 +132,28 @@ SELECT
     m8.name as direcao,
     m9.name as combustivel,
     ca.feature2
-FROM catalog.catalog_aplication ca 
-LEFT JOIN catalog.auto_types ty ON ca.type = ty.id
-LEFT JOIN catalog.auto_makers ma ON ca.maker = ma.id
-LEFT JOIN catalog.auto_models mo ON ca.model = mo.id
-LEFT JOIN catalog.auto_local lo ON ca.local = lo.id
-LEFT JOIN catalog.auto_years ye ON ca.year_start = ye.id
-LEFT JOIN catalog.auto_years ya ON ca.year_end = ya.id
-LEFT JOIN catalog.auto_motor2 m1 ON ca.motor2 = m1.id
-LEFT JOIN catalog.auto_motor2 m2 ON ca.motor3 = m2.id
-LEFT JOIN catalog.auto_motor2 m3 ON ca.valve = m3.id
-LEFT JOIN catalog.auto_motor2 m4 ON ca.cc = m4.id
-LEFT JOIN catalog.auto_motor2 m5 ON ca.air = m5.id
-LEFT JOIN catalog.auto_motor2 m6 ON ca.abs = m6.id
-LEFT JOIN catalog.auto_motor2 m7 ON ca.exchange = m7.id
-LEFT JOIN catalog.auto_motor2 m8 ON ca.direction = m8.id
-LEFT JOIN catalog.auto_motor2 m9 ON ca.fuel = m9.id
+FROM Catalogo.catalog_aplication ca 
+LEFT JOIN Catalogo.auto_types ty ON ca.type = ty.id
+LEFT JOIN Catalogo.auto_makers ma ON ca.maker = ma.id
+LEFT JOIN Catalogo.auto_models mo ON ca.model = mo.id
+LEFT JOIN Catalogo.auto_local lo ON ca.local = lo.id
+LEFT JOIN Catalogo.auto_years ye ON ca.year_start = ye.id
+LEFT JOIN Catalogo.auto_years ya ON ca.year_end = ya.id
+LEFT JOIN Catalogo.auto_motor2 m1 ON ca.motor2 = m1.id
+LEFT JOIN Catalogo.auto_motor2 m2 ON ca.motor3 = m2.id
+LEFT JOIN Catalogo.auto_motor2 m3 ON ca.valve = m3.id
+LEFT JOIN Catalogo.auto_motor2 m4 ON ca.cc = m4.id
+LEFT JOIN Catalogo.auto_motor2 m5 ON ca.air = m5.id
+LEFT JOIN Catalogo.auto_motor2 m6 ON ca.abs = m6.id
+LEFT JOIN Catalogo.auto_motor2 m7 ON ca.exchange = m7.id
+LEFT JOIN Catalogo.auto_motor2 m8 ON ca.direction = m8.id
+LEFT JOIN Catalogo.auto_motor2 m9 ON ca.fuel = m9.id
 ORDER BY ca.product_id, ty.name, ma.maker, mo.model, m2.name, m3.name, ye.year;
 
 -- =====================================================
 -- 7. View Consolidada para Solr (Produto Completo) - MySQL 8.4.7
 -- =====================================================
-CREATE OR REPLACE VIEW vw_solr_produto_completo AS
+CREATE OR REPLACE VIEW Catalogo.vw_solr_produto_completo AS
 SELECT 
     -- Dados básicos
     pdb.produto_id,
@@ -255,12 +255,12 @@ SELECT
         JSON_ARRAY()
     ) as aplicacoes_carros
     
-FROM vw_produto_dados_basicos pdb
-LEFT JOIN vw_catalogo_similar vs ON pdb.produto_id = vs.product_id
-LEFT JOIN vw_catalogo_original vo ON pdb.produto_id = vo.product_id
-LEFT JOIN vw_catalogo_caracteristicas vc ON pdb.produto_id = vc.product_id
-LEFT JOIN vw_catalogo_motos vm ON pdb.produto_id = vm.product_id
-LEFT JOIN vw_catalogo_carros vca ON pdb.produto_id = vca.product_id
+FROM Catalogo.vw_produto_dados_basicos pdb
+LEFT JOIN Catalogo.vw_catalogo_similar vs ON pdb.produto_id = vs.product_id
+LEFT JOIN Catalogo.vw_catalogo_original vo ON pdb.produto_id = vo.product_id
+LEFT JOIN Catalogo.vw_catalogo_caracteristicas vc ON pdb.produto_id = vc.product_id
+LEFT JOIN Catalogo.vw_catalogo_motos vm ON pdb.produto_id = vm.product_id
+LEFT JOIN Catalogo.vw_catalogo_carros vca ON pdb.produto_id = vca.product_id
 GROUP BY pdb.produto_id, pdb.modelo, pdb.nome, pdb.seo, pdb.marca, pdb.ncm, 
          pdb.habilitado, pdb.codebar, pdb.embalagem, pdb.OrigemPOID, pdb.st, 
          pdb.isento_st, pdb.icms_antecipado, pdb.vip;
@@ -270,7 +270,7 @@ GROUP BY pdb.produto_id, pdb.modelo, pdb.nome, pdb.seo, pdb.marca, pdb.ncm,
 -- =====================================================
 
 -- View para produtos por segmento
-CREATE OR REPLACE VIEW vw_solr_produtos_segmento AS
+CREATE OR REPLACE VIEW Catalogo.vw_solr_produtos_segmento AS
 SELECT 
     p.*,
     c.segmentoPOID,
@@ -299,11 +299,11 @@ SELECT
         WHEN JSON_EXTRACT(c.map, '$.catalogoMap.ecommerce.arrivals') = 1 THEN 1 
         ELSE 0 
     END as produtoArrivals
-FROM vw_solr_produto_completo p
-JOIN catalog.catalog c ON p.produto_id = c.product_id;
+FROM Catalogo.vw_solr_produto_completo p
+JOIN Catalogo.catalog c ON p.produto_id = c.product_id;
 
 -- View para produtos ativos
-CREATE OR REPLACE VIEW vw_solr_produtos_ativos AS
+CREATE OR REPLACE VIEW Catalogo.vw_solr_produtos_ativos AS
 SELECT 
     p.*,
     c.segmentoPOID,
@@ -332,8 +332,8 @@ SELECT
         WHEN JSON_EXTRACT(c.map, '$.catalogoMap.ecommerce.arrivals') = 1 THEN 1 
         ELSE 0 
     END as produtoArrivals
-FROM vw_solr_produto_completo p
-JOIN catalog.catalog c ON p.produto_id = c.product_id
+FROM Catalogo.vw_solr_produto_completo p
+JOIN Catalogo.catalog c ON p.produto_id = c.product_id
 WHERE p.habilitado = 1;
 
 -- =====================================================
@@ -341,27 +341,27 @@ WHERE p.habilitado = 1;
 -- =====================================================
 
 -- Índices para as views principais
-CREATE INDEX IF NOT EXISTS idx_catalog_codes_product_type ON catalog.catalog_codes(product_id, type);
-CREATE INDEX IF NOT EXISTS idx_catalog_features_product ON catalog.catalog_features(product_id);
-CREATE INDEX IF NOT EXISTS idx_auto_motos_product ON catalog.auto_motos(product_id);
-CREATE INDEX IF NOT EXISTS idx_catalog_aplication_product ON catalog.catalog_aplication(product_id);
+CREATE INDEX IF NOT EXISTS idx_catalog_codes_product_type ON Catalogo.catalog_codes(product_id, type);
+CREATE INDEX IF NOT EXISTS idx_catalog_features_product ON Catalogo.catalog_features(product_id);
+CREATE INDEX IF NOT EXISTS idx_auto_motos_product ON Catalogo.auto_motos(product_id);
+CREATE INDEX IF NOT EXISTS idx_catalog_aplication_product ON Catalogo.catalog_aplication(product_id);
 CREATE INDEX IF NOT EXISTS idx_mak_inv_id ON mak.inv(id);
-CREATE INDEX IF NOT EXISTS idx_catalog_product_id ON catalog.catalog(product_id);
+CREATE INDEX IF NOT EXISTS idx_catalog_product_id ON Catalogo.catalog(product_id);
 
 -- Índices funcionais para performance em JSON (MySQL 8.0+)
-CREATE INDEX IF NOT EXISTS idx_catalog_map_ecommerce_active ON catalog.catalog((JSON_EXTRACT(map, '$.catalogoMap.ecommerce.active')));
-CREATE INDEX IF NOT EXISTS idx_catalog_map_descriptions_name ON catalog.catalog((JSON_UNQUOTE(JSON_EXTRACT(map, '$.catalogoMap.descriptions.name'))));
+CREATE INDEX IF NOT EXISTS idx_catalog_map_ecommerce_active ON Catalogo.catalog((JSON_EXTRACT(map, '$.catalogoMap.ecommerce.active')));
+CREATE INDEX IF NOT EXISTS idx_catalog_map_descriptions_name ON Catalogo.catalog((JSON_UNQUOTE(JSON_EXTRACT(map, '$.catalogoMap.descriptions.name'))));
 
 -- Índices compostos para consultas frequentes
-CREATE INDEX IF NOT EXISTS idx_catalog_segmento_categoria ON catalog.catalog(segmentoPOID, categoriaPOID);
-CREATE INDEX IF NOT EXISTS idx_catalog_codes_type_code ON catalog.catalog_codes(type, code);
+CREATE INDEX IF NOT EXISTS idx_catalog_segmento_categoria ON Catalogo.catalog(segmentoPOID, categoriaPOID);
+CREATE INDEX IF NOT EXISTS idx_catalog_codes_type_code ON Catalogo.catalog_codes(type, code);
 
 -- =====================================================
 -- 10. Views Adicionais para MySQL 8.4.7 (Window Functions)
 -- =====================================================
 
 -- View com ranking de produtos por segmento
-CREATE OR REPLACE VIEW vw_solr_ranking_segmento AS
+CREATE OR REPLACE VIEW Catalogo.vw_solr_ranking_segmento AS
 SELECT 
     p.*,
     c.segmentoPOID,
@@ -371,12 +371,12 @@ SELECT
     ROW_NUMBER() OVER (PARTITION BY c.segmentoPOID ORDER BY p.modelo) as ranking_segmento,
     COUNT(*) OVER (PARTITION BY c.segmentoPOID, c.categoriaPOID) as total_categoria,
     COUNT(*) OVER (PARTITION BY c.segmentoPOID) as total_segmento
-FROM vw_solr_produto_completo p
-JOIN catalog.catalog c ON p.produto_id = c.product_id
+FROM Catalogo.vw_solr_produto_completo p
+JOIN Catalogo.catalog c ON p.produto_id = c.product_id
 WHERE p.habilitado = 1;
 
 -- View com estatísticas por segmento
-CREATE OR REPLACE VIEW vw_solr_stats_segmento AS
+CREATE OR REPLACE VIEW Catalogo.vw_solr_stats_segmento AS
 SELECT 
     c.segmentoPOID,
     COUNT(*) as total_produtos,
@@ -385,8 +385,8 @@ SELECT
     AVG(LENGTH(p.modelo)) as avg_modelo_length,
     MAX(p.modelo) as ultimo_modelo,
     MIN(p.modelo) as primeiro_modelo
-FROM catalog.catalog c
-JOIN vw_produto_dados_basicos p ON c.product_id = p.produto_id
+FROM Catalogo.catalog c
+JOIN Catalogo.vw_produto_dados_basicos p ON c.product_id = p.produto_id
 GROUP BY c.segmentoPOID;
 
 -- =====================================================
@@ -395,7 +395,7 @@ GROUP BY c.segmentoPOID;
 
 /*
 -- Para obter dados completos de um produto específico:
-SELECT * FROM vw_solr_produto_completo WHERE produto_id = 12345;
+SELECT * FROM Catalogo.vw_solr_produto_completo WHERE produto_id = 12345;
 
 -- Para obter produtos de um segmento específico com dados JSON:
 SELECT 
@@ -404,24 +404,24 @@ SELECT
     marca,
     JSON_EXTRACT(codigos_similares, '$[0].codigo') as primeiro_similar,
     JSON_LENGTH(caracteristicas) as qtd_caracteristicas
-FROM vw_solr_produtos_segmento 
+FROM Catalogo.vw_solr_produtos_segmento 
 WHERE segmentoPOID = 5;
 
 -- Para obter produtos ativos para sincronização:
-SELECT * FROM vw_solr_produtos_ativos WHERE produtoAtivo = 1;
+SELECT * FROM Catalogo.vw_solr_produtos_ativos WHERE produtoAtivo = 1;
 
 -- Para obter ranking de produtos:
-SELECT * FROM vw_solr_ranking_segmento WHERE ranking_categoria <= 10;
+SELECT * FROM Catalogo.vw_solr_ranking_segmento WHERE ranking_categoria <= 10;
 
 -- Para obter estatísticas do segmento:
-SELECT * FROM vw_solr_stats_segmento WHERE segmentoPOID = 5;
+SELECT * FROM Catalogo.vw_solr_stats_segmento WHERE segmentoPOID = 5;
 
 -- Para buscar produtos por características específicas:
 SELECT 
     produto_id,
     modelo,
     caracteristica
-FROM vw_solr_produto_completo p
+FROM Catalogo.vw_solr_produto_completo p
 JOIN JSON_TABLE(p.caracteristicas, '$[*]' COLUMNS (
     caracteristica VARCHAR(255) PATH '$.seo',
     atributo VARCHAR(255) PATH '$.atributo'
@@ -433,7 +433,7 @@ SELECT
     produto_id,
     modelo,
     aplicacao
-FROM vw_solr_produto_completo p
+FROM Catalogo.vw_solr_produto_completo p
 JOIN JSON_TABLE(p.aplicacoes_carros, '$[*]' COLUMNS (
     montadora VARCHAR(255) PATH '$.montadora',
     modelo_carro VARCHAR(255) PATH '$.modelo',

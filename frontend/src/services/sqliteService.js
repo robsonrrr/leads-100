@@ -562,11 +562,137 @@ class SQLiteService {
         const products = this.db.exec('SELECT COUNT(*) FROM products')[0]?.values[0]?.[0] || 0
         const customers = this.db.exec('SELECT COUNT(*) FROM customers')[0]?.values[0]?.[0] || 0
         const pendingSync = this.db.exec("SELECT COUNT(*) FROM sync_queue WHERE status = 'pending'")[0]?.values[0]?.[0] || 0
+        const drafts = this.db.exec("SELECT COUNT(*) FROM leads_draft WHERE synced = 0")[0]?.values[0]?.[0] || 0
+
+        // Estimar tamanho do banco
+        let dbSize = 0
+        try {
+            const exported = this.db.export()
+            dbSize = exported.length
+        } catch (e) {
+            console.warn('Não foi possível calcular tamanho do DB')
+        }
 
         return {
             products,
             customers,
             pendingSync,
+            drafts,
+            schemaVersion: SCHEMA_VERSION,
+            dbSizeBytes: dbSize,
+            dbSizeMB: (dbSize / 1024 / 1024).toFixed(2)
+        }
+    }
+
+    /**
+     * Verifica quota de armazenamento disponível
+     */
+    async checkStorageQuota() {
+        if (navigator.storage && navigator.storage.estimate) {
+            const { usage, quota } = await navigator.storage.estimate()
+            const percentUsed = ((usage / quota) * 100).toFixed(2)
+            return {
+                usage,
+                quota,
+                available: quota - usage,
+                percentUsed,
+                isNearLimit: percentUsed > 80
+            }
+        }
+        return { available: null, isNearLimit: false }
+    }
+
+    /**
+     * Limpa dados antigos usando estratégia LRU
+     * Remove registros não acessados há mais de X dias
+     */
+    async cleanOldData(daysOld = 30) {
+        if (!this.isReady) await this.init()
+
+        const cutoffDate = new Date()
+        cutoffDate.setDate(cutoffDate.getDate() - daysOld)
+        const cutoff = cutoffDate.toISOString()
+
+        // Limpar produtos antigos
+        const deletedProducts = this.db.exec(
+            `DELETE FROM products WHERE updated_at < ? AND id NOT IN (
+                SELECT DISTINCT product_id FROM leads_draft WHERE synced = 0
+            )`,
+            [cutoff]
+        )
+
+        // Limpar sync queue processados
+        this.db.run("DELETE FROM sync_queue WHERE status = 'synced' AND created_at < ?", [cutoff])
+
+        // Limpar leads sincronizados antigos
+        this.db.run("DELETE FROM leads_draft WHERE synced = 1 AND updated_at < ?", [cutoff])
+
+        await this.persist()
+        console.log(`🗑️ SQLite: Dados antigos (>${daysOld} dias) removidos`)
+    }
+
+    /**
+     * Logs de erro para debug
+     */
+    logError(operation, error) {
+        const errorLog = {
+            timestamp: new Date().toISOString(),
+            operation,
+            message: error.message,
+            stack: error.stack
+        }
+        console.error('📦 SQLite Error:', errorLog)
+
+        // Salvar no localStorage para análise
+        try {
+            const logs = JSON.parse(localStorage.getItem('sqlite_errors') || '[]')
+            logs.push(errorLog)
+            // Manter apenas últimos 50 erros
+            if (logs.length > 50) logs.shift()
+            localStorage.setItem('sqlite_errors', JSON.stringify(logs))
+        } catch (e) {
+            // Ignore storage errors
+        }
+    }
+
+    /**
+     * Retorna logs de erro
+     */
+    getErrorLogs() {
+        try {
+            return JSON.parse(localStorage.getItem('sqlite_errors') || '[]')
+        } catch (e) {
+            return []
+        }
+    }
+
+    /**
+     * Limpa logs de erro
+     */
+    clearErrorLogs() {
+        localStorage.removeItem('sqlite_errors')
+    }
+
+    /**
+     * Métricas de performance
+     */
+    async getPerformanceMetrics() {
+        if (!this.isReady) await this.init()
+
+        // Medir tempo de busca
+        const startSearch = performance.now()
+        await this.searchProducts({ search: 'test', limit: 10 })
+        const searchTime = performance.now() - startSearch
+
+        // Medir tempo de contagem
+        const startCount = performance.now()
+        await this.getProductsCount()
+        const countTime = performance.now() - startCount
+
+        return {
+            searchTimeMs: searchTime.toFixed(2),
+            countTimeMs: countTime.toFixed(2),
+            isReady: this.isReady,
             schemaVersion: SCHEMA_VERSION
         }
     }

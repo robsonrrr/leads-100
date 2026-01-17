@@ -169,10 +169,10 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 6.2.1 | Detectar quota exceeded | Frontend | ⏳ |
-| 6.2.2 | Limpar dados antigos (LRU) | Frontend | ⏳ |
-| 6.2.3 | Fallback para API se cache falhar | Frontend | ⏳ |
-| 6.2.4 | Log de erros de sync | Frontend | ⏳ |
+| 6.2.1 | Detectar quota exceeded | Frontend | ✅ |
+| 6.2.2 | Limpar dados antigos (LRU) | Frontend | ✅ |
+| 6.2.3 | Fallback para API se cache falhar | Frontend | ✅ |
+| 6.2.4 | Log de erros de sync | Frontend | ✅ |
 
 ---
 
@@ -180,8 +180,8 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 7.1 | Tempo de busca offline vs online | Frontend | ⏳ |
-| 7.2 | Quantidade de dados cacheados | Frontend | ⏳ |
+| 7.1 | Tempo de busca offline vs online | Frontend | ✅ |
+| 7.2 | Quantidade de dados cacheados | Frontend | ✅ |
 | 7.3 | Frequência de uso offline | Frontend | ⏳ |
 | 7.4 | Taxa de sucesso de sync | Frontend | ⏳ |
 
@@ -196,9 +196,9 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 3. Clientes | 10 | 9 | 1 |
 | 4. Leads | 10 | 7 | 3 |
 | 5. Integração | 10 | 9 | 1 |
-| 6. Limites | 4 | 0 | 4 |
-| 7. Métricas | 4 | 0 | 4 |
-| **TOTAL** | **64** | **47** | **17** |
+| 6. Limites | 4 | 4 | 0 |
+| 7. Métricas | 4 | 2 | 2 |
+| **TOTAL** | **64** | **53** | **11** |
 
 ---
 
