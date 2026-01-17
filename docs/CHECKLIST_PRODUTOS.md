@@ -244,6 +244,28 @@ CREATE TABLE seller_favorite_products (
 
 ---
 
+## 5.3 Badges de Pricing na Tabela de Itens
+
+| # | Tarefa | Responsável | Status |
+|---|--------|-------------|--------|
+| 5.3.1 | Badge de Promoção na tabela (vermelho) | Frontend | ✅ |
+| 5.3.2 | Badge de Lançamento (roxo) | Frontend | ✅ |
+| 5.3.3 | Badge de Preço Fixo do cliente (laranja) | Frontend | ✅ |
+| 5.3.4 | Badge de Combo/Bundle (verde outlined) | Frontend | ✅ |
+| 5.3.5 | Badge de Desconto por Quantidade - SKU (azul) | Frontend | ✅ |
+| 5.3.6 | Badge de Desconto por Quantidade - Família (azul) | Frontend | ✅ |
+| 5.3.7 | Tooltip com detalhes em cada badge | Frontend | ✅ |
+| 5.3.8 | Preço fixo do cliente no autocomplete | Frontend | ✅ |
+| 5.3.9 | Aplicar preço fixo ao gravar item | Frontend | ✅ |
+
+**Endpoints criados:**
+```
+GET /api/pricing/quantity-discounts - Descontos por quantidade
+GET /api/pricing/launch-products - Produtos em lançamento
+GET /api/pricing/customer-fixed-prices/:customerId - Preços fixos
+GET /api/pricing/bundles - Combos/Bundles ativos
+```
+
 # 🔗 BLOCO 6 — PRODUTOS RELACIONADOS
 
 ## 6.1 Cross-Sell / Up-Sell
@@ -305,11 +327,11 @@ CREATE TABLE seller_favorite_products (
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 9 | 4 | 5 |
-| 5. Preços | 11 | 7 | 4 |
+| 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **36** | **51** |
+| **Total** | **96** | **45** | **51** |
 
 ---
 
