@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material'
+import { Autocomplete, TextField, CircularProgress, Box, Typography, Chip } from '@mui/material'
+import { Inventory as StockIcon } from '@mui/icons-material'
 import { productsService } from '../services/api'
+import { formatCurrency } from '../utils'
 
+/**
+ * ProductAutocomplete - Busca de produtos com preview visual
+ * Inclui: thumbnail, preço, estoque e marca
+ */
 function ProductAutocomplete({ value, onChange, error, helperText }) {
   const [options, setOptions] = useState([])
   const [loading, setLoading] = useState(false)
@@ -24,7 +30,7 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
       setLoading(true)
       const response = await productsService.search({
         search: searchTerm,
-        limit: 10,
+        limit: 15,
         simple: '1'
       })
 
@@ -37,6 +43,15 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Helper para determinar status de estoque
+  const getStockStatus = (stock) => {
+    if (!stock && stock !== 0) return null
+    const stockNum = parseInt(stock)
+    if (stockNum <= 0) return { label: 'Sem estoque', color: 'error', value: 0 }
+    if (stockNum < 5) return { label: `${stockNum} un.`, color: 'warning', value: stockNum }
+    return { label: `${stockNum} un.`, color: 'success', value: stockNum }
   }
 
   return (
@@ -61,35 +76,114 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
       loading={loading}
       renderOption={(props, option) => {
         const { key, ...optionProps } = props
+        const stockStatus = getStockStatus(option.stock || option.estoque)
+        const imageUrl = option.id
+          ? `https://img.rolemak.com.br/id/h80/${option.id}.jpg?version=9.02`
+          : null
+
         return (
-          <Box component="li" key={key} {...optionProps}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                {option.model && `${option.model} - `}
-                {option.brand && `${option.brand} - `}
-                {option.name || option.description || `Produto #${option.id}`}
-              </Typography>
-              {option.description && option.name && (
-                <Typography variant="caption" color="text.secondary">
-                  {option.description}
-                </Typography>
+          <Box
+            component="li"
+            key={key}
+            {...optionProps}
+            sx={{
+              '&.MuiAutocomplete-option': {
+                py: 1,
+                px: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                '&:last-child': { borderBottom: 'none' }
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+              {/* Thumbnail do produto */}
+              {imageUrl && (
+                <Box
+                  component="img"
+                  src={imageUrl}
+                  alt={option.model || 'Produto'}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    objectFit: 'contain',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    flexShrink: 0
+                  }}
+                />
               )}
-              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                {option.price && (
-                  <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
-                    R$ {parseFloat(option.price).toFixed(2)}
+
+              {/* Informações do produto */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Linha 1: Modelo e Marca */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 'bold',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {option.model || option.codigo || `#${option.id}`}
                   </Typography>
-                )}
-                {option.model && (
-                  <Typography variant="caption" color="text.secondary">
-                    Modelo: {option.model}
-                  </Typography>
-                )}
-                {option.brand && (
-                  <Typography variant="caption" color="text.secondary">
-                    Marca: {option.brand}
-                  </Typography>
-                )}
+                  {option.brand && (
+                    <Typography variant="caption" color="text.secondary">
+                      {option.brand}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* Linha 2: Descrição */}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: 250
+                  }}
+                >
+                  {option.name || option.description || option.descricao}
+                </Typography>
+
+                {/* Linha 3: Preço e Estoque */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                  {/* Preço */}
+                  {(option.price || option.preco_venda) && (
+                    <Typography
+                      variant="body2"
+                      color="primary.main"
+                      sx={{ fontWeight: 'bold' }}
+                    >
+                      {formatCurrency(option.price || option.preco_venda)}
+                    </Typography>
+                  )}
+
+                  {/* Estoque */}
+                  {stockStatus && (
+                    <Chip
+                      icon={<StockIcon sx={{ fontSize: 14 }} />}
+                      label={stockStatus.label}
+                      color={stockStatus.color}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                        '& .MuiChip-icon': { ml: 0.5 }
+                      }}
+                    />
+                  )}
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -98,7 +192,8 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Produto"
+          label="Buscar Produto (código, modelo ou descrição)"
+          placeholder="Digite pelo menos 2 caracteres..."
           error={error}
           helperText={helperText}
           InputProps={{
@@ -113,9 +208,18 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
         />
       )}
       noOptionsText={inputValue.length < 2 ? 'Digite pelo menos 2 caracteres' : 'Nenhum produto encontrado'}
+      ListboxProps={{
+        sx: {
+          maxHeight: 350,
+          '& .MuiAutocomplete-option': {
+            minHeight: 64
+          }
+        }
+      }}
     />
   )
 }
 
 export default ProductAutocomplete
+
 
