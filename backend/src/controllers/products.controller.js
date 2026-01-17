@@ -764,3 +764,122 @@ export async function findByBarcode(req, res, next) {
     next(error);
   }
 }
+
+// ========== ANALYTICS DE PRODUTOS ==========
+
+import ProductAnalyticsService from '../services/productAnalytics.service.js';
+
+/**
+ * Dashboard de analytics de produtos (8.1.5)
+ * GET /api/products/analytics/dashboard
+ */
+export async function getProductAnalyticsDashboard(req, res, next) {
+  try {
+    const { period = 'month' } = req.query;
+    const sellerId = req.user?.id || null;
+
+    const dashboard = await ProductAnalyticsService.getDashboard({ period, sellerId });
+
+    res.json({
+      success: true,
+      data: dashboard
+    });
+  } catch (error) {
+    console.error('Erro getProductAnalyticsDashboard:', error);
+    next(error);
+  }
+}
+
+/**
+ * Produtos mais vendidos (8.1.1)
+ * GET /api/products/analytics/top-selling
+ */
+export async function getTopSellingProducts(req, res, next) {
+  try {
+    const { period = 'month', limit = 20 } = req.query;
+    const sellerId = req.user?.id || null;
+
+    const products = await ProductAnalyticsService.getTopSelling({
+      period,
+      limit: parseInt(limit),
+      sellerId
+    });
+
+    res.json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Erro getTopSellingProducts:', error);
+    next(error);
+  }
+}
+
+/**
+ * Produtos mais buscados (8.1.2)
+ * GET /api/products/analytics/most-searched
+ */
+export async function getMostSearchedProducts(req, res, next) {
+  try {
+    const { period = 'month', limit = 20 } = req.query;
+
+    const products = await ProductAnalyticsService.getMostSearched({
+      period,
+      limit: parseInt(limit)
+    });
+
+    res.json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Erro getMostSearchedProducts:', error);
+    next(error);
+  }
+}
+
+/**
+ * Taxa de conversão por produto (8.1.3)
+ * GET /api/products/analytics/conversion-rates
+ */
+export async function getProductConversionRates(req, res, next) {
+  try {
+    const { period = 'month', limit = 20 } = req.query;
+
+    const rates = await ProductAnalyticsService.getConversionRates({
+      period,
+      limit: parseInt(limit)
+    });
+
+    res.json({
+      success: true,
+      data: rates
+    });
+  } catch (error) {
+    console.error('Erro getProductConversionRates:', error);
+    next(error);
+  }
+}
+
+/**
+ * Margem média por produto (8.1.4)
+ * GET /api/products/analytics/margins
+ */
+export async function getProductMargins(req, res, next) {
+  try {
+    const { period = 'month', limit = 20 } = req.query;
+
+    const margins = await ProductAnalyticsService.getAverageMargins({
+      period,
+      limit: parseInt(limit)
+    });
+
+    res.json({
+      success: true,
+      data: margins
+    });
+  } catch (error) {
+    console.error('Erro getProductMargins:', error);
+    next(error);
+  }
+}

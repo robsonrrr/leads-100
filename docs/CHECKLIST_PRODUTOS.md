@@ -324,11 +324,11 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 8.1.1 | Produtos mais vendidos (por período) | Backend | ⏳ |
-| 8.1.2 | Produtos mais buscados | Backend | ⏳ |
-| 8.1.3 | Taxa de conversão por produto | Backend | ⏳ |
-| 8.1.4 | Margem média por produto | Backend | ⏳ |
-| 8.1.5 | Dashboard de performance de produtos | Frontend | ⏳ |
+| 8.1.1 | Produtos mais vendidos (por período) | Backend | ✅ |
+| 8.1.2 | Produtos mais buscados | Backend | ✅ |
+| 8.1.3 | Taxa de conversão por produto | Backend | ✅ |
+| 8.1.4 | Margem média por produto | Backend | ✅ |
+| 8.1.5 | Dashboard de performance de produtos | Frontend | ✅ |
 
 ---
 
@@ -343,8 +343,8 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 5. Preços | 20 | 20 | 0 |
 | 6. Relacionados | 9 | 9 | 0 |
 | 7. Mobile | 5 | 5 | 0 |
-| 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **90** | **9** |
+| 8. Analytics | 5 | 5 | 0 |
+| **Total** | **99** | **95** | **4** |
 
 ---
 

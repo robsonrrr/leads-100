@@ -506,5 +506,58 @@ router.get('/:id/bought-together', optionalAuth, productsController.getBoughtTog
  */
 router.get('/barcode/:barcode', optionalAuth, productsController.findByBarcode);
 
+// ========== ANALYTICS DE PRODUTOS ==========
+
+/**
+ * @swagger
+ * /api/products/analytics/dashboard:
+ *   get:
+ *     tags: [Products]
+ *     summary: Dashboard de performance de produtos
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [day, week, month, quarter, year]
+ */
+router.get('/analytics/dashboard', optionalAuth, productsController.getProductAnalyticsDashboard);
+
+/**
+ * @swagger
+ * /api/products/analytics/top-selling:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos mais vendidos
+ */
+router.get('/analytics/top-selling', optionalAuth, productsController.getTopSellingProducts);
+
+/**
+ * @swagger
+ * /api/products/analytics/most-searched:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos mais buscados
+ */
+router.get('/analytics/most-searched', optionalAuth, productsController.getMostSearchedProducts);
+
+/**
+ * @swagger
+ * /api/products/analytics/conversion-rates:
+ *   get:
+ *     tags: [Products]
+ *     summary: Taxa de conversão por produto
+ */
+router.get('/analytics/conversion-rates', optionalAuth, productsController.getProductConversionRates);
+
+/**
+ * @swagger
+ * /api/products/analytics/margins:
+ *   get:
+ *     tags: [Products]
+ *     summary: Margem média por produto
+ */
+router.get('/analytics/margins', optionalAuth, productsController.getProductMargins);
+
 export default router;
 
