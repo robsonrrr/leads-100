@@ -254,81 +254,76 @@ class CustomerGoalsService {
     }
 
     /**
-     * DADOS REALTIME - Sem cache
-     * Dados críticos que não podem ter cache: sold_month, is_active_month, penetration
+     * DADOS REALTIME - Cache muito curto (1 minuto)
+     * Dados críticos: sold_month, is_active_month, penetration
+     * Cache de 1 min é aceitável - vendedor não precisa de dados 100% realtime
      */
     async _getRealtimeMonthlyData(sellerId, options, database) {
-        const { year, month, classification, requestUserId, requestUserLevel } = options;
+        const { year, month, classification } = options;
 
-        const monthlySellerFilter = 'AND VendedorID = ?';
+        const cacheKey = `goals_monthly:${sellerId}:${year}:${month}:${classification || 'all'}`;
 
-        let classFilter = '';
-        const customerMonthlyParams = [year, month, sellerId, sellerId, year];
-        const penetrationParams = [year, month, sellerId, sellerId, year];
+        // Cache de 1 minuto para dados "realtime" - performance vs precisão
+        return CacheService.getOrSet(cacheKey, async () => {
+            // Query única otimizada para buscar vendas mensais por cliente
+            const queryParams = [year, month, sellerId, sellerId, year];
+            let classFilter = '';
 
-        if (classification) {
-            classFilter = 'AND g.classification = ?';
-            customerMonthlyParams.push(classification);
-            penetrationParams.push(classification);
-        }
+            if (classification) {
+                classFilter = 'AND g.classification = ?';
+                queryParams.push(classification);
+            }
 
-        // Vendas mensais por cliente (REALTIME - sem cache)
-        const [monthlyResults] = await database.query(`
-            SELECT 
-                g.customer_id,
-                COALESCE(vm.sold_month, 0) as sold_month,
-                CASE WHEN COALESCE(vm.sold_month, 0) > 0 THEN 1 ELSE 0 END as is_active_month
-            FROM mak.customer_goals g
-            LEFT JOIN (
-                SELECT ClienteID, SUM(Quantidade) as sold_month
-                FROM mak.Vendas_Historia
-                WHERE YEAR(DataVenda) = ? AND MONTH(DataVenda) = ? AND ProdutoSegmento = 'machines' ${monthlySellerFilter}
-                GROUP BY ClienteID
-            ) vm ON vm.ClienteID = g.customer_id
-            WHERE g.seller_id = ? AND g.year = ?
-            ${classFilter}
-        `, customerMonthlyParams);
+            // Query única que busca tudo de uma vez
+            const [results] = await database.query(`
+                SELECT 
+                    g.customer_id,
+                    COALESCE(vm.sold_month, 0) as sold_month
+                FROM mak.customer_goals g
+                LEFT JOIN (
+                    SELECT ClienteID, SUM(Quantidade) as sold_month
+                    FROM mak.Vendas_Historia
+                    WHERE YEAR(DataVenda) = ? 
+                      AND MONTH(DataVenda) = ? 
+                      AND ProdutoSegmento = 'machines'
+                      AND VendedorID = ?
+                    GROUP BY ClienteID
+                ) vm ON vm.ClienteID = g.customer_id
+                WHERE g.seller_id = ? AND g.year = ?
+                ${classFilter}
+            `, queryParams);
 
-        // Penetração mensal (REALTIME - sem cache)
-        const [penetrationRows] = await database.query(`
-            SELECT
-                COUNT(DISTINCT g.customer_id) as total_customers,
-                COUNT(DISTINCT CASE WHEN COALESCE(vm.sold_month, 0) > 0 THEN g.customer_id END) as active_customers_month,
-                SUM(COALESCE(vm.sold_month, 0)) as total_sold_month
-            FROM mak.customer_goals g
-            LEFT JOIN (
-                SELECT ClienteID, SUM(Quantidade) as sold_month
-                FROM mak.Vendas_Historia
-                WHERE YEAR(DataVenda) = ? AND MONTH(DataVenda) = ? AND ProdutoSegmento = 'machines' ${monthlySellerFilter}
-                GROUP BY ClienteID
-            ) vm ON vm.ClienteID = g.customer_id
-            WHERE g.seller_id = ? AND g.year = ?
-            ${classFilter}
-        `, penetrationParams);
+            // Mapear e calcular totais em uma única passagem
+            const customerMonthly = {};
+            let totalCustomers = 0;
+            let activeCustomersMonth = 0;
+            let totalSoldMonth = 0;
 
-        // Mapear dados mensais por customer_id
-        const customerMonthly = {};
-        for (const row of monthlyResults) {
-            customerMonthly[row.customer_id] = {
-                sold_month: row.sold_month,
-                is_active_month: row.is_active_month
+            for (const row of results) {
+                const soldMonth = parseInt(row.sold_month) || 0;
+                customerMonthly[row.customer_id] = {
+                    sold_month: soldMonth,
+                    is_active_month: soldMonth > 0 ? 1 : 0
+                };
+                totalCustomers++;
+                if (soldMonth > 0) {
+                    activeCustomersMonth++;
+                    totalSoldMonth += soldMonth;
+                }
+            }
+
+            const penetrationMonthPct = totalCustomers > 0
+                ? Math.round((activeCustomersMonth / totalCustomers) * 100)
+                : 0;
+
+            return {
+                customerMonthly,
+                totalCustomers,
+                activeCustomersMonth,
+                totalSoldMonth,
+                penetrationMonthPct
             };
-        }
-
-        const totalCustomers = parseInt(penetrationRows[0]?.total_customers) || 0;
-        const activeCustomersMonth = parseInt(penetrationRows[0]?.active_customers_month) || 0;
-        const totalSoldMonth = parseInt(penetrationRows[0]?.total_sold_month) || 0;
-        const penetrationMonthPct = totalCustomers > 0
-            ? Math.round((activeCustomersMonth / totalCustomers) * 100)
-            : 0;
-
-        return {
-            customerMonthly,
-            totalCustomers,
-            activeCustomersMonth,
-            totalSoldMonth,
-            penetrationMonthPct
-        };
+        }, 60); // Cache de 1 minuto
     }
 
     /**

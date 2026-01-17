@@ -488,7 +488,7 @@ export const CacheService = {
   },
 
   /**
-   * Wrapper genérico para cache
+   * Wrapper genérico para cache (usado em Q3.1)
    */
   async cached(key, ttl, fetchFn) {
     const cached = await cacheGet(key);
@@ -502,6 +502,41 @@ export const CacheService = {
     await cacheSet(key, data, ttl);
     cacheMetrics.sets++;
     return data;
+  },
+
+  /**
+   * Wrapper genérico para cache com padrão getOrSet (facilita uso)
+   * @param {string} key - Chave do cache
+   * @param {Function} fetchFn - Função para buscar dados se cache miss
+   * @param {number} ttl - TTL em segundos (default: 300 = 5 minutos)
+   */
+  async getOrSet(key, fetchFn, ttl = 300) {
+    const fullKey = key.startsWith('leads-agent:') ? key : makeKey(key);
+
+    try {
+      const cached = await cacheGet(fullKey);
+      if (cached) {
+        cacheMetrics.hits++;
+        logger.debug(`Cache HIT: ${key}`);
+        return cached;
+      }
+
+      cacheMetrics.misses++;
+      logger.debug(`Cache MISS: ${key}`);
+      const data = await fetchFn();
+
+      if (data !== null && data !== undefined) {
+        await cacheSet(fullKey, data, ttl);
+        cacheMetrics.sets++;
+      }
+
+      return data;
+    } catch (error) {
+      cacheMetrics.errors++;
+      logger.warn(`Cache error for ${key}: ${error.message}`);
+      // Em caso de erro no cache, executa a função diretamente
+      return await fetchFn();
+    }
   },
 
   // =====================
