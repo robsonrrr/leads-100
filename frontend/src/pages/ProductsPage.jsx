@@ -119,13 +119,17 @@ function ProductsPage() {
     // Mapas para lookup rápido
     const promotionMap = useMemo(() => {
         const map = new Map()
-        promotions.forEach(p => map.set(p.product_id, p))
+        if (Array.isArray(promotions)) {
+            promotions.forEach(p => map.set(p.product_id, p))
+        }
         return map
     }, [promotions])
 
     const launchMap = useMemo(() => {
         const map = new Map()
-        launchProducts.forEach(lp => map.set(lp.product_id, lp))
+        if (Array.isArray(launchProducts)) {
+            launchProducts.forEach(lp => map.set(lp.product_id, lp))
+        }
         return map
     }, [launchProducts])
 
