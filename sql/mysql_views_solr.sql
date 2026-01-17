@@ -352,23 +352,27 @@ WHERE p.habilitado = 1;
 
 -- =====================================================
 -- 9. Índices Recomendados para Performance (MySQL 8.4.7)
+-- NOTA: MySQL não suporta CREATE INDEX IF NOT EXISTS
+-- Execute manualmente se necessário, ignorando erros de duplicata
 -- =====================================================
 
--- Índices para as views principais
-CREATE INDEX IF NOT EXISTS idx_catalog_codes_product_type ON Catalogo.catalog_codes(product_id, type);
-CREATE INDEX IF NOT EXISTS idx_catalog_features_product ON Catalogo.catalog_features(product_id);
-CREATE INDEX IF NOT EXISTS idx_auto_motos_product ON Catalogo.auto_motos(product_id);
-CREATE INDEX IF NOT EXISTS idx_catalog_aplication_product ON Catalogo.catalog_aplication(product_id);
-CREATE INDEX IF NOT EXISTS idx_mak_inv_id ON mak.inv(id);
-CREATE INDEX IF NOT EXISTS idx_catalog_product_id ON Catalogo.catalog(product_id);
+/*
+-- Índices para as views principais (executar manualmente)
+CREATE INDEX idx_catalog_codes_product_type ON Catalogo.catalog_codes(product_id, type);
+CREATE INDEX idx_catalog_features_product ON Catalogo.catalog_features(product_id);
+CREATE INDEX idx_auto_motos_product ON Catalogo.auto_motos(product_id);
+CREATE INDEX idx_catalog_aplication_product ON Catalogo.catalog_aplication(product_id);
+CREATE INDEX idx_mak_inv_id ON mak.inv(id);
+CREATE INDEX idx_catalog_product_id ON Catalogo.catalog(product_id);
 
 -- Índices funcionais para performance em JSON (MySQL 8.0+)
-CREATE INDEX IF NOT EXISTS idx_catalog_map_ecommerce_active ON Catalogo.catalog((JSON_EXTRACT(map, '$.catalogoMap.ecommerce.active')));
-CREATE INDEX IF NOT EXISTS idx_catalog_map_descriptions_name ON Catalogo.catalog((JSON_UNQUOTE(JSON_EXTRACT(map, '$.catalogoMap.descriptions.name'))));
+CREATE INDEX idx_catalog_map_ecommerce_active ON Catalogo.catalog((JSON_EXTRACT(map, '$.catalogoMap.ecommerce.active')));
+CREATE INDEX idx_catalog_map_descriptions_name ON Catalogo.catalog((JSON_UNQUOTE(JSON_EXTRACT(map, '$.catalogoMap.descriptions.name'))));
 
 -- Índices compostos para consultas frequentes
-CREATE INDEX IF NOT EXISTS idx_catalog_segmento_categoria ON Catalogo.catalog(segmentoPOID, categoriaPOID);
-CREATE INDEX IF NOT EXISTS idx_catalog_codes_type_code ON Catalogo.catalog_codes(type, code);
+CREATE INDEX idx_catalog_segmento_json ON Catalogo.catalog((JSON_EXTRACT(map, '$.segmentoPOID')));
+CREATE INDEX idx_catalog_codes_type_code ON Catalogo.catalog_codes(type, code);
+*/
 
 -- =====================================================
 -- 10. Views Adicionais para MySQL 8.4.7 (Window Functions)
