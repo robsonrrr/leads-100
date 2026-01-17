@@ -335,6 +335,42 @@ router.get('/:id/stock-by-warehouse', optionalAuth, productsController.getStockB
  */
 router.get('/:id/price-history', optionalAuth, productsController.getPriceHistory);
 
+/**
+ * @swagger
+ * /api/products/{id}/replenishment:
+ *   get:
+ *     tags: [Products]
+ *     summary: Previsão de reposição de estoque
+ */
+router.get('/:id/replenishment', optionalAuth, productsController.getReplenishmentForecast);
+
+/**
+ * @swagger
+ * /api/products/{id}/invalidate-stock-cache:
+ *   post:
+ *     tags: [Products]
+ *     summary: Invalida cache de estoque
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/:id/invalidate-stock-cache', authenticateToken, productsController.invalidateStockCache);
+
+/**
+ * @swagger
+ * /api/products/delivery-time:
+ *   get:
+ *     tags: [Products]
+ *     summary: Calcula tempo de entrega entre UFs
+ *     parameters:
+ *       - in: query
+ *         name: origin
+ *         required: true
+ *       - in: query
+ *         name: destination
+ *         required: true
+ */
+router.get('/delivery-time', optionalAuth, productsController.getDeliveryTime);
+
 // ========== HISTÓRICO DE BUSCAS E TRENDING ==========
 
 /**

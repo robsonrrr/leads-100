@@ -495,5 +495,145 @@ export class ProductRepository {
       return result;
     }, 3600); // Cache de 1 hora
   }
+
+  /**
+   * Previsão de reposição de estoque (4.1.5)
+   * Verifica pedidos de compra pendentes para o produto
+   * @param {number} productId 
+   * @returns {Promise<Object>} Previsão de reposição
+   */
+  async getReplenishmentForecast(productId) {
+    const cacheKey = `replenishment:${productId}`;
+
+    return CacheService.getOrSet(cacheKey, async () => {
+      try {
+        // Tentar buscar pedidos de compra pendentes (se tabela existir)
+        const query = `
+          SELECT 
+            pc.data_prevista as expected_date,
+            ipc.qtde as quantity,
+            f.fantasia as supplier
+          FROM mak.ipc ipc
+          INNER JOIN mak.pc pc ON ipc.idpc = pc.id
+          LEFT JOIN mak.fornecedores f ON pc.idfornecedor = f.id
+          WHERE ipc.idproduto = ?
+            AND pc.status IN ('P', 'A')  -- Pendente ou Aprovado
+            AND pc.data_prevista >= CURDATE()
+          ORDER BY pc.data_prevista
+          LIMIT 5
+        `;
+
+        const [rows] = await db().execute(query, [productId]);
+
+        const forecast = rows.map(row => ({
+          expectedDate: row.expected_date,
+          quantity: parseInt(row.quantity) || 0,
+          supplier: row.supplier
+        }));
+
+        const totalIncoming = forecast.reduce((sum, f) => sum + f.quantity, 0);
+        const nextDate = forecast.length > 0 ? forecast[0].expectedDate : null;
+
+        return {
+          productId,
+          hasPendingOrders: forecast.length > 0,
+          totalIncoming,
+          nextReplenishmentDate: nextDate,
+          orders: forecast
+        };
+      } catch (error) {
+        // Se tabelas não existem, retornar vazio
+        if (error.code === 'ER_NO_SUCH_TABLE' || error.code === 'ER_BAD_FIELD_ERROR') {
+          return { productId, hasPendingOrders: false, totalIncoming: 0, nextReplenishmentDate: null, orders: [] };
+        }
+        throw error;
+      }
+    }, 300); // Cache de 5 minutos
+  }
+
+  /**
+   * Invalida cache de estoque para um produto (4.1.6)
+   * Chamado quando estoque é atualizado
+   * @param {number} productId 
+   */
+  async invalidateStockCache(productId) {
+    const keys = [
+      `stock_warehouse_${productId}`,
+      `replenishment:${productId}`,
+      `product:${productId}`
+    ];
+
+    for (const key of keys) {
+      await CacheService.del(key);
+    }
+
+    console.log(`✅ Cache de estoque invalidado para produto ${productId}`);
+    return true;
+  }
+
+  /**
+   * Calcula tempo de entrega por depósito (4.2.6)
+   * Baseado na UF de destino e origem
+   * @param {string} originUf - UF do depósito
+   * @param {string} destinationUf - UF do cliente
+   * @returns {Object} Tempo estimado de entrega
+   */
+  getDeliveryTime(originUf, destinationUf) {
+    // Mapa de tempos de entrega em dias úteis
+    const deliveryMatrix = {
+      // Mesma UF: 1-2 dias
+      same: { min: 1, max: 2 },
+      // Mesma região: 2-4 dias
+      sameRegion: { min: 2, max: 4 },
+      // Regiões vizinhas: 3-5 dias
+      nearRegion: { min: 3, max: 5 },
+      // Longa distância: 5-8 dias
+      far: { min: 5, max: 8 }
+    };
+
+    const regions = {
+      norte: ['AC', 'AM', 'AP', 'PA', 'RO', 'RR', 'TO'],
+      nordeste: ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
+      centroOeste: ['DF', 'GO', 'MS', 'MT'],
+      sudeste: ['ES', 'MG', 'RJ', 'SP'],
+      sul: ['PR', 'RS', 'SC']
+    };
+
+    const getRegion = (uf) => {
+      for (const [region, ufs] of Object.entries(regions)) {
+        if (ufs.includes(uf?.toUpperCase())) return region;
+      }
+      return null;
+    };
+
+    const originRegion = getRegion(originUf);
+    const destRegion = getRegion(destinationUf);
+
+    // Mesma UF
+    if (originUf?.toUpperCase() === destinationUf?.toUpperCase()) {
+      return { ...deliveryMatrix.same, label: 'Entrega rápida' };
+    }
+
+    // Mesma região
+    if (originRegion === destRegion) {
+      return { ...deliveryMatrix.sameRegion, label: 'Entrega regional' };
+    }
+
+    // Regiões vizinhas
+    const nearRegions = {
+      sul: ['sudeste'],
+      sudeste: ['sul', 'centroOeste', 'nordeste'],
+      centroOeste: ['sudeste', 'norte', 'nordeste'],
+      nordeste: ['centroOeste', 'sudeste', 'norte'],
+      norte: ['centroOeste', 'nordeste']
+    };
+
+    if (nearRegions[originRegion]?.includes(destRegion)) {
+      return { ...deliveryMatrix.nearRegion, label: 'Entrega inter-regional' };
+    }
+
+    // Longa distância
+    return { ...deliveryMatrix.far, label: 'Entrega longa distância' };
+  }
 }
 

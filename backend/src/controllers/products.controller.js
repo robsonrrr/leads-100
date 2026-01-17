@@ -353,6 +353,91 @@ export async function getStockByWarehouse(req, res, next) {
   }
 }
 
+/**
+ * Previsão de reposição de estoque (4.1.5)
+ * GET /api/products/:id/replenishment
+ */
+export async function getReplenishmentForecast(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const forecast = await productRepository.getReplenishmentForecast(productId);
+
+    res.json({
+      success: true,
+      data: forecast
+    });
+  } catch (error) {
+    console.error('Erro getReplenishmentForecast:', error);
+    next(error);
+  }
+}
+
+/**
+ * Invalida cache de estoque (4.1.6)
+ * POST /api/products/:id/invalidate-stock-cache
+ */
+export async function invalidateStockCache(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    await productRepository.invalidateStockCache(productId);
+
+    res.json({
+      success: true,
+      message: `Cache de estoque invalidado para produto ${productId}`
+    });
+  } catch (error) {
+    console.error('Erro invalidateStockCache:', error);
+    next(error);
+  }
+}
+
+/**
+ * Calcula tempo de entrega (4.2.6)
+ * GET /api/products/delivery-time?origin=SP&destination=RJ
+ */
+export async function getDeliveryTime(req, res, next) {
+  try {
+    const { origin, destination } = req.query;
+
+    if (!origin || !destination) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'UF de origem e destino são obrigatórios' }
+      });
+    }
+
+    const deliveryTime = productRepository.getDeliveryTime(origin, destination);
+
+    res.json({
+      success: true,
+      data: {
+        origin,
+        destination,
+        ...deliveryTime
+      }
+    });
+  } catch (error) {
+    console.error('Erro getDeliveryTime:', error);
+    next(error);
+  }
+}
+
 // ========== HISTÓRICO DE PREÇOS ==========
 
 /**

@@ -195,8 +195,8 @@ CREATE TABLE seller_favorite_products (
 | 4.1.2 | Exibir estoque na tabela de itens | Frontend | ✅ |
 | 4.1.3 | Alerta visual quando estoque baixo (< 5) | Frontend | ✅ |
 | 4.1.4 | Alerta visual quando sem estoque | Frontend | ✅ |
-| 4.1.5 | Previsão de reposição (se disponível) | Backend | ⏳ |
-| 4.1.6 | Invalidar cache ao atualizar estoque | Backend | ⏳ |
+| 4.1.5 | Previsão de reposição (se disponível) | Backend | ✅ |
+| 4.1.6 | Invalidar cache ao atualizar estoque | Backend | ✅ |
 
 **Critério de Aceite:**
 ```
@@ -216,7 +216,7 @@ CREATE TABLE seller_favorite_products (
 | 4.2.3 | Destacar unidade do lead (chip azul) | Frontend | ✅ |
 | 4.2.4 | Alerta de estoque insuficiente na unidade | Frontend | ✅ |
 | 4.2.5 | Bloquear conversão sem estoque na unidade | Frontend | ✅ |
-| 4.2.6 | Calcular tempo de entrega por depósito | Backend | ⏳ |
+| 4.2.6 | Calcular tempo de entrega por depósito | Backend | ✅ |
 
 **View SQL criada:** `produtos_estoque_por_unidades`
 ```sql
@@ -339,12 +339,12 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 1. Visualização | 14 | 14 | 0 |
 | 2. Busca | 20 | 16 | 4 |
 | 3. Personalização | 15 | 15 | 0 |
-| 4. Estoque | 12 | 9 | 3 |
+| 4. Estoque | 12 | 12 | 0 |
 | 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **69** | **30** |
+| **Total** | **99** | **72** | **27** |
 
 ---
 
