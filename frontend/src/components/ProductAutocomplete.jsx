@@ -1,17 +1,46 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Autocomplete, TextField, CircularProgress, Box, Typography, Chip } from '@mui/material'
 import { Inventory as StockIcon, LocalOffer as PromoIcon } from '@mui/icons-material'
-import { productsService } from '../services/api'
+import { productsService, promotionsService } from '../services/api'
 import { formatCurrency } from '../utils'
 
 /**
  * ProductAutocomplete - Busca de produtos com preview visual
- * Inclui: thumbnail, preço, estoque e marca
+ * Inclui: thumbnail, preço, estoque, marca e badge de promoção
  */
 function ProductAutocomplete({ value, onChange, error, helperText }) {
   const [options, setOptions] = useState([])
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
+  const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
+
+  // Carregar promoções ativas uma vez
+  useEffect(() => {
+    loadPromotions()
+  }, [])
+
+  const loadPromotions = async () => {
+    try {
+      const response = await promotionsService.getActive()
+      if (response.data.success) {
+        setPromotions(response.data.data || [])
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar promoções:', err)
+    }
+  }
+
+  // Criar mapa de promoções para lookup rápido
+  const promotionMap = useMemo(() => {
+    const map = new Map()
+    promotions.forEach(promo => {
+      map.set(promo.sku, {
+        promoPrice: promo.preco_promo,
+        promoDiscount: promo.desconto
+      })
+    })
+    return map
+  }, [promotions])
 
   useEffect(() => {
     if (inputValue.length >= 2) {
@@ -35,7 +64,20 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
       })
 
       if (response.data.success) {
-        setOptions(response.data.data)
+        // Enriquecer com dados de promoção
+        const enrichedData = response.data.data.map(product => {
+          const promo = promotionMap.get(product.id)
+          if (promo) {
+            return {
+              ...product,
+              onPromotion: true,
+              promoPrice: promo.promoPrice,
+              promoDiscount: promo.promoDiscount
+            }
+          }
+          return product
+        })
+        setOptions(enrichedData)
       }
     } catch (err) {
       console.error('Erro ao buscar produtos:', err)
