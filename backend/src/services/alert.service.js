@@ -4,6 +4,7 @@
  */
 import logger from '../config/logger.js';
 import { getRedis } from '../config/redis.js';
+import { SlackService } from './slack.service.js';
 
 // Thresholds Q3.1
 const THRESHOLDS = {
@@ -110,9 +111,16 @@ async function sendAlert(alert) {
         logger.error('Failed to save alert to Redis:', e);
     }
 
-    // TODO: Integrar com Slack/Teams/PagerDuty em produção
-    // await sendToSlack(alert);
-    // await sendToEmail(alert);
+    // Enviar para Slack (critical e emergency sempre, warning só se habilitado)
+    try {
+        if (level === 'emergency' || level === 'critical') {
+            await SlackService.sendAlert(alert);
+        } else if (level === 'warning' && process.env.SLACK_ALERT_WARNINGS === 'true') {
+            await SlackService.sendAlert(alert);
+        }
+    } catch (slackError) {
+        logger.error('Failed to send Slack alert:', slackError);
+    }
 
     return alert;
 }

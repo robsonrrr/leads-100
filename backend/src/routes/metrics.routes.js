@@ -115,4 +115,32 @@ router.get('/alerts', authenticateToken, metricsController.getAlerts);
  */
 router.get('/alerts/stats', authenticateToken, metricsController.getAlertStats);
 
+/**
+ * @swagger
+ * /metrics/slack/test:
+ *   post:
+ *     summary: Test Slack connection
+ *     tags: [Metrics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Test result
+ */
+router.post('/slack/test', authenticateToken, metricsController.testSlackConnection);
+
+/**
+ * @swagger
+ * /metrics/slack/config:
+ *   get:
+ *     summary: Get Slack configuration status
+ *     tags: [Metrics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Slack config status
+ */
+router.get('/slack/config', authenticateToken, metricsController.getSlackConfig);
+
 export default router;

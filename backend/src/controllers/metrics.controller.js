@@ -550,6 +550,53 @@ export async function getAlertStats(req, res, next) {
     }
 }
 
+// Import SlackService for Slack endpoints
+import { SlackService } from '../services/slack.service.js';
+
+/**
+ * POST /api/metrics/slack/test
+ * Testa conexão com Slack
+ */
+export async function testSlackConnection(req, res, next) {
+    try {
+        // Verificar nível de acesso (admin apenas)
+        if (req.user?.level < 5) {
+            return res.status(403).json({
+                success: false,
+                error: { message: 'Acesso negado - requer admin' }
+            });
+        }
+
+        const result = await SlackService.testConnection();
+
+        res.json({
+            success: result.success,
+            data: result
+        });
+    } catch (error) {
+        logger.error('Error testing Slack connection:', error);
+        next(error);
+    }
+}
+
+/**
+ * GET /api/metrics/slack/config
+ * Retorna configuração do Slack
+ */
+export async function getSlackConfig(req, res, next) {
+    try {
+        const config = SlackService.getConfig();
+
+        res.json({
+            success: true,
+            data: config
+        });
+    } catch (error) {
+        logger.error('Error getting Slack config:', error);
+        next(error);
+    }
+}
+
 export default {
     metricsMiddleware,
     getPerformanceMetrics,
@@ -560,5 +607,7 @@ export default {
     recordCacheHit,
     recordCacheMiss,
     getAlerts,
-    getAlertStats
+    getAlertStats,
+    testSlackConnection,
+    getSlackConfig
 };
