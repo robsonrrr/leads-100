@@ -64,7 +64,14 @@ export async function searchProducts(req, res, next) {
     res.json({
       success: true,
       data: result.data.map(product => {
-        const json = simple ? product.toSimpleJSON() : product.toJSON();
+        // Dados do cache são POJOs, dados frescos são instâncias de Product
+        let json;
+        if (typeof product.toJSON === 'function') {
+          json = simple ? product.toSimpleJSON() : product.toJSON();
+        } else {
+          // Dados vieram do cache Redis (já são objetos simples)
+          json = product;
+        }
         json.estoque = parseInt(stockMap.get(product.id)) || 0;
         return json;
       }),
