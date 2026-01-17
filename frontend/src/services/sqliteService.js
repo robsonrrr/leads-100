@@ -8,7 +8,7 @@
 import initSqlJs from 'sql.js'
 
 // Versão do schema - incrementar ao alterar tabelas
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 const DB_NAME = 'leads_agent_cache'
 
 class SQLiteService {
@@ -82,6 +82,9 @@ class SQLiteService {
             // Migrations
             if (currentVersion < 1) {
                 await this._migrationV1()
+            }
+            if (currentVersion < 2) {
+                await this._migrationV2()
             }
 
             // Registrar versão
@@ -205,6 +208,39 @@ class SQLiteService {
     }
 
     /**
+     * Migration V2 - Tabelas auxiliares
+     */
+    async _migrationV2() {
+        // Imagens de produtos
+        this.db.run(`
+      CREATE TABLE IF NOT EXISTS product_images (
+        product_id INTEGER,
+        url TEXT,
+        display_order INTEGER DEFAULT 0,
+        PRIMARY KEY (product_id, url)
+      )
+    `)
+        this.db.run('CREATE INDEX IF NOT EXISTS idx_prod_images ON product_images(product_id)')
+
+        // Endereços de clientes
+        this.db.run(`
+      CREATE TABLE IF NOT EXISTS customer_addresses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER,
+        address TEXT,
+        number TEXT,
+        neighborhood TEXT,
+        city TEXT,
+        state TEXT,
+        zipcode TEXT
+      )
+    `)
+        this.db.run('CREATE INDEX IF NOT EXISTS idx_cust_addr ON customer_addresses(customer_id)')
+
+        console.log('📦 SQLite: Migration V2 aplicada')
+    }
+
+    /**
      * Salva o banco no IndexedDB
      */
     async _saveToIndexedDB() {
@@ -286,6 +322,11 @@ class SQLiteService {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
+        const stmtImg = this.db.prepare(`
+            INSERT INTO product_images (product_id, url, display_order)
+            VALUES (?, ?, ?)
+        `)
+
         for (const p of products) {
             stmt.run([
                 p.id,
@@ -301,8 +342,16 @@ class SQLiteService {
                 new Date().toISOString(),
                 1
             ])
+
+            // Salvar imagem
+            this.db.run('DELETE FROM product_images WHERE product_id = ?', [p.id])
+            const mainImage = p.image_url || `https://img.rolemak.com.br/id/h180/${p.id}.jpg`
+            if (mainImage) {
+                stmtImg.run([p.id, mainImage, 0])
+            }
         }
         stmt.free()
+        stmtImg.free()
 
         await this.persist()
         console.log(`📦 SQLite: ${products.length} produtos salvos no cache`)
@@ -397,6 +446,11 @@ class SQLiteService {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
+        const stmtAddr = this.db.prepare(`
+            INSERT INTO customer_addresses (customer_id, address, number, neighborhood, city, state, zipcode)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `)
+
         for (const c of customers) {
             stmt.run([
                 c.id,
@@ -410,8 +464,24 @@ class SQLiteService {
                 c.seller_id || c.vendedor_id,
                 new Date().toISOString()
             ])
+
+            // Salvar endereço
+            this.db.run('DELETE FROM customer_addresses WHERE customer_id = ?', [c.id])
+
+            if (c.address || c.endereco) {
+                stmtAddr.run([
+                    c.id,
+                    c.address || c.endereco,
+                    c.number || c.numero || '',
+                    c.neighborhood || c.bairro || '',
+                    c.city || c.cidade || '',
+                    c.state || c.uf || '',
+                    c.zipcode || c.cep || ''
+                ])
+            }
         }
         stmt.free()
+        stmtAddr.free()
 
         await this.persist()
         console.log(`📦 SQLite: ${customers.length} clientes salvos no cache`)

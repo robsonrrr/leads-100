@@ -98,6 +98,11 @@ router.get('/customers', authenticateToken, async (req, res) => {
         c.uf as state,
         c.telefone as phone,
         c.email,
+        c.endereco as address,
+        c.numero as number,
+        c.bairro as neighborhood,
+        c.cep as zipcode,
+
         c.vendedor_id as seller_id,
         c.updated_at
       FROM clientes c

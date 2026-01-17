@@ -8,6 +8,8 @@ import {
 } from '@mui/icons-material';
 import { offlineSyncService } from '../services/offlineSync.service';
 
+import { metricsService } from '../services/metricsService';
+
 const OfflineIndicator = () => {
     const [status, setStatus] = useState(offlineSyncService.getQueueStatus());
 
@@ -16,15 +18,20 @@ const OfflineIndicator = () => {
             setStatus(offlineSyncService.getQueueStatus());
         };
 
+        const handleOffline = () => {
+            handleStatusChange();
+            metricsService.logOfflineSession();
+        }
+
         window.addEventListener('online', handleStatusChange);
-        window.addEventListener('offline', handleStatusChange);
+        window.addEventListener('offline', handleOffline);
 
         // Polling para checar fila (opcional, pode ser disparado por eventos no service)
         const interval = setInterval(handleStatusChange, 5000);
 
         return () => {
             window.removeEventListener('online', handleStatusChange);
-            window.removeEventListener('offline', handleStatusChange);
+            window.removeEventListener('offline', handleOffline);
             clearInterval(interval);
         };
     }, []);

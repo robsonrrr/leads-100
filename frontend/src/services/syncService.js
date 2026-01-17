@@ -9,6 +9,7 @@
 
 import { sqliteService } from './sqliteService'
 import api from './api'
+import { metricsService } from './metricsService'
 
 const SYNC_INTERVAL = 15 * 60 * 1000 // 15 minutos
 const SYNC_QUEUE_INTERVAL = 30 * 1000 // 30 segundos
@@ -249,11 +250,13 @@ class SyncService {
                     }
 
                     await sqliteService.markSynced(item.id)
+                    metricsService.logSync(true)
                     console.log(`✅ Sincronizado: ${item.action} ${item.entity} ${item.entity_id}`)
 
                 } catch (error) {
                     console.error(`❌ Erro ao sincronizar ${item.id}:`, error)
                     await sqliteService.markSyncError(item.id)
+                    metricsService.logSync(false)
                     this.notify('queue:error', {
                         entity: item.entity,
                         action: item.action,
