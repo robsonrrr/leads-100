@@ -47,14 +47,20 @@ export async function searchProducts(req, res, next) {
       { page: value.page, limit: value.limit }
     );
 
+    // Buscar estoque em lote para os produtos retornados
+    const productIds = result.data.map(p => p.id);
+    const stockMap = await productRepository.getStockForProducts(productIds);
+
     // Usar formato simplificado para listagem
     const simple = req.query.simple === 'true' || req.query.simple === '1';
 
     res.json({
       success: true,
-      data: result.data.map(product =>
-        simple ? product.toSimpleJSON() : product.toJSON()
-      ),
+      data: result.data.map(product => {
+        const json = simple ? product.toSimpleJSON() : product.toJSON();
+        json.estoque = parseInt(stockMap.get(product.id)) || 0;
+        return json;
+      }),
       pagination: result.pagination
     });
   } catch (error) {

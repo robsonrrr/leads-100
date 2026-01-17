@@ -6,7 +6,8 @@
 
 -- =====================================================
 -- 1. View para Listagem de Produtos (GET /api/products)
--- Otimizada para paginação e filtros
+-- Otimizada para paginação e filtros (SEM estoque para performance)
+-- Estoque deve ser buscado separadamente via /products/:id/stock
 -- =====================================================
 CREATE OR REPLACE VIEW Ecommerce.vw_produtos_listagem AS
 SELECT 
@@ -23,20 +24,9 @@ SELECT
     p.categoria,
     p.ncm,
     p.vip,
-    -- Estoque agregado via subquery
-    COALESCE((
-        SELECT SUM(e.estoque_disponivel) 
-        FROM mak.produtos_estoque_por_unidades e 
-        WHERE e.produto_id = i.id
-    ), 0) as estoque_total,
     -- URL da imagem
     CONCAT('https://img.rolemak.com.br/id/h180/', i.id, '.jpg') as imagem_url,
     -- Flags de status
-    CASE WHEN (
-        SELECT SUM(e.estoque_disponivel) 
-        FROM mak.produtos_estoque_por_unidades e 
-        WHERE e.produto_id = i.id
-    ) > 0 THEN 1 ELSE 0 END as tem_estoque,
     CASE WHEN i.revenda > 0 THEN 1 ELSE 0 END as tem_preco
 FROM mak.inv i
 LEFT JOIN mak.produtos p ON i.idcf = p.id

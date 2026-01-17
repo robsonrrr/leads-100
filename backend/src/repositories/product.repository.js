@@ -18,15 +18,17 @@ export class ProductRepository {
 
     // Tentar cache para buscas frequentes
     return CacheService.getProducts(cacheKey, async () => {
-      // Usar a view otimizada Ecommerce.vw_produtos_listagem
+      // Query direta nas tabelas base para máxima performance
+      // NOTA: Estoque removido da listagem para performance (~2s -> 0.2s)
+      // Estoque disponível via /products/:id/stock-by-warehouse
       let query = `SELECT 
-        id, modelo, nome, descricao, marca, codebar,
-        preco_tabela as revenda, custo,
-        segmento, segmento_id, categoria, ncm, vip,
-        estoque_total as estoque,
-        imagem_url, tem_estoque, tem_preco
-      FROM Ecommerce.vw_produtos_listagem
-      WHERE 1=1`;
+        i.id, i.modelo, i.nome, i.description as descricao, i.marca, i.codebar,
+        i.revenda, i.custo,
+        p.segmento, p.segmento_id, p.categoria, p.ncm, p.vip,
+        CONCAT('https://img.rolemak.com.br/id/h180/', i.id, '.jpg') as imagem_url
+      FROM mak.inv i
+      LEFT JOIN mak.produtos p ON i.idcf = p.id
+      WHERE i.revenda > 0`;
       const params = [];
 
       // Busca por termo (ID, modelo, nome, descrição, categoria, NCM, segmento)
@@ -35,23 +37,23 @@ export class ProductRepository {
 
         if (isNumeric) {
           query += ` AND (
-            id = ? OR
-            modelo LIKE ? OR
-            nome LIKE ? OR 
-            descricao LIKE ? OR 
-            categoria LIKE ? OR 
-            ncm LIKE ? OR
-            segmento LIKE ?
+            i.id = ? OR
+            i.modelo LIKE ? OR
+            i.nome LIKE ? OR 
+            i.description LIKE ? OR 
+            p.categoria LIKE ? OR 
+            p.ncm LIKE ? OR
+            p.segmento LIKE ?
           )`;
           params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
         } else {
           query += ` AND (
-            modelo LIKE ? OR
-            nome LIKE ? OR 
-            descricao LIKE ? OR 
-            categoria LIKE ? OR 
-            ncm LIKE ? OR
-            segmento LIKE ?
+            i.modelo LIKE ? OR
+            i.nome LIKE ? OR 
+            i.description LIKE ? OR 
+            p.categoria LIKE ? OR 
+            p.ncm LIKE ? OR
+            p.segmento LIKE ?
           )`;
           const searchPattern = `%${searchTerm}%`;
           params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
@@ -60,30 +62,30 @@ export class ProductRepository {
 
       // Filtros adicionais
       if (filters.segment) {
-        query += ' AND segmento = ?';
+        query += ' AND p.segmento = ?';
         params.push(filters.segment);
       }
 
       if (filters.segmentId) {
-        query += ' AND segmento_id = ?';
+        query += ' AND p.segmento_id = ?';
         params.push(filters.segmentId);
       }
 
       if (filters.category) {
-        query += ' AND categoria LIKE ?';
+        query += ' AND p.categoria LIKE ?';
         params.push(`%${filters.category}%`);
       }
 
       if (filters.ncm) {
-        query += ' AND ncm LIKE ?';
+        query += ' AND p.ncm LIKE ?';
         params.push(`%${filters.ncm}%`);
       }
 
       // Ordenação por preço de revenda (maior para menor)
-      query += ' ORDER BY preco_tabela DESC, nome ASC';
+      query += ' ORDER BY i.revenda DESC, i.nome ASC';
 
       // Contar total antes de paginar
-      const countQuery = query.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM').replace(/ORDER BY.*$/, '');
+      const countQuery = query.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT i.id) as total FROM').replace(/ORDER BY.*$/, '');
       const countParams = params.slice();
       const [countResult] = await db().execute(countQuery, countParams);
       const total = countResult[0]?.total || 0;
@@ -242,6 +244,30 @@ export class ProductRepository {
     `;
     const [rows] = await db().execute(query);
     return rows;
+  }
+
+  /**
+   * Busca estoque em lote para múltiplos produtos
+   * @param {Array<number>} productIds - Array de IDs de produtos
+   * @returns {Map<number, number>} Mapa de ID -> estoque
+   */
+  async getStockForProducts(productIds) {
+    if (!productIds || productIds.length === 0) return new Map();
+
+    const placeholders = productIds.map(() => '?').join(',');
+    const query = `
+      SELECT produto_id, SUM(estoque_disponivel) as estoque
+      FROM mak.produtos_estoque_por_unidades
+      WHERE produto_id IN (${placeholders})
+      GROUP BY produto_id
+    `;
+    const [rows] = await db().execute(query, productIds);
+
+    const stockMap = new Map();
+    for (const row of rows) {
+      stockMap.set(row.produto_id, row.estoque || 0);
+    }
+    return stockMap;
   }
 
   /**
