@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import {
   Paper,
@@ -50,9 +50,10 @@ import {
   AutoFixHigh as AutoFixHighIcon,
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
-  Inventory as InventoryIcon
+  Inventory as InventoryIcon,
+  LocalOffer as PromoIcon
 } from '@mui/icons-material'
-import { leadsService, pricingService, productsService } from '../services/api'
+import { leadsService, pricingService, productsService, promotionsService } from '../services/api'
 import aiService from '../services/ai.service'
 import { formatCurrency } from '../utils'
 import ProductAutocomplete from './ProductAutocomplete'
@@ -101,6 +102,21 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [productDetailModal, setProductDetailModal] = useState({ open: false, product: null }) // Modal de detalhes do produto
   const [favorites, setFavorites] = useState(new Set()) // Set de IDs de produtos favoritos
   const [loadingFavorite, setLoadingFavorite] = useState({}) // { productId: boolean }
+  const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
+
+  // Mapa de promoções para lookup rápido
+  const promotionMap = useMemo(() => {
+    const map = new Map()
+    if (Array.isArray(promotions)) {
+      promotions.forEach(promo => {
+        map.set(promo.sku, {
+          promoPrice: promo.preco_promo,
+          promoDiscount: promo.desconto
+        })
+      })
+    }
+    return map
+  }, [promotions])
 
   const [formData, setFormData] = useState({
     product: null,
@@ -122,9 +138,10 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
   }, [leadId])
 
-  // Carregar favoritos do vendedor
+  // Carregar favoritos e promoções do vendedor
   useEffect(() => {
     loadFavorites()
+    loadPromotions()
   }, [])
 
   const loadFavorites = async () => {
@@ -135,8 +152,18 @@ function CartItems({ leadId, lead, readOnly = false }) {
         setFavorites(favoriteIds)
       }
     } catch (err) {
-      // Silently fail - favoritos são opcionais
       console.debug('Erro ao carregar favoritos:', err)
+    }
+  }
+
+  const loadPromotions = async () => {
+    try {
+      const response = await promotionsService.getActive()
+      if (response.data.success && response.data.data?.promotions) {
+        setPromotions(response.data.data.promotions)
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar promoções:', err)
     }
   }
 
@@ -1127,9 +1154,24 @@ function CartItems({ leadId, lead, readOnly = false }) {
                             <Typography variant="body2">
                               {item.product?.name || `Produto #${item.productId}`}
                             </Typography>
-                            {/* Chip de estoque */}
-                            {item.product?.stock !== undefined && (
-                              <Box sx={{ mt: 0.5 }}>
+                            {/* Chips de promoção e estoque */}
+                            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+                              {/* Badge de promoção */}
+                              {promotionMap.has(item.productId || item.product?.id) && (
+                                <Chip
+                                  icon={<PromoIcon sx={{ fontSize: 14 }} />}
+                                  label={`-${Math.round(promotionMap.get(item.productId || item.product?.id).promoDiscount)}%`}
+                                  color="error"
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                                    '& .MuiChip-icon': { ml: 0.5 }
+                                  }}
+                                />
+                              )}
+                              {/* Chip de estoque */}
+                              {item.product?.stock !== undefined && (
                                 <Chip
                                   icon={<InventoryIcon sx={{ fontSize: 14 }} />}
                                   label={
@@ -1153,8 +1195,8 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                     '& .MuiChip-icon': { ml: 0.5 }
                                   }}
                                 />
-                              </Box>
-                            )}
+                              )}
+                            </Box>
                           </Box>
                         </Box>
                       </TableCell>
