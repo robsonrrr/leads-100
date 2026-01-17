@@ -41,7 +41,9 @@ import PullToRefresh from '../components/PullToRefresh'
 import { useToast } from '../contexts/ToastContext'
 import LeadsMetrics from '../components/LeadsMetrics'
 import AdvancedFilters, { FilterButton } from '../components/AdvancedFilters'
-import { CheckCircle as ConvertedIcon, HourglassEmpty as PendingIcon, WhatsApp as WhatsAppIcon, Print as PrintIcon } from '@mui/icons-material'
+import { CheckCircle as ConvertedIcon, HourglassEmpty as PendingIcon, WhatsApp as WhatsAppIcon, Print as PrintIcon, CloudOff as CloudOffIcon, Delete as DeleteIcon, Sync as SyncIcon } from '@mui/icons-material'
+import useOfflineLeads from '../hooks/useOfflineLeads'
+import { UnsyncedBadge, UnsyncedIcon } from '../components/UnsyncedBadge'
 
 function LeadsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -120,6 +122,15 @@ function LeadsPage() {
     const [advancedFilters, setAdvancedFilters] = useState({})
 
     const { isManager, selectedSellerSegment, selectedSeller, getFilterParams } = useManagerFilter()
+
+    // Hook para leads offline (rascunhos não sincronizados)
+    const {
+        drafts: offlineDrafts,
+        pendingCount: offlinePendingCount,
+        syncDraft,
+        deleteDraft,
+        isOffline
+    } = useOfflineLeads()
 
     useEffect(() => {
         const timeout = setTimeout(() => setDebouncedQuery(searchQuery), 400)
@@ -375,6 +386,105 @@ function LeadsPage() {
                 </Box>
 
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+                {/* Rascunhos Offline - Não sincronizados */}
+                {offlinePendingCount > 0 && (
+                    <Paper sx={{ mb: 2, p: 2, border: '2px dashed', borderColor: 'warning.main', bgcolor: 'warning.lighter' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <CloudOffIcon color="warning" />
+                                <Typography variant="subtitle1" fontWeight={700} color="warning.dark">
+                                    Rascunhos não sincronizados ({offlinePendingCount})
+                                </Typography>
+                            </Box>
+                            {!isOffline && (
+                                <Button
+                                    size="small"
+                                    startIcon={<SyncIcon />}
+                                    onClick={async () => {
+                                        for (const draft of offlineDrafts) {
+                                            try {
+                                                await syncDraft(draft.id)
+                                                toast.showSuccess(`Rascunho sincronizado!`)
+                                            } catch (err) {
+                                                toast.showError(`Erro ao sincronizar: ${err.message}`)
+                                            }
+                                        }
+                                        loadLeads()
+                                    }}
+                                >
+                                    Sincronizar Todos
+                                </Button>
+                            )}
+                        </Box>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            {offlineDrafts.map(draft => (
+                                <Paper
+                                    key={draft.id}
+                                    sx={{
+                                        p: 2,
+                                        minWidth: 280,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 1,
+                                        border: '1px solid',
+                                        borderColor: 'warning.light'
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography variant="subtitle2" fontWeight={600}>
+                                            {draft.customer_name || 'Cliente não definido'}
+                                        </Typography>
+                                        <UnsyncedBadge size="small" showLabel={false} />
+                                    </Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {(draft.items?.length || 0)} itens • {formatCurrency(
+                                            (draft.items || []).reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                                        )}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Criado: {formatDate(draft.created_at)}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                        {!isOffline && (
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="primary"
+                                                startIcon={<SyncIcon />}
+                                                onClick={async () => {
+                                                    try {
+                                                        await syncDraft(draft.id)
+                                                        toast.showSuccess('Lead sincronizado com sucesso!')
+                                                        loadLeads()
+                                                    } catch (err) {
+                                                        toast.showError(`Erro: ${err.message}`)
+                                                    }
+                                                }}
+                                            >
+                                                Sincronizar
+                                            </Button>
+                                        )}
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<DeleteIcon />}
+                                            onClick={async () => {
+                                                if (confirm('Deseja excluir este rascunho?')) {
+                                                    await deleteDraft(draft.id)
+                                                    toast.showSuccess('Rascunho excluído')
+                                                }
+                                            }}
+                                        >
+                                            Excluir
+                                        </Button>
+                                    </Box>
+                                </Paper>
+                            ))}
+                        </Box>
+                    </Paper>
+                )}
 
                 <Paper>
                     {loading ? <DashboardSkeleton /> : (
