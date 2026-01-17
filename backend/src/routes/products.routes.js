@@ -471,5 +471,25 @@ router.get('/expand-synonyms', optionalAuth, productsController.expandSynonyms);
  */
 router.get('/fuzzy-search', optionalAuth, productsController.fuzzySearch);
 
+// ========== PRODUTOS RELACIONADOS ==========
+
+/**
+ * @swagger
+ * /api/products/{id}/related:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos relacionados, acessórios e comprados juntos
+ */
+router.get('/:id/related', optionalAuth, productsController.getRelatedProducts);
+
+/**
+ * @swagger
+ * /api/products/{id}/bought-together:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos frequentemente comprados juntos
+ */
+router.get('/:id/bought-together', optionalAuth, productsController.getBoughtTogether);
+
 export default router;
 

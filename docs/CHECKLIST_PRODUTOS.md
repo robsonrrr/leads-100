@@ -285,11 +285,11 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 6.1.1 | Algoritmo de produtos relacionados | Backend | ⏳ |
-| 6.1.2 | Endpoint GET /api/products/:id/related | Backend | ⏳ |
-| 6.1.3 | Seção "Você também pode gostar" | Frontend | ⏳ |
-| 6.1.4 | Acessórios e complementos | Backend | ⏳ |
-| 6.1.5 | Produtos comprados juntos | Backend | ⏳ |
+| 6.1.1 | Algoritmo de produtos relacionados | Backend | ✅ |
+| 6.1.2 | Endpoint GET /api/products/:id/related | Backend | ✅ |
+| 6.1.3 | Seção "Você também pode gostar" | Frontend | ✅ |
+| 6.1.4 | Acessórios e complementos | Backend | ✅ |
+| 6.1.5 | Produtos comprados juntos | Backend | ✅ |
 
 ---
 
@@ -297,10 +297,10 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 6.2.1 | Selecionar produtos para comparar | Frontend | ⏳ |
-| 6.2.2 | Tabela comparativa lado a lado | Frontend | ⏳ |
-| 6.2.3 | Destacar diferenças entre produtos | Frontend | ⏳ |
-| 6.2.4 | Máximo 4 produtos por comparação | Frontend | ⏳ |
+| 6.2.1 | Selecionar produtos para comparar | Frontend | ✅ |
+| 6.2.2 | Tabela comparativa lado a lado | Frontend | ✅ |
+| 6.2.3 | Destacar diferenças entre produtos | Frontend | ✅ |
+| 6.2.4 | Máximo 4 produtos por comparação | Frontend | ✅ |
 
 ---
 
@@ -341,10 +341,10 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 3. Personalização | 15 | 15 | 0 |
 | 4. Estoque | 12 | 12 | 0 |
 | 5. Preços | 20 | 20 | 0 |
-| 6. Relacionados | 9 | 0 | 9 |
+| 6. Relacionados | 9 | 9 | 0 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **76** | **23** |
+| **Total** | **99** | **85** | **14** |
 
 ---
 

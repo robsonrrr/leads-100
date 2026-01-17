@@ -276,6 +276,8 @@ export const productsService = {
   removeFavorite: (productId) => api.delete(`/products/${productId}/favorite`),
   // Recentes
   getRecent: (limit = 20) => api.get('/products/recent', { params: { limit } }),
+  // Relacionados
+  getRelated: (productId) => api.get(`/products/${productId}/related`),
 }
 
 export const pricingService = {

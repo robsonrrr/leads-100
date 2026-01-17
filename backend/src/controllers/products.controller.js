@@ -671,3 +671,62 @@ export async function fuzzySearch(req, res, next) {
     next(error);
   }
 }
+
+// ========== PRODUTOS RELACIONADOS ==========
+
+import RelatedProductsService from '../services/relatedProducts.service.js';
+
+/**
+ * Busca todos os produtos relacionados (6.1.2)
+ * GET /api/products/:id/related
+ */
+export async function getRelatedProducts(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const related = await RelatedProductsService.getAllRelated(productId);
+
+    res.json({
+      success: true,
+      data: related
+    });
+  } catch (error) {
+    console.error('Erro getRelatedProducts:', error);
+    next(error);
+  }
+}
+
+/**
+ * Busca produtos comprados juntos (6.1.5)
+ * GET /api/products/:id/bought-together
+ */
+export async function getBoughtTogether(req, res, next) {
+  try {
+    const productId = parseInt(req.params.id);
+    const limit = parseInt(req.query.limit) || 5;
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'ID do produto inválido' }
+      });
+    }
+
+    const boughtTogether = await RelatedProductsService.getBoughtTogether(productId, limit);
+
+    res.json({
+      success: true,
+      data: boughtTogether
+    });
+  } catch (error) {
+    console.error('Erro getBoughtTogether:', error);
+    next(error);
+  }
+}
