@@ -4,7 +4,7 @@
 
 **Período:** Julho - Setembro 2026  
 **Pré-requisito:** Q2 100% concluído ✅  
-**Status:** Planejado ⏳  
+**Status:** Q3.1 Em Implementação 🔄  
 **Última atualização:** 17 de Janeiro 2026
 
 ---
@@ -52,12 +52,12 @@
 |---|--------|-------------|--------|
 | 1.1.1 | Auditoria de slow query log | Backend | ⏳ |
 | 1.1.2 | Análise com EXPLAIN de queries críticas | Backend | ⏳ |
-| 1.1.3 | Criar índices para tabela `sCart` (leads) | Backend | ⏳ |
-| 1.1.4 | Criar índices para tabela `icart` (itens) | Backend | ⏳ |
-| 1.1.5 | Criar índices para `pricing_decision_event` | Backend | ⏳ |
-| 1.1.6 | Criar índices para queries de analytics | Backend | ⏳ |
+| 1.1.3 | Criar índices para tabela `sCart` (leads) | Backend | ✅ |
+| 1.1.4 | Criar índices para tabela `icart` (itens) | Backend | ✅ |
+| 1.1.5 | Criar índices para `pricing_decision_event` | Backend | ✅ |
+| 1.1.6 | Criar índices para queries de analytics | Backend | ✅ |
 | 1.1.7 | Eliminar queries N+1 no dashboard | Backend | ⏳ |
-| 1.1.8 | Implementar paginação cursor-based | Backend | ⏳ |
+| 1.1.8 | Implementar paginação cursor-based | Backend | ✅ |
 | 1.1.9 | Otimizar consultas de histórico | Backend | ⏳ |
 
 **Critério de Aceite:**
@@ -74,16 +74,16 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.2.1 | Setup de Redis em produção | Infra | ⏳ |
-| 1.2.2 | Configurar connection pool | Backend | ⏳ |
-| 1.2.3 | Cache de metadados (segmentos, tipos) | Backend | ⏳ |
-| 1.2.4 | Cache de produtos (TTL 5min) | Backend | ⏳ |
-| 1.2.5 | Cache de estoque (TTL 2min) | Backend | ⏳ |
-| 1.2.6 | Cache de clientes frequentes | Backend | ⏳ |
-| 1.2.7 | Cache de dashboard/analytics (TTL 5min) | Backend | ⏳ |
-| 1.2.8 | Invalidação por evento (update/delete) | Backend | ⏳ |
-| 1.2.9 | Métrica de cache hit rate | Backend | ⏳ |
-| 1.2.10 | Dashboard de monitoramento Redis | Infra | ⏳ |
+| 1.2.1 | Setup de Redis em produção | Infra | ✅ |
+| 1.2.2 | Configurar connection pool | Backend | ✅ |
+| 1.2.3 | Cache de metadados (segmentos, tipos) | Backend | ✅ |
+| 1.2.4 | Cache de produtos (TTL 5min) | Backend | ✅ |
+| 1.2.5 | Cache de estoque (TTL 2min) | Backend | ✅ |
+| 1.2.6 | Cache de clientes frequentes | Backend | ✅ |
+| 1.2.7 | Cache de dashboard/analytics (TTL 5min) | Backend | ✅ |
+| 1.2.8 | Invalidação por evento (update/delete) | Backend | ✅ |
+| 1.2.9 | Métrica de cache hit rate | Backend | ✅ |
+| 1.2.10 | Dashboard de monitoramento Redis | Infra | ✅ |
 
 **Critério de Aceite:**
 ```
@@ -124,8 +124,8 @@
 | 1.4.1 | Setup de APM (DataDog/NewRelic/CloudWatch) | Infra | ⏳ |
 | 1.4.2 | Alertas de latência (> 500ms) | Infra | ⏳ |
 | 1.4.3 | Alertas de erro rate (> 1%) | Infra | ⏳ |
-| 1.4.4 | Dashboard de saúde do sistema | Infra | ⏳ |
-| 1.4.5 | Logs centralizados | Infra | ⏳ |
+| 1.4.4 | Dashboard de saúde do sistema | Infra | ✅ |
+| 1.4.5 | Logs centralizados | Infra | ✅ |
 
 ---
 
