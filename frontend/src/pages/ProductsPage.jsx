@@ -135,13 +135,14 @@ function ProductsPage() {
             setLoading(true)
             setError('')
 
+            // Só enviar parâmetros que não estão vazios
             const params = {
                 page,
-                limit: ITEMS_PER_PAGE,
-                search: searchTerm,
-                segment: selectedSegment,
-                category: selectedCategory
+                limit: ITEMS_PER_PAGE
             }
+            if (searchTerm) params.search = searchTerm
+            if (selectedSegment) params.segment = selectedSegment
+            if (selectedCategory) params.category = selectedCategory
 
             const response = await productsService.search(params)
 
