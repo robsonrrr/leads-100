@@ -238,6 +238,11 @@ class SyncService {
                 } catch (error) {
                     console.error(`❌ Erro ao sincronizar ${item.id}:`, error)
                     await sqliteService.markSyncError(item.id)
+                    this.notify('queue:error', {
+                        entity: item.entity,
+                        action: item.action,
+                        error: error.message
+                    })
                 }
             }
 

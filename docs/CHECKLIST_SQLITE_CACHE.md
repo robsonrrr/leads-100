@@ -116,7 +116,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 4.1.1 | Tabela: leads_draft (local, não sincronizado) | Frontend | ✅ |
 | 4.1.2 | Tabela: lead_items_draft (itens do carrinho) | Frontend | ✅ |
 | 4.1.3 | Salvar automaticamente ao editar | Frontend | ✅ |
-| 4.1.4 | Indicador "Não salvo na nuvem" | Frontend | ⏳ |
+| 4.1.4 | Indicador "Não salvo na nuvem" | Frontend | ✅ |
 | 4.1.5 | Sincronizar quando voltar online | Frontend | ✅ |
 
 ### 4.2 Fila de Sincronização
@@ -194,11 +194,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 1. Infraestrutura | 10 | 7 | 3 |
 | 2. Produtos | 16 | 15 | 1 |
 | 3. Clientes | 10 | 9 | 1 |
-| 4. Leads | 10 | 7 | 3 |
+| 4. Leads | 10 | 8 | 2 |
 | 5. Integração | 10 | 9 | 1 |
 | 6. Limites | 4 | 4 | 0 |
 | 7. Métricas | 4 | 2 | 2 |
-| **TOTAL** | **64** | **53** | **11** |
+| **TOTAL** | **64** | **54** | **10** |
 
 ---
 

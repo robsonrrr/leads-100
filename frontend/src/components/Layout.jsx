@@ -43,6 +43,7 @@ import PWAInstallPrompt from './PWAInstallPrompt'
 import OfflineIndicator from './OfflineIndicator'
 import InAppNotification from './InAppNotification'
 import NotificationBell from './NotificationBell'
+import SyncErrorNotifications from './SyncErrorNotifications'
 
 const drawerWidth = 240
 
@@ -312,6 +313,7 @@ function Layout({ children }) {
       <PWAInstallPrompt />
       <OfflineIndicator />
       <InAppNotification />
+      <SyncErrorNotifications />
     </Box>
   )
 }
