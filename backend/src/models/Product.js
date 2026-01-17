@@ -13,7 +13,7 @@ export class Product {
     this.marca = data.marca || '';
     this.revenda = data.revenda || 0;
     this.custo = data.custo || 0;
-    
+
     // Campos de produtos (tabela auxiliar - segmento, NCM, impostos)
     this.segmento = data.segmento || '';
     this.segmento_id = data.segmento_id || 0;
@@ -36,6 +36,9 @@ export class Product {
     this.pc_contabil = data.pc_contabil || null;
     this.vip = data.vip || null;
     this.cclasstrib_padrao = data.cclasstrib_padrao || '0000001';
+
+    // Estoque (da view produtos_estoque)
+    this.estoque = parseInt(data.estoque) || 0;
   }
 
   toJSON() {
@@ -76,7 +79,8 @@ export class Product {
       accounting: {
         costCenter: this.pc_contabil,
         vip: this.vip
-      }
+      },
+      stock: this.estoque
     };
   }
 
@@ -90,7 +94,8 @@ export class Product {
       segment: this.segmento,
       ncm: this.ncm,
       price: parseFloat(this.revenda) || 0,
-      description: this.descricao
+      description: this.descricao,
+      stock: this.estoque
     };
   }
 }

@@ -19,13 +19,16 @@ export class ProductRepository {
     // Tentar cache para buscas frequentes
     return CacheService.getProducts(cacheKey, async () => {
       // Tabela principal é inv, JOIN com produtos para segmento e NCM
+      // JOIN com produtos_estoque para trazer estoque disponível
       let query = `SELECT DISTINCT 
         i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
         p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
         p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
-        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
+        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao,
+        COALESCE(e.total_disponivel, 0) as estoque
       FROM inv i 
       LEFT JOIN produtos p ON i.idcf = p.id 
+      LEFT JOIN produtos_estoque e ON e.produto_id = i.id
       WHERE 1=1`;
       const params = [];
 
@@ -116,9 +119,11 @@ export class ProductRepository {
         i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
         p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
         p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
-        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
+        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao,
+        COALESCE(e.total_disponivel, 0) as estoque
       FROM inv i 
       LEFT JOIN produtos p ON i.idcf = p.id 
+      LEFT JOIN produtos_estoque e ON e.produto_id = i.id
       WHERE i.id = ?`;
       const [rows] = await db().execute(query, [id]);
 
