@@ -22,24 +22,40 @@ let performanceMetrics = {
 // Usar métricas centralizadas do CacheService
 // cacheMetrics agora vem do CacheService.getMetrics()
 
+// Importar AlertService para monitoramento
+import { AlertService } from '../services/alert.service.js';
+
 /**
  * Middleware para coletar métricas de request
+ * Q3.1: Inclui verificação de alertas de latência
  */
 export function metricsMiddleware(req, res, next) {
     const startTime = Date.now();
 
-    res.on('finish', () => {
+    res.on('finish', async () => {
         const duration = Date.now() - startTime;
         performanceMetrics.requests++;
         performanceMetrics.totalResponseTime += duration;
 
+        // Q3.1: Verificar alerta de latência
+        const endpoint = `${req.method} ${req.baseUrl || ''}${req.path}`;
+        await AlertService.checkLatency(endpoint, duration);
+
         if (duration > 1000) {
             performanceMetrics.slowQueries++;
-            logger.warn(`Slow request: ${req.method} ${req.path} - ${duration}ms`);
+            logger.warn(`Slow request: ${endpoint} - ${duration}ms`);
         }
 
         if (res.statusCode >= 500) {
             performanceMetrics.errors++;
+
+            // Q3.1: Verificar alerta de error rate a cada 100 requests
+            if (performanceMetrics.requests % 100 === 0) {
+                await AlertService.checkErrorRate(
+                    performanceMetrics.requests,
+                    performanceMetrics.errors
+                );
+            }
         }
     });
 
@@ -478,6 +494,62 @@ function calculateHitRate(hits, misses) {
     return ((h / total) * 100).toFixed(2) + '%';
 }
 
+/**
+ * GET /api/metrics/alerts
+ * Retorna alertas recentes
+ */
+export async function getAlerts(req, res, next) {
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const alerts = await AlertService.getRecentAlerts(limit);
+
+        res.json({
+            success: true,
+            data: {
+                alerts,
+                count: alerts.length,
+                thresholds: AlertService.THRESHOLDS
+            }
+        });
+    } catch (error) {
+        logger.error('Error getting alerts:', error);
+        next(error);
+    }
+}
+
+/**
+ * GET /api/metrics/alerts/stats
+ * Retorna estatísticas de alertas
+ */
+export async function getAlertStats(req, res, next) {
+    try {
+        const stats = AlertService.getStats();
+        const cacheMetrics = CacheService.getMetrics();
+
+        // Verificar proativamente memória e cache
+        await AlertService.checkMemoryUsage();
+        await AlertService.checkCacheHitRate(cacheMetrics.hits, cacheMetrics.misses);
+
+        res.json({
+            success: true,
+            data: {
+                alertStats: stats,
+                thresholds: AlertService.THRESHOLDS,
+                currentStatus: {
+                    errorRate: performanceMetrics.requests > 0
+                        ? ((performanceMetrics.errors / performanceMetrics.requests) * 100).toFixed(2) + '%'
+                        : '0%',
+                    cacheHitRate: cacheMetrics.hitRate,
+                    memoryUsage: formatMemoryUsage()
+                }
+            }
+        });
+    } catch (error) {
+        logger.error('Error getting alert stats:', error);
+        next(error);
+    }
+}
+
 export default {
     metricsMiddleware,
     getPerformanceMetrics,
@@ -486,5 +558,7 @@ export default {
     resetMetrics,
     healthCheck,
     recordCacheHit,
-    recordCacheMiss
+    recordCacheMiss,
+    getAlerts,
+    getAlertStats
 };

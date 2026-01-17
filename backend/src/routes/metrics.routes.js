@@ -87,4 +87,32 @@ router.get('/queries', authenticateToken, metricsController.getQueryMetrics);
  */
 router.post('/reset', authenticateToken, metricsController.resetMetrics);
 
+/**
+ * @swagger
+ * /metrics/alerts:
+ *   get:
+ *     summary: Get recent alerts
+ *     tags: [Metrics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Recent alerts list
+ */
+router.get('/alerts', authenticateToken, metricsController.getAlerts);
+
+/**
+ * @swagger
+ * /metrics/alerts/stats:
+ *   get:
+ *     summary: Get alert statistics
+ *     tags: [Metrics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Alert statistics
+ */
+router.get('/alerts/stats', authenticateToken, metricsController.getAlertStats);
+
 export default router;
