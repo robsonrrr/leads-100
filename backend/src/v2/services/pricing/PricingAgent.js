@@ -141,10 +141,22 @@ class PricingAgent {
 
     /**
      * Busca dados reais de custo e preço de lista para os itens
+     * OTIMIZADO: Uma única query para todos os produtos (elimina N+1)
      */
     async enrichItems(items = []) {
-        return await Promise.all(items.map(async (item) => {
-            const product = await this.productRepo.findById(item.product_id);
+        if (!items || items.length === 0) {
+            return [];
+        }
+
+        // Extrair todos os IDs de produtos
+        const productIds = items.map(item => item.product_id).filter(id => id != null);
+
+        // Buscar todos os produtos em uma única query
+        const productsMap = await this.productRepo.findByIds(productIds);
+
+        // Enriquecer itens com dados dos produtos
+        return items.map(item => {
+            const product = productsMap.get(item.product_id);
             return {
                 ...item,
                 product_id: item.product_id,
@@ -152,7 +164,7 @@ class PricingAgent {
                 unit_cost: product ? parseFloat(product.custo) : (item.unit_cost || 0),
                 name: product ? product.nome : (item.name || 'Produto Desconhecido')
             };
-        }));
+        });
     }
 
     /**

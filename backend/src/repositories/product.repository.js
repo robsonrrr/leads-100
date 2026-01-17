@@ -27,7 +27,7 @@ export class ProductRepository {
     if (searchTerm) {
       // Se o termo for numérico, também buscar por ID
       const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
-      
+
       if (isNumeric) {
         query += ` AND (
           i.id = ? OR
@@ -120,6 +120,46 @@ export class ProductRepository {
     }
 
     return new Product(rows[0]);
+  }
+
+  /**
+   * Busca múltiplos produtos por IDs (elimina N+1)
+   * @param {Array<number>} ids - Array de IDs de produtos
+   * @returns {Map<number, Product>} Mapa de ID -> Produto
+   */
+  async findByIds(ids) {
+    if (!ids || ids.length === 0) {
+      return new Map();
+    }
+
+    // Remover duplicatas e valores inválidos
+    const uniqueIds = [...new Set(ids.filter(id => id != null))];
+
+    if (uniqueIds.length === 0) {
+      return new Map();
+    }
+
+    // Criar placeholders para IN clause
+    const placeholders = uniqueIds.map(() => '?').join(',');
+
+    const query = `SELECT 
+      i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
+      p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
+      p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
+      p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
+    FROM inv i 
+    LEFT JOIN produtos p ON i.idcf = p.id 
+    WHERE i.id IN (${placeholders})`;
+
+    const [rows] = await db().execute(query, uniqueIds);
+
+    // Converter para Map para acesso O(1)
+    const productMap = new Map();
+    for (const row of rows) {
+      productMap.set(row.id, new Product(row));
+    }
+
+    return productMap;
   }
 
   /**

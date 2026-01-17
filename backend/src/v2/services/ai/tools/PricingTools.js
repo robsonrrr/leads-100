@@ -47,9 +47,13 @@ export const pricingTools = {
                 const customer = await customerRepository.findById(customerId);
                 if (!customer) return JSON.stringify({ error: `Cliente ${customerId} não encontrado.` });
 
-                // 2. Preparar detalhes dos produtos para o payload
-                const enrichedItems = await Promise.all(items.map(async (item) => {
-                    const product = await productRepository.findById(item.productId);
+                // 2. Buscar todos os produtos em UMA ÚNICA QUERY (elimina N+1)
+                const productIds = items.map(item => item.productId).filter(id => id != null);
+                const productsMap = await productRepository.findByIds(productIds);
+
+                // 3. Enriquecer itens com dados dos produtos
+                const enrichedItems = items.map(item => {
+                    const product = productsMap.get(item.productId);
                     return {
                         ...item,
                         product,
@@ -58,12 +62,12 @@ export const pricingTools = {
                         model: product ? product.modelo : '',
                         name: product ? product.nome : ''
                     };
-                }));
+                });
 
-                // 3. Calcular Order Value (Soma dos preços de tabela * quantidade)
+                // 4. Calcular Order Value (Soma dos preços de tabela * quantidade)
                 const orderValue = enrichedItems.reduce((sum, item) => sum + (item.revenda * item.quantity), 0);
 
-                // 4. Montar order_items para o payload (contexto do carrinho)
+                // 5. Montar order_items para o payload (contexto do carrinho)
                 const orderItems = enrichedItems.map(item => ({
                     sku_id: item.productId,
                     quantity: item.quantity,
