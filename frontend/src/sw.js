@@ -1,11 +1,32 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 import { clientsClaim } from 'workbox-core'
+import { registerRoute } from 'workbox-routing'
+import { CacheFirst } from 'workbox-strategies'
+import { CacheableResponsePlugin } from 'workbox-cacheable-response'
+import { ExpirationPlugin } from 'workbox-expiration'
 
 // Limpar caches antigos
 cleanupOutdatedCaches()
 
 // Precaching dos assets gerados pelo build
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Cache de Imagens de Produto (Runtime Caching)
+registerRoute(
+    ({ url }) => url.origin === 'https://img.rolemak.com.br',
+    new CacheFirst({
+        cacheName: 'product-images-cache',
+        plugins: [
+            new CacheableResponsePlugin({
+                statuses: [0, 200],
+            }),
+            new ExpirationPlugin({
+                maxEntries: 500,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 dias
+            }),
+        ],
+    })
+)
 
 // Ativar SW imediatamente
 self.skipWaiting()
