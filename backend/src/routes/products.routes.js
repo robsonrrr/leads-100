@@ -1,5 +1,5 @@
 import express from 'express';
-import { optionalAuth } from '../middleware/auth.js';
+import { optionalAuth, authenticateToken } from '../middleware/auth.js';
 import * as productsController from '../controllers/products.controller.js';
 
 const router = express.Router();
