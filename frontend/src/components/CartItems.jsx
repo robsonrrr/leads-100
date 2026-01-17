@@ -51,7 +51,8 @@ import {
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
   Inventory as InventoryIcon,
-  LocalOffer as PromoIcon
+  LocalOffer as PromoIcon,
+  NewReleases as LaunchIcon
 } from '@mui/icons-material'
 import { leadsService, pricingService, productsService, promotionsService } from '../services/api'
 import aiService from '../services/ai.service'
@@ -104,6 +105,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [loadingFavorite, setLoadingFavorite] = useState({}) // { productId: boolean }
   const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
   const [quantityDiscounts, setQuantityDiscounts] = useState([]) // Lista de descontos por quantidade
+  const [launchProducts, setLaunchProducts] = useState([]) // Lista de produtos em lançamento
 
   // Mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
@@ -118,6 +120,29 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
     return map
   }, [promotions])
+
+  // Mapa de produtos em lançamento para lookup rápido
+  const launchProductMap = useMemo(() => {
+    const map = new Map()
+    if (Array.isArray(launchProducts)) {
+      const now = new Date()
+      launchProducts.forEach(lp => {
+        // Verificar se está no período de lançamento
+        const startDate = new Date(lp.launch_start)
+        const endDate = new Date(lp.launch_end)
+        if (lp.is_active && now >= startDate && now <= endDate) {
+          map.set(lp.sku_id, {
+            launchPrice: parseFloat(lp.launch_price),
+            regularPrice: parseFloat(lp.regular_price),
+            launchEnd: endDate,
+            productName: lp.product_name,
+            productModel: lp.product_model
+          })
+        }
+      })
+    }
+    return map
+  }, [launchProducts])
 
   // Mapa de descontos por quantidade - separado por SKU e família
   const { skuDiscountMap, familyDiscounts } = useMemo(() => {
@@ -197,11 +222,12 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
   }, [leadId])
 
-  // Carregar favoritos, promoções e descontos por quantidade
+  // Carregar favoritos, promoções, descontos e lançamentos
   useEffect(() => {
     loadFavorites()
     loadPromotions()
     loadQuantityDiscounts()
+    loadLaunchProducts()
   }, [])
 
   const loadFavorites = async () => {
@@ -235,6 +261,17 @@ function CartItems({ leadId, lead, readOnly = false }) {
       }
     } catch (err) {
       console.debug('Erro ao carregar descontos por quantidade:', err)
+    }
+  }
+
+  const loadLaunchProducts = async () => {
+    try {
+      const response = await pricingService.getLaunchProducts()
+      if (response.data.success) {
+        setLaunchProducts(response.data.data || [])
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar produtos em lançamento:', err)
     }
   }
 
@@ -1240,6 +1277,39 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                     '& .MuiChip-icon': { ml: 0.5 }
                                   }}
                                 />
+                              )}
+                              {/* Badge de lançamento */}
+                              {launchProductMap.has(item.productId || item.product?.id) && (
+                                <Tooltip
+                                  title={
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>🚀 Produto em Lançamento</Typography>
+                                      <Typography variant="caption" display="block">
+                                        Preço Lançamento: {formatCurrency(launchProductMap.get(item.productId || item.product?.id).launchPrice)}
+                                      </Typography>
+                                      <Typography variant="caption" display="block">
+                                        Preço Regular: {formatCurrency(launchProductMap.get(item.productId || item.product?.id).regularPrice)}
+                                      </Typography>
+                                      <Typography variant="caption" display="block">
+                                        Até: {launchProductMap.get(item.productId || item.product?.id).launchEnd.toLocaleDateString('pt-BR')}
+                                      </Typography>
+                                    </Box>
+                                  }
+                                  arrow
+                                >
+                                  <Chip
+                                    icon={<LaunchIcon sx={{ fontSize: 14 }} />}
+                                    label="Lançamento"
+                                    color="secondary"
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                                      '& .MuiChip-icon': { ml: 0.5 },
+                                      cursor: 'help'
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                               {/* Badge de desconto por quantidade (SKU ou família) */}
                               {(() => {
