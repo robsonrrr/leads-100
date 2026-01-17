@@ -14,20 +14,20 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.1.1 | Instalar dependência sql.js | Frontend | ⏳ |
-| 1.1.2 | Criar wrapper SQLiteService | Frontend | ⏳ |
-| 1.1.3 | Configurar WASM para sql.js | Frontend | ⏳ |
-| 1.1.4 | Persistir DB no IndexedDB | Frontend | ⏳ |
-| 1.1.5 | Criar migrations/versioning | Frontend | ⏳ |
+| 1.1.1 | Instalar dependência sql.js | Frontend | ✅ |
+| 1.1.2 | Criar wrapper SQLiteService | Frontend | ✅ |
+| 1.1.3 | Configurar WASM para sql.js | Frontend | ✅ |
+| 1.1.4 | Persistir DB no IndexedDB | Frontend | ✅ |
+| 1.1.5 | Criar migrations/versioning | Frontend | ✅ |
 
 ### 1.2 Sincronização
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 1.2.1 | Endpoint de sync incremental (delta) | Backend | ⏳ |
-| 1.2.2 | Controle de timestamp última sync | Frontend | ⏳ |
+| 1.2.2 | Controle de timestamp última sync | Frontend | ✅ |
 | 1.2.3 | Background sync com Service Worker | Frontend | ⏳ |
-| 1.2.4 | Indicador visual de sincronização | Frontend | ⏳ |
+| 1.2.4 | Indicador visual de sincronização | Frontend | ✅ |
 | 1.2.5 | Resolução de conflitos (servidor ganha) | Backend | ⏳ |
 
 ---
@@ -38,11 +38,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.1.1 | Tabela: products (id, model, brand, name, description) | Frontend | ⏳ |
-| 2.1.2 | Tabela: segments (id, name, seo) | Frontend | ⏳ |
-| 2.1.3 | Tabela: categories (id, name, segment_id) | Frontend | ⏳ |
+| 2.1.1 | Tabela: products (id, model, brand, name, description) | Frontend | ✅ |
+| 2.1.2 | Tabela: segments (id, name, seo) | Frontend | ✅ |
+| 2.1.3 | Tabela: categories (id, name, segment_id) | Frontend | ✅ |
 | 2.1.4 | Tabela: product_images (product_id, url, order) | Frontend | ⏳ |
-| 2.1.5 | Índices para busca (model, brand, name) | Frontend | ⏳ |
+| 2.1.5 | Índices para busca (model, brand, name) | Frontend | ✅ |
 
 ### 2.2 Dados NÃO Cachear (Real-Time)
 
@@ -66,12 +66,12 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.4.1 | Busca por modelo (LIKE) | Frontend | ⏳ |
-| 2.4.2 | Filtro por segmento | Frontend | ⏳ |
-| 2.4.3 | Filtro por categoria | Frontend | ⏳ |
-| 2.4.4 | Filtro por marca | Frontend | ⏳ |
-| 2.4.5 | Ordenação (nome, modelo) | Frontend | ⏳ |
-| 2.4.6 | Paginação local | Frontend | ⏳ |
+| 2.4.1 | Busca por modelo (LIKE) | Frontend | ✅ |
+| 2.4.2 | Filtro por segmento | Frontend | ✅ |
+| 2.4.3 | Filtro por categoria | Frontend | ✅ |
+| 2.4.4 | Filtro por marca | Frontend | ✅ |
+| 2.4.5 | Ordenação (nome, modelo) | Frontend | ✅ |
+| 2.4.6 | Paginação local | Frontend | ✅ |
 
 ---
 
@@ -81,11 +81,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 3.1.1 | Tabela: customers (id, name, cnpj, city, state) | Frontend | ⏳ |
-| 3.1.2 | Tabela: customer_contacts (id, customer_id, phone, email) | Frontend | ⏳ |
+| 3.1.1 | Tabela: customers (id, name, cnpj, city, state) | Frontend | ✅ |
+| 3.1.2 | Tabela: customer_contacts (id, customer_id, phone, email) | Frontend | ✅ |
 | 3.1.3 | Tabela: customer_addresses (id, customer_id, address) | Frontend | ⏳ |
-| 3.1.4 | Índices para busca (name, cnpj, city) | Frontend | ⏳ |
-| 3.1.5 | Apenas clientes da carteira do vendedor | Frontend | ⏳ |
+| 3.1.4 | Índices para busca (name, cnpj, city) | Frontend | ✅ |
+| 3.1.5 | Apenas clientes da carteira do vendedor | Frontend | ✅ |
 
 ### 3.2 Sync de Clientes
 
@@ -113,7 +113,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 4.1.1 | Tabela: leads_draft (local, não sincronizado) | Frontend | ⏳ |
+| 4.1.1 | Tabela: leads_draft (local, não sincronizado) | Frontend | ✅ |
 | 4.1.2 | Tabela: lead_items_draft (itens do carrinho) | Frontend | ⏳ |
 | 4.1.3 | Salvar automaticamente ao editar | Frontend | ⏳ |
 | 4.1.4 | Indicador "Não salvo na nuvem" | Frontend | ⏳ |
@@ -123,8 +123,8 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 4.2.1 | Tabela: sync_queue (action, data, status) | Frontend | ⏳ |
-| 4.2.2 | Adicionar operações pendentes à fila | Frontend | ⏳ |
+| 4.2.1 | Tabela: sync_queue (action, data, status) | Frontend | ✅ |
+| 4.2.2 | Adicionar operações pendentes à fila | Frontend | ✅ |
 | 4.2.3 | Processar fila quando online | Frontend | ⏳ |
 | 4.2.4 | Retry com backoff exponencial | Frontend | ⏳ |
 | 4.2.5 | Notificar usuário de erros de sync | Frontend | ⏳ |
@@ -137,21 +137,21 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 5.1.1 | Criar hook useOfflineProducts() | Frontend | ⏳ |
-| 5.1.2 | Criar hook useOfflineCustomers() | Frontend | ⏳ |
+| 5.1.1 | Criar hook useOfflineProducts() | Frontend | ✅ |
+| 5.1.2 | Criar hook useOfflineCustomers() | Frontend | ✅ |
 | 5.1.3 | Criar hook useOfflineLeads() | Frontend | ⏳ |
-| 5.1.4 | Priorizar cache, fallback para API | Frontend | ⏳ |
-| 5.1.5 | Retornar flag isOffline para UI | Frontend | ⏳ |
+| 5.1.4 | Priorizar cache, fallback para API | Frontend | ✅ |
+| 5.1.5 | Retornar flag isOffline para UI | Frontend | ✅ |
 
 ### 5.2 UI Offline
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 5.2.1 | Banner "Modo Offline" no header | Frontend | ⏳ |
+| 5.2.1 | Banner "Modo Offline" no header | Frontend | ✅ |
 | 5.2.2 | Desabilitar ações que precisam de API | Frontend | ⏳ |
-| 5.2.3 | Badge em itens não sincronizados | Frontend | ⏳ |
-| 5.2.4 | Botão "Sincronizar Agora" | Frontend | ⏳ |
-| 5.2.5 | Contador de itens pendentes | Frontend | ⏳ |
+| 5.2.3 | Badge em itens não sincronizados | Frontend | ✅ |
+| 5.2.4 | Botão "Sincronizar Agora" | Frontend | ✅ |
+| 5.2.5 | Contador de itens pendentes | Frontend | ✅ |
 
 ---
 
@@ -191,14 +191,14 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | Categoria | Total | Concluídas | Pendentes |
 |-----------|-------|------------|-----------|
-| 1. Infraestrutura | 10 | 0 | 10 |
-| 2. Produtos | 16 | 0 | 16 |
-| 3. Clientes | 10 | 0 | 10 |
-| 4. Leads | 10 | 0 | 10 |
-| 5. Integração | 10 | 0 | 10 |
+| 1. Infraestrutura | 10 | 7 | 3 |
+| 2. Produtos | 16 | 10 | 6 |
+| 3. Clientes | 10 | 4 | 6 |
+| 4. Leads | 10 | 3 | 7 |
+| 5. Integração | 10 | 8 | 2 |
 | 6. Limites | 4 | 0 | 4 |
 | 7. Métricas | 4 | 0 | 4 |
-| **TOTAL** | **64** | **0** | **64** |
+| **TOTAL** | **64** | **32** | **32** |
 
 ---
 
