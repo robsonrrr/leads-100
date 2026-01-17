@@ -152,6 +152,7 @@ ORDER BY ca.product_id, ty.name, ma.maker, mo.model, m2.name, m3.name, ye.year;
 
 -- =====================================================
 -- 7. View Consolidada para Solr (Produto Completo) - MySQL 8.4.7
+-- Nota: MySQL não suporta FILTER (WHERE), usamos subqueries
 -- =====================================================
 CREATE OR REPLACE VIEW Catalogo.vw_solr_produto_completo AS
 SELECT 
@@ -171,99 +172,111 @@ SELECT
     pdb.icms_antecipado,
     pdb.vip,
     
-    -- Códigos similares (agregados como JSON array)
-    COALESCE(
-        JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'id', similarID,
-                'codigo', COALESCE(similarCodigo, ''),
-                'marca', COALESCE(similarMarca, '')
-            )
-        ) FILTER (WHERE similarID IS NOT NULL),
-        JSON_ARRAY()
+    -- Códigos similares (subquery agregada)
+    (
+        SELECT COALESCE(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', vs.similarID,
+                    'codigo', COALESCE(vs.similarCodigo, ''),
+                    'marca', COALESCE(vs.similarMarca, '')
+                )
+            ),
+            JSON_ARRAY()
+        )
+        FROM Catalogo.vw_catalogo_similar vs 
+        WHERE vs.product_id = pdb.produto_id AND vs.similarID IS NOT NULL
     ) as codigos_similares,
     
-    -- Códigos originais (agregados como JSON array)
-    COALESCE(
-        JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'id', originalID,
-                'codigo', COALESCE(originalCodigo, ''),
-                'marca', COALESCE(originalMarca, '')
-            )
-        ) FILTER (WHERE originalID IS NOT NULL),
-        JSON_ARRAY()
+    -- Códigos originais (subquery agregada)
+    (
+        SELECT COALESCE(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', vo.originalID,
+                    'codigo', COALESCE(vo.originalCodigo, ''),
+                    'marca', COALESCE(vo.originalMarca, '')
+                )
+            ),
+            JSON_ARRAY()
+        )
+        FROM Catalogo.vw_catalogo_original vo 
+        WHERE vo.product_id = pdb.produto_id AND vo.originalID IS NOT NULL
     ) as codigos_originais,
     
-    -- Características (agregadas como JSON array)
-    COALESCE(
-        JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'seo', COALESCE(caracteristicaSEO, ''),
-                'nome', COALESCE(caracteristicaNome, ''),
-                'atributo', COALESCE(atributoNome, ''),
-                'ordem', COALESCE(caracteristicaOrdem, 0),
-                'medida', COALESCE(caracteristicaMedida, ''),
-                'segmento', COALESCE(segments, 0)
-            )
-        ) FILTER (WHERE caracteristicaSEO IS NOT NULL),
-        JSON_ARRAY()
+    -- Características (subquery agregada)
+    (
+        SELECT COALESCE(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'seo', COALESCE(vc.caracteristicaSEO, ''),
+                    'nome', COALESCE(vc.caracteristicaNome, ''),
+                    'atributo', COALESCE(vc.atributoNome, ''),
+                    'ordem', COALESCE(vc.caracteristicaOrdem, 0),
+                    'medida', COALESCE(vc.caracteristicaMedida, ''),
+                    'segmento', COALESCE(vc.segments, 0)
+                )
+            ),
+            JSON_ARRAY()
+        )
+        FROM Catalogo.vw_catalogo_caracteristicas vc 
+        WHERE vc.product_id = pdb.produto_id AND vc.caracteristicaSEO IS NOT NULL
     ) as caracteristicas,
     
-    -- Aplicações em motos (agregadas como JSON array)
-    COALESCE(
-        JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'maker', COALESCE(maker, ''),
-                'modelo', COALESCE(moto_modelo, ''),
-                'cc', COALESCE(moto_cc, ''),
-                'feature', COALESCE(moto_feature, ''),
-                'submodelo', COALESCE(moto_submodelo, ''),
-                'posicao', COALESCE(moto_posicao, ''),
-                'grupo', COALESCE(moto_grupo, ''),
-                'subgrupo', COALESCE(moto_subgrupo, ''),
-                'aplicacao', COALESCE(moto_aplicacao, ''),
-                'ano', COALESCE(am.year, ''),
-                'layout', COALESCE(am.layout, '')
-            )
-        ) FILTER (WHERE maker IS NOT NULL),
-        JSON_ARRAY()
+    -- Aplicações em motos (subquery agregada)
+    (
+        SELECT COALESCE(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'maker', COALESCE(vm.maker, ''),
+                    'modelo', COALESCE(vm.moto_modelo, ''),
+                    'cc', COALESCE(vm.moto_cc, ''),
+                    'feature', COALESCE(vm.moto_feature, ''),
+                    'submodelo', COALESCE(vm.moto_submodelo, ''),
+                    'posicao', COALESCE(vm.moto_posicao, ''),
+                    'grupo', COALESCE(vm.moto_grupo, ''),
+                    'subgrupo', COALESCE(vm.moto_subgrupo, ''),
+                    'aplicacao', COALESCE(vm.moto_aplicacao, ''),
+                    'ano', COALESCE(vm.year, ''),
+                    'layout', COALESCE(vm.layout, '')
+                )
+            ),
+            JSON_ARRAY()
+        )
+        FROM Catalogo.vw_catalogo_motos vm 
+        WHERE vm.product_id = pdb.produto_id AND vm.maker IS NOT NULL
     ) as aplicacoes_motos,
     
-    -- Aplicações em carros (agregadas como JSON array)
-    COALESCE(
-        JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'montadora', COALESCE(montadora, ''),
-                'modelo', COALESCE(modelo, ''),
-                'tipo', COALESCE(tipo, ''),
-                'localizacao', COALESCE(localizacao, ''),
-                'ano_inicio', COALESCE(ano_inicio, ''),
-                'ano_fim', COALESCE(ano_fim, ''),
-                'motor2', COALESCE(motor2, ''),
-                'motor3', COALESCE(motor3, ''),
-                'valvulas', COALESCE(valvulas, ''),
-                'cilindrada', COALESCE(cilindrada, ''),
-                'ar', COALESCE(ar, ''),
-                'abs', COALESCE(abs, ''),
-                'cambio', COALESCE(cambio, ''),
-                'direcao', COALESCE(direcao, ''),
-                'combustivel', COALESCE(combustivel, ''),
-                'feature2', COALESCE(feature2, '')
-            )
-        ) FILTER (WHERE montadora IS NOT NULL),
-        JSON_ARRAY()
+    -- Aplicações em carros (subquery agregada)
+    (
+        SELECT COALESCE(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'montadora', COALESCE(vca.montadora, ''),
+                    'modelo', COALESCE(vca.modelo, ''),
+                    'tipo', COALESCE(vca.tipo, ''),
+                    'localizacao', COALESCE(vca.localizacao, ''),
+                    'ano_inicio', COALESCE(vca.ano_inicio, ''),
+                    'ano_fim', COALESCE(vca.ano_fim, ''),
+                    'motor2', COALESCE(vca.motor2, ''),
+                    'motor3', COALESCE(vca.motor3, ''),
+                    'valvulas', COALESCE(vca.valvulas, ''),
+                    'cilindrada', COALESCE(vca.cilindrada, ''),
+                    'ar', COALESCE(vca.ar, ''),
+                    'abs', COALESCE(vca.abs, ''),
+                    'cambio', COALESCE(vca.cambio, ''),
+                    'direcao', COALESCE(vca.direcao, ''),
+                    'combustivel', COALESCE(vca.combustivel, ''),
+                    'feature2', COALESCE(vca.feature2, '')
+                )
+            ),
+            JSON_ARRAY()
+        )
+        FROM Catalogo.vw_catalogo_carros vca 
+        WHERE vca.product_id = pdb.produto_id AND vca.montadora IS NOT NULL
     ) as aplicacoes_carros
     
-FROM Catalogo.vw_produto_dados_basicos pdb
-LEFT JOIN Catalogo.vw_catalogo_similar vs ON pdb.produto_id = vs.product_id
-LEFT JOIN Catalogo.vw_catalogo_original vo ON pdb.produto_id = vo.product_id
-LEFT JOIN Catalogo.vw_catalogo_caracteristicas vc ON pdb.produto_id = vc.product_id
-LEFT JOIN Catalogo.vw_catalogo_motos vm ON pdb.produto_id = vm.product_id
-LEFT JOIN Catalogo.vw_catalogo_carros vca ON pdb.produto_id = vca.product_id
-GROUP BY pdb.produto_id, pdb.modelo, pdb.nome, pdb.seo, pdb.marca, pdb.ncm, 
-         pdb.habilitado, pdb.codebar, pdb.embalagem, pdb.OrigemPOID, pdb.st, 
-         pdb.isento_st, pdb.icms_antecipado, pdb.vip;
+FROM Catalogo.vw_produto_dados_basicos pdb;
 
 -- =====================================================
 -- 8. Views para Consultas Específicas (Otimizadas)
