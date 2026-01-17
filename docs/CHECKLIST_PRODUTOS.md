@@ -192,9 +192,9 @@ CREATE TABLE seller_favorite_products (
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 4.1.1 | Cache de estoque no Redis (TTL 2min) | Backend | ✅ |
-| 4.1.2 | Exibir estoque na tabela de itens | Frontend | ⏳ |
-| 4.1.3 | Alerta visual quando estoque baixo (< 5) | Frontend | ⏳ |
-| 4.1.4 | Alerta visual quando sem estoque | Frontend | ⏳ |
+| 4.1.2 | Exibir estoque na tabela de itens | Frontend | ✅ |
+| 4.1.3 | Alerta visual quando estoque baixo (< 5) | Frontend | ✅ |
+| 4.1.4 | Alerta visual quando sem estoque | Frontend | ✅ |
 | 4.1.5 | Previsão de reposição (se disponível) | Backend | ⏳ |
 | 4.1.6 | Invalidar cache ao atualizar estoque | Backend | ⏳ |
 
@@ -304,12 +304,12 @@ CREATE TABLE seller_favorite_products (
 | 1. Visualização | 14 | 8 | 6 |
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
-| 4. Estoque | 9 | 1 | 8 |
+| 4. Estoque | 9 | 4 | 5 |
 | 5. Preços | 11 | 4 | 7 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **29** | **58** |
+| **Total** | **87** | **32** | **55** |
 
 ---
 
