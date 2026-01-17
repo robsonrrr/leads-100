@@ -49,7 +49,8 @@ import {
   ShoppingCart as ShoppingCartIcon,
   AutoFixHigh as AutoFixHighIcon,
   Favorite as FavoriteIcon,
-  FavoriteBorder as FavoriteBorderIcon
+  FavoriteBorder as FavoriteBorderIcon,
+  Inventory as InventoryIcon
 } from '@mui/icons-material'
 import { leadsService, pricingService, productsService } from '../services/api'
 import aiService from '../services/ai.service'
@@ -1126,6 +1127,34 @@ function CartItems({ leadId, lead, readOnly = false }) {
                             <Typography variant="body2">
                               {item.product?.name || `Produto #${item.productId}`}
                             </Typography>
+                            {/* Chip de estoque */}
+                            {item.product?.stock !== undefined && (
+                              <Box sx={{ mt: 0.5 }}>
+                                <Chip
+                                  icon={<InventoryIcon sx={{ fontSize: 14 }} />}
+                                  label={
+                                    item.product.stock <= 0
+                                      ? 'Sem estoque'
+                                      : item.product.stock < 5
+                                        ? `Baixo: ${item.product.stock} un.`
+                                        : `${item.product.stock} un.`
+                                  }
+                                  color={
+                                    item.product.stock <= 0
+                                      ? 'error'
+                                      : item.product.stock < 5
+                                        ? 'warning'
+                                        : 'success'
+                                  }
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                    '& .MuiChip-icon': { ml: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                            )}
                           </Box>
                         </Box>
                       </TableCell>

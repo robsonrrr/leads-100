@@ -18,10 +18,12 @@ export class CartItemRepository {
         inv.nome as product_name,
         inv.description as product_description,
         p.segmento as product_segment,
-        p.categoria as product_category
+        p.categoria as product_category,
+        COALESCE(e.total_disponivel, 0) as product_stock
       FROM icart i
       LEFT JOIN inv inv ON i.cProduct = inv.id
       LEFT JOIN produtos p ON inv.idcf = p.id
+      LEFT JOIN produtos_estoque e ON e.produto_id = inv.id
       WHERE i.cSCart = ?
       ORDER BY i.cCart ASC
     `;
@@ -37,7 +39,8 @@ export class CartItemRepository {
           name: row.product_name,
           description: row.product_description,
           segment: row.product_segment,
-          category: row.product_category
+          category: row.product_category,
+          stock: parseInt(row.product_stock) || 0
         };
       }
       return item;
