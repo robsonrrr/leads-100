@@ -27,6 +27,7 @@ import {
     Info as InfoIcon
 } from '@mui/icons-material'
 import { sqliteService } from '../services/sqliteService'
+import { syncService } from '../services/syncService'
 
 export default function CacheStatusIndicator() {
     const [isOffline, setIsOffline] = useState(!navigator.onLine)
@@ -62,7 +63,20 @@ export default function CacheStatusIndicator() {
         loadStats()
         const interval = setInterval(loadStats, 30000) // Atualizar a cada 30s
 
-        return () => clearInterval(interval)
+        // Listener de eventos de sync
+        const unsubscribe = syncService.addListener((event, data) => {
+            if (event === 'sync:start') {
+                setSyncing(true)
+            } else if (event === 'sync:complete' || event === 'sync:error') {
+                setSyncing(false)
+                loadStats()
+            }
+        })
+
+        return () => {
+            clearInterval(interval)
+            unsubscribe()
+        }
     }, [])
 
     const handleClick = (event) => {
@@ -76,8 +90,7 @@ export default function CacheStatusIndicator() {
     const handleSync = async () => {
         setSyncing(true)
         try {
-            // TODO: Implementar sync real
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            await syncService.forceSync()
             const s = await sqliteService.getStats()
             setStats(s)
         } catch (err) {

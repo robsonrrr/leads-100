@@ -32,6 +32,7 @@ import goalsRoutes from './routes/goals.routes.js';
 import reportsRoutes from './routes/reports.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
+import syncRoutes from './routes/sync.routes.js';
 import v2Routes from './v2/index.js';
 
 // Load environment variables
@@ -205,6 +206,7 @@ app.use('/api/goals', goalsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/sync', syncRoutes);
 
 // API V2 Routes (Plan 2026)
 app.use('/api/v2', v2Routes);

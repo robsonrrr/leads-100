@@ -56,11 +56,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.3.1 | Endpoint: GET /api/sync/products?since=timestamp | Backend | ⏳ |
-| 2.3.2 | Retornar apenas produtos alterados desde X | Backend | ⏳ |
-| 2.3.3 | Incluir flag de deleted para soft-delete | Backend | ⏳ |
-| 2.3.4 | Sync inicial (bulk) em background | Frontend | ⏳ |
-| 2.3.5 | Sync incremental a cada 15 min | Frontend | ⏳ |
+| 2.3.1 | Endpoint: GET /api/sync/products?since=timestamp | Backend | ✅ |
+| 2.3.2 | Retornar apenas produtos alterados desde X | Backend | ✅ |
+| 2.3.3 | Incluir flag de deleted para soft-delete | Backend | ✅ |
+| 2.3.4 | Sync inicial (bulk) em background | Frontend | ✅ |
+| 2.3.5 | Sync incremental a cada 15 min | Frontend | ✅ |
 
 ### 2.4 Busca Offline
 
@@ -91,11 +91,11 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 3.2.1 | Endpoint: GET /api/sync/customers?since=timestamp | Backend | ⏳ |
-| 3.2.2 | Filtrar por seller_id (apenas sua carteira) | Backend | ⏳ |
-| 3.2.3 | Incluir dados de contato e endereço | Backend | ⏳ |
-| 3.2.4 | Sync inicial em background | Frontend | ⏳ |
-| 3.2.5 | Sync incremental a cada 30 min | Frontend | ⏳ |
+| 3.2.1 | Endpoint: GET /api/sync/customers?since=timestamp | Backend | ✅ |
+| 3.2.2 | Filtrar por seller_id (apenas sua carteira) | Backend | ✅ |
+| 3.2.3 | Incluir dados de contato e endereço | Backend | ✅ |
+| 3.2.4 | Sync inicial em background | Frontend | ✅ |
+| 3.2.5 | Sync incremental a cada 30 min | Frontend | ✅ |
 
 ### 3.3 Dados NÃO Cachear
 
@@ -114,10 +114,10 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 4.1.1 | Tabela: leads_draft (local, não sincronizado) | Frontend | ✅ |
-| 4.1.2 | Tabela: lead_items_draft (itens do carrinho) | Frontend | ⏳ |
-| 4.1.3 | Salvar automaticamente ao editar | Frontend | ⏳ |
+| 4.1.2 | Tabela: lead_items_draft (itens do carrinho) | Frontend | ✅ |
+| 4.1.3 | Salvar automaticamente ao editar | Frontend | ✅ |
 | 4.1.4 | Indicador "Não salvo na nuvem" | Frontend | ⏳ |
-| 4.1.5 | Sincronizar quando voltar online | Frontend | ⏳ |
+| 4.1.5 | Sincronizar quando voltar online | Frontend | ✅ |
 
 ### 4.2 Fila de Sincronização
 
@@ -125,7 +125,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 |---|--------|-------------|--------|
 | 4.2.1 | Tabela: sync_queue (action, data, status) | Frontend | ✅ |
 | 4.2.2 | Adicionar operações pendentes à fila | Frontend | ✅ |
-| 4.2.3 | Processar fila quando online | Frontend | ⏳ |
+| 4.2.3 | Processar fila quando online | Frontend | ✅ |
 | 4.2.4 | Retry com backoff exponencial | Frontend | ⏳ |
 | 4.2.5 | Notificar usuário de erros de sync | Frontend | ⏳ |
 
@@ -139,7 +139,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 |---|--------|-------------|--------|
 | 5.1.1 | Criar hook useOfflineProducts() | Frontend | ✅ |
 | 5.1.2 | Criar hook useOfflineCustomers() | Frontend | ✅ |
-| 5.1.3 | Criar hook useOfflineLeads() | Frontend | ⏳ |
+| 5.1.3 | Criar hook useOfflineLeads() | Frontend | ✅ |
 | 5.1.4 | Priorizar cache, fallback para API | Frontend | ✅ |
 | 5.1.5 | Retornar flag isOffline para UI | Frontend | ✅ |
 
@@ -192,13 +192,13 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | Categoria | Total | Concluídas | Pendentes |
 |-----------|-------|------------|-----------|
 | 1. Infraestrutura | 10 | 7 | 3 |
-| 2. Produtos | 16 | 10 | 6 |
-| 3. Clientes | 10 | 4 | 6 |
-| 4. Leads | 10 | 3 | 7 |
-| 5. Integração | 10 | 8 | 2 |
+| 2. Produtos | 16 | 15 | 1 |
+| 3. Clientes | 10 | 9 | 1 |
+| 4. Leads | 10 | 7 | 3 |
+| 5. Integração | 10 | 9 | 1 |
 | 6. Limites | 4 | 0 | 4 |
 | 7. Métricas | 4 | 0 | 4 |
-| **TOTAL** | **64** | **32** | **32** |
+| **TOTAL** | **64** | **47** | **17** |
 
 ---
 
