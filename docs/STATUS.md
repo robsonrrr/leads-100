@@ -444,10 +444,16 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Hook useNotifications para gerenciamento
   - Categorização com ícones e cores
   - Integração com preferências do usuário
+- ✅ **Testes Automatizados** (2026-01-17)
+  - Testes unitários para AuditLog service
+  - Testes unitários para Email service
+  - Testes unitários para Export service
+  - Testes de funções utilitárias (helpers)
+  - Testes de integração para rotas de Leads
+  - Setup com mocks de database e serviços
 
 ### Pendente
 - ⏳ Revendedor (cliente de cliente)
-- ⏳ Testes automatizados
 
 ---
 
@@ -553,7 +559,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **95% - Em Andamento**
+**Status**: ✅ **98% - Quase Completo**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
