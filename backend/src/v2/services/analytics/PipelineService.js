@@ -1,5 +1,6 @@
 import { getDatabase } from '../../../config/database.js';
 import logger from '../../../config/logger.js';
+import { CacheService } from '../../../services/cache.service.js';
 
 const db = () => getDatabase();
 
@@ -9,6 +10,8 @@ const db = () => getDatabase();
  * 
  * Pipeline = Leads em aberto + Leads convertidos no período
  * Conversão = Leads convertidos / Leads criados
+ * 
+ * CACHE: 5 minutos para dados consolidados, dados críticos são atualizados frequentemente
  */
 export class PipelineService {
 
@@ -30,6 +33,15 @@ export class PipelineService {
         } = options;
 
         const targetPeriod = period || this.getCurrentPeriod();
+        const cacheKey = `pipeline:${targetPeriod}:${segment}:${sellerId || 'all'}`;
+
+        // Cache de 5 minutos para pipeline (dados mudam com novas vendas, mas não precisa ser realtime)
+        return CacheService.getOrSet(cacheKey, async () => {
+            return await this._calculatePipeline(targetPeriod, sellerId, granularity, segment);
+        }, 300); // 5 minutos
+    }
+
+    async _calculatePipeline(targetPeriod, sellerId, granularity, segment) {
         const [year, month] = targetPeriod.split('-').map(Number);
 
         logger.info('PipelineService: Calculating pipeline', { sellerId, period: targetPeriod, granularity, segment });

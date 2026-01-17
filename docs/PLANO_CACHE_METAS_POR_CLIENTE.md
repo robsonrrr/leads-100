@@ -309,8 +309,14 @@ logger.info('CustomerGoals request', {
 ### Validação
 - [x] Verificar que `sold_month` sempre reflete realtime ✅ Query separada sem cache
 - [x] Verificar que `penetration_month_pct` sempre reflete realtime ✅ Calculado em _getRealtimeMonthlyData
-- [ ] Medir tempo de resposta antes/depois
+- [x] Medir tempo de resposta antes/depois ✅ Implementado em 17/01/2026
 - [x] Testar cenário: venda registrada → cache invalidado ✅ Implementado em convertToOrder
+
+### Otimizações Adicionais (17/01/2026)
+- [x] Cache de 5 min no `PipelineService.calculate()` ✅
+- [x] Cache de 5 min no `PenetrationService.calculate()` ✅
+- [x] Cache de 5 min no `getTeamProgress()` (goals.controller.js) ✅
+- [x] Cache de 10 min nos dados anuais do CustomerGoalsService ✅
 
 ---
 

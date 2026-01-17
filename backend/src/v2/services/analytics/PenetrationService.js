@@ -1,5 +1,6 @@
 import { getDatabase } from '../../../config/database.js';
 import logger from '../../../config/logger.js';
+import { CacheService } from '../../../services/cache.service.js';
 
 const db = () => getDatabase();
 
@@ -9,6 +10,8 @@ const db = () => getDatabase();
  * 
  * Penetração = Revendas que Compraram no Mês / Total de Revendas na Carteira
  * Meta: >= 2.5 revendas/vendedor/mês
+ * 
+ * CACHE: 5 minutos para dados consolidados
  */
 export class PenetrationService {
 
@@ -28,22 +31,27 @@ export class PenetrationService {
 
         // Determina o período (default: mês atual)
         const targetPeriod = period || this.getCurrentPeriod();
-        const [year, month] = targetPeriod.split('-').map(Number);
+        const cacheKey = `penetration:${targetPeriod}:${segment}:${sellerId || 'all'}`;
 
-        logger.info('PenetrationService: Calculating penetration', { sellerId, period: targetPeriod, segment });
+        // Cache de 5 minutos para penetração
+        return CacheService.getOrSet(cacheKey, async () => {
+            const [year, month] = targetPeriod.split('-').map(Number);
 
-        try {
-            // Se sellerId informado, calcula só para ele
-            if (sellerId) {
-                return await this.calculateForSeller(sellerId, year, month, segment);
+            logger.info('PenetrationService: Calculating penetration', { sellerId, period: targetPeriod, segment });
+
+            try {
+                // Se sellerId informado, calcula só para ele
+                if (sellerId) {
+                    return await this.calculateForSeller(sellerId, year, month, segment);
+                }
+
+                // Caso contrário, calcula para todos os vendedores do segmento
+                return await this.calculateForAllSellers(year, month, segment);
+            } catch (error) {
+                logger.error('PenetrationService: Error calculating penetration', { error: error.message });
+                throw error;
             }
-
-            // Caso contrário, calcula para todos os vendedores do segmento
-            return await this.calculateForAllSellers(year, month, segment);
-        } catch (error) {
-            logger.error('PenetrationService: Error calculating penetration', { error: error.message });
-            throw error;
-        }
+        }, 300); // 5 minutos
     }
 
     /**

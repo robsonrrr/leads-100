@@ -3,6 +3,7 @@
  * Sistema de Metas de Vendedores
  */
 import { getDatabase } from '../config/database.js';
+import { CacheService } from '../services/cache.service.js';
 import Joi from 'joi';
 
 const db = () => getDatabase();
@@ -412,48 +413,55 @@ export async function getTeamProgress(req, res, next) {
     const month = parseInt(req.query.month) || now.getMonth() + 1;
     const segmento = req.query.segmento || null;
 
-    let query = `
-      SELECT 
-        u.id as seller_id,
-        COALESCE(u.nick, u.user) as seller_name,
-        u.segmento,
-        COALESCE(gm.target_value, 0) as month_target,
-        COALESCE(ga.target_value, 0) as year_target,
-        COALESCE(SUM(CASE WHEN MONTH(h.data) = ? THEN h.valor ELSE 0 END), 0) as month_sales,
-        COALESCE(SUM(h.valor), 0) as year_sales
-      FROM rolemak_users u
-      LEFT JOIN staging.seller_goals gm ON u.id = gm.seller_id AND gm.year = ? AND gm.month = ?
-      LEFT JOIN staging.seller_goals ga ON u.id = ga.seller_id AND ga.year = ? AND ga.month IS NULL
-      LEFT JOIN mak.hoje h ON u.id = h.vendedor AND YEAR(h.data) = ? AND h.valor > 0 AND h.nop IN (27, 28, 51, 76)
-      WHERE u.depto = 'VENDAS'
-    `;
-    const params = [month, year, month, year, year];
+    // Cache de 5 minutos para team-progress (query pesada)
+    const cacheKey = `team_progress:${year}:${month}:${segmento || 'all'}`;
 
-    if (segmento) {
-      query += ` AND u.segmento = ?`;
-      params.push(segmento);
-    }
+    const team = await CacheService.getOrSet(cacheKey, async () => {
+      let query = `
+        SELECT 
+          u.id as seller_id,
+          COALESCE(u.nick, u.user) as seller_name,
+          u.segmento,
+          COALESCE(gm.target_value, 0) as month_target,
+          COALESCE(ga.target_value, 0) as year_target,
+          COALESCE(SUM(CASE WHEN MONTH(h.data) = ? THEN h.valor ELSE 0 END), 0) as month_sales,
+          COALESCE(SUM(h.valor), 0) as year_sales
+        FROM rolemak_users u
+        LEFT JOIN staging.seller_goals gm ON u.id = gm.seller_id AND gm.year = ? AND gm.month = ?
+        LEFT JOIN staging.seller_goals ga ON u.id = ga.seller_id AND ga.year = ? AND ga.month IS NULL
+        LEFT JOIN mak.hoje h ON u.id = h.vendedor AND YEAR(h.data) = ? AND h.valor > 0 AND h.nop IN (27, 28, 51, 76)
+        WHERE u.depto = 'VENDAS'
+      `;
+      const params = [month, year, month, year, year];
 
-    query += ` GROUP BY u.id, u.nick, u.user, u.segmento, gm.target_value, ga.target_value`;
-    query += ` ORDER BY month_sales DESC`;
-
-    const [rows] = await db().execute(query, params);
-
-    const team = rows.map(row => ({
-      sellerId: row.seller_id,
-      sellerName: row.seller_name,
-      segmento: row.segmento,
-      monthly: {
-        target: parseFloat(row.month_target) || 0,
-        achieved: parseFloat(row.month_sales) || 0,
-        progress: row.month_target > 0 ? Math.round((row.month_sales / row.month_target) * 100) : 0
-      },
-      annual: {
-        target: parseFloat(row.year_target) || 0,
-        achieved: parseFloat(row.year_sales) || 0,
-        progress: row.year_target > 0 ? Math.round((row.year_sales / row.year_target) * 100) : 0
+      if (segmento) {
+        query += ` AND u.segmento = ?`;
+        params.push(segmento);
       }
-    }));
+
+      query += ` GROUP BY u.id, u.nick, u.user, u.segmento, gm.target_value, ga.target_value`;
+      query += ` ORDER BY month_sales DESC`;
+
+      const [rows] = await db().execute(query, params);
+
+      return rows.map(row => ({
+        sellerId: row.seller_id,
+        sellerName: row.seller_name,
+        segmento: row.segmento,
+        monthly: {
+          target: parseFloat(row.month_target) || 0,
+          achieved: parseFloat(row.month_sales) || 0,
+          progress: row.month_target > 0 ? Math.round((row.month_sales / row.month_target) * 100) : 0
+        },
+        annual: {
+          target: parseFloat(row.year_target) || 0,
+          achieved: parseFloat(row.year_sales) || 0,
+          progress: row.year_target > 0 ? Math.round((row.year_sales / row.year_target) * 100) : 0
+        }
+      }));
+    }, 300); // 5 minutos
+
+
 
     res.json({
       success: true,
