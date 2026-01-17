@@ -23,19 +23,23 @@ SELECT
     p.categoria,
     p.ncm,
     p.vip,
-    COALESCE(e.total_disponivel, 0) as estoque_total,
-    COALESCE(e.matriz, 0) as estoque_matriz,
-    COALESCE(e.cd01, 0) as estoque_cd01,
-    COALESCE(e.cd06, 0) as estoque_cd06,
-    COALESCE(e.cd11, 0) as estoque_cd11,
+    -- Estoque agregado via subquery
+    COALESCE((
+        SELECT SUM(e.estoque_disponivel) 
+        FROM mak.produtos_estoque_por_unidades e 
+        WHERE e.produto_id = i.id
+    ), 0) as estoque_total,
     -- URL da imagem
     CONCAT('https://img.rolemak.com.br/id/h180/', i.id, '.jpg') as imagem_url,
     -- Flags de status
-    CASE WHEN e.total_disponivel > 0 THEN 1 ELSE 0 END as tem_estoque,
+    CASE WHEN (
+        SELECT SUM(e.estoque_disponivel) 
+        FROM mak.produtos_estoque_por_unidades e 
+        WHERE e.produto_id = i.id
+    ) > 0 THEN 1 ELSE 0 END as tem_estoque,
     CASE WHEN i.revenda > 0 THEN 1 ELSE 0 END as tem_preco
 FROM mak.inv i
 LEFT JOIN mak.produtos p ON i.idcf = p.id
-LEFT JOIN mak.produtos_estoque e ON e.produto_id = i.id
 WHERE i.revenda > 0;  -- Apenas produtos com preço
 
 -- =====================================================
@@ -77,12 +81,12 @@ SELECT
     p.ipi,
     p.st,
     
-    -- Estoque
-    COALESCE(e.total_disponivel, 0) as estoque_total,
-    COALESCE(e.matriz, 0) as estoque_matriz,
-    COALESCE(e.cd01, 0) as estoque_cd01,
-    COALESCE(e.cd06, 0) as estoque_cd06,
-    COALESCE(e.cd11, 0) as estoque_cd11,
+    -- Estoque total agregado
+    COALESCE((
+        SELECT SUM(e.estoque_disponivel) 
+        FROM mak.produtos_estoque_por_unidades e 
+        WHERE e.produto_id = i.id
+    ), 0) as estoque_total,
     
     -- Flags ecommerce
     COALESCE(pe.produtoAtivo, 0) as ativo_ecommerce,
@@ -104,7 +108,6 @@ SELECT
     
 FROM mak.inv i
 LEFT JOIN mak.produtos p ON i.idcf = p.id
-LEFT JOIN mak.produtos_estoque e ON e.produto_id = i.id
 LEFT JOIN Ecommerce.produtos_ecommerce pe ON pe.id = i.id;
 
 -- =====================================================
