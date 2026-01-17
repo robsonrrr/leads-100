@@ -211,9 +211,22 @@ CREATE TABLE seller_favorite_products (
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 4.2.1 | Consultar estoque por depósito | Backend | ⏳ |
-| 4.2.2 | Exibir disponibilidade por local | Frontend | ⏳ |
-| 4.2.3 | Calcular tempo de entrega por depósito | Backend | ⏳ |
+| 4.2.1 | Consultar estoque por depósito | Backend | ✅ |
+| 4.2.2 | Exibir disponibilidade por local | Frontend | ✅ |
+| 4.2.3 | Destacar unidade do lead (chip azul) | Frontend | ✅ |
+| 4.2.4 | Alerta de estoque insuficiente na unidade | Frontend | ✅ |
+| 4.2.5 | Bloquear conversão sem estoque na unidade | Frontend | ✅ |
+| 4.2.6 | Calcular tempo de entrega por depósito | Backend | ⏳ |
+
+**View SQL criada:** `produtos_estoque_por_unidades`
+```sql
+-- Consulta estoque normalizado por unidade
+SELECT produto_id, unidade_id, unidade_fantasia, estoque_disponivel
+FROM mak.produtos_estoque_por_unidades
+WHERE produto_id = ?
+```
+
+**Endpoint:** `GET /api/products/:id/stock-by-warehouse`
 
 ---
 
@@ -326,12 +339,12 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | 1. Visualização | 14 | 9 | 5 |
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
-| 4. Estoque | 9 | 4 | 5 |
+| 4. Estoque | 12 | 9 | 3 |
 | 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **96** | **45** | **51** |
+| **Total** | **99** | **50** | **49** |
 
 ---
 
