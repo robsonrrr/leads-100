@@ -127,9 +127,9 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.3.1 | Sugestões de busca (did you mean?) | Backend | ⏳ |
-| 2.3.2 | Busca por sinônimos | Backend | ⏳ |
-| 2.3.3 | Busca tolerante a erros de digitação | Backend | ⏳ |
+| 2.3.1 | Sugestões de busca (did you mean?) | Backend | ✅ |
+| 2.3.2 | Busca por sinônimos | Backend | ✅ |
+| 2.3.3 | Busca tolerante a erros de digitação | Backend | ✅ |
 | 2.3.4 | Histórico de buscas do vendedor | Backend | ✅ |
 | 2.3.5 | Produtos mais buscados (trending) | Backend | ✅ |
 
@@ -337,14 +337,14 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 | Bloco | Tarefas | Concluídas | Pendentes |
 |-------|---------|------------|-----------|
 | 1. Visualização | 14 | 14 | 0 |
-| 2. Busca | 20 | 13 | 7 |
+| 2. Busca | 20 | 16 | 4 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 12 | 9 | 3 |
 | 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **58** | **41** |
+| **Total** | **99** | **61** | **38** |
 
 ---
 

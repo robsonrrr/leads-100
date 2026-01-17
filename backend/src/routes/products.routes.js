@@ -377,5 +377,52 @@ router.get('/trending', optionalAuth, productsController.getTrendingProducts);
  */
 router.get('/trending-terms', optionalAuth, productsController.getTrendingTerms);
 
+// ========== BUSCA INTELIGENTE ==========
+
+/**
+ * @swagger
+ * /api/products/suggestions:
+ *   get:
+ *     tags: [Products]
+ *     summary: Sugestões de busca "Did you mean?"
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/suggestions', optionalAuth, productsController.getSuggestions);
+
+/**
+ * @swagger
+ * /api/products/expand-synonyms:
+ *   get:
+ *     tags: [Products]
+ *     summary: Expande termo com sinônimos
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/expand-synonyms', optionalAuth, productsController.expandSynonyms);
+
+/**
+ * @swagger
+ * /api/products/fuzzy-search:
+ *   get:
+ *     tags: [Products]
+ *     summary: Busca tolerante a erros (fuzzy)
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/fuzzy-search', optionalAuth, productsController.fuzzySearch);
+
 export default router;
 

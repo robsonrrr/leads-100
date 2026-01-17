@@ -477,3 +477,84 @@ export async function getTrendingTerms(req, res, next) {
     next(error);
   }
 }
+
+// ========== BUSCA INTELIGENTE ==========
+
+import SmartSearchService from '../services/smartSearch.service.js';
+
+/**
+ * Busca sugestões "Did you mean?"
+ * GET /api/products/suggestions?q=termo
+ */
+export async function getSuggestions(req, res, next) {
+  try {
+    const { q: searchTerm } = req.query;
+    const limit = parseInt(req.query.limit) || 5;
+
+    if (!searchTerm || searchTerm.length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const suggestions = await SmartSearchService.getSuggestions(searchTerm, limit);
+
+    res.json({
+      success: true,
+      data: suggestions
+    });
+  } catch (error) {
+    console.error('Erro getSuggestions:', error);
+    next(error);
+  }
+}
+
+/**
+ * Expande termo com sinônimos
+ * GET /api/products/expand-synonyms?q=termo
+ */
+export async function expandSynonyms(req, res, next) {
+  try {
+    const { q: searchTerm } = req.query;
+
+    if (!searchTerm) {
+      return res.json({ success: true, data: { original: '', expanded: [] } });
+    }
+
+    const expanded = SmartSearchService.expandWithSynonyms(searchTerm);
+
+    res.json({
+      success: true,
+      data: {
+        original: searchTerm,
+        expanded
+      }
+    });
+  } catch (error) {
+    console.error('Erro expandSynonyms:', error);
+    next(error);
+  }
+}
+
+/**
+ * Busca fuzzy com tolerância a erros
+ * GET /api/products/fuzzy-search?q=termo
+ */
+export async function fuzzySearch(req, res, next) {
+  try {
+    const { q: searchTerm } = req.query;
+    const limit = parseInt(req.query.limit) || 10;
+
+    if (!searchTerm || searchTerm.length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const results = await SmartSearchService.searchWithFuzzyMatch(searchTerm, limit);
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Erro fuzzySearch:', error);
+    next(error);
+  }
+}
