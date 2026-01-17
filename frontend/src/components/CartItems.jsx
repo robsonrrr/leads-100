@@ -119,28 +119,63 @@ function CartItems({ leadId, lead, readOnly = false }) {
     return map
   }, [promotions])
 
-  // Mapa de descontos por quantidade (SKU -> tem desconto)
-  const quantityDiscountMap = useMemo(() => {
-    const map = new Map()
+  // Mapa de descontos por quantidade - separado por SKU e família
+  const { skuDiscountMap, familyDiscounts } = useMemo(() => {
+    const skuMap = new Map()
+    const familyList = []
+
     if (Array.isArray(quantityDiscounts)) {
       quantityDiscounts.forEach(qd => {
+        const discountInfo = {
+          minQty: qd.min_quantity,
+          maxQty: qd.max_quantity,
+          discount: qd.discount_pct,
+          price: qd.price,
+          description: qd.description
+        }
+
         if (qd.sku_id) {
           // Desconto por SKU específico
-          if (!map.has(qd.sku_id)) {
-            map.set(qd.sku_id, [])
+          if (!skuMap.has(qd.sku_id)) {
+            skuMap.set(qd.sku_id, [])
           }
-          map.get(qd.sku_id).push({
-            minQty: qd.min_quantity,
-            maxQty: qd.max_quantity,
-            discount: qd.discount_pct,
-            price: qd.price,
-            description: qd.description
+          skuMap.get(qd.sku_id).push(discountInfo)
+        } else if (qd.product_family) {
+          // Desconto por família (ex: "B9000", "GT-700")
+          familyList.push({
+            family: qd.product_family,
+            ...discountInfo
           })
         }
       })
     }
-    return map
+
+    return { skuDiscountMap: skuMap, familyDiscounts: familyList }
   }, [quantityDiscounts])
+
+  // Helper para verificar se produto tem desconto por quantidade
+  const getQuantityDiscounts = (productId, productModel) => {
+    // Primeiro verifica por SKU específico
+    if (skuDiscountMap.has(productId)) {
+      return { type: 'sku', discounts: skuDiscountMap.get(productId) }
+    }
+
+    // Depois verifica por família (primeiros dígitos do modelo)
+    if (productModel && familyDiscounts.length > 0) {
+      const modelUpper = String(productModel).toUpperCase()
+
+      // Encontrar descontos de família que correspondem ao modelo
+      const matchingDiscounts = familyDiscounts.filter(fd =>
+        modelUpper.startsWith(fd.family.toUpperCase())
+      )
+
+      if (matchingDiscounts.length > 0) {
+        return { type: 'family', family: matchingDiscounts[0].family, discounts: matchingDiscounts }
+      }
+    }
+
+    return null
+  }
 
   const [formData, setFormData] = useState({
     product: null,
@@ -1206,35 +1241,47 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                   }}
                                 />
                               )}
-                              {/* Badge de desconto por quantidade */}
-                              {quantityDiscountMap.has(item.productId || item.product?.id) && (
-                                <Tooltip
-                                  title={
-                                    <Box>
-                                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Descontos por Quantidade:</Typography>
-                                      {quantityDiscountMap.get(item.productId || item.product?.id).map((qd, idx) => (
-                                        <Typography key={idx} variant="caption" display="block">
-                                          • {qd.minQty}+ un: {qd.discount ? `-${qd.discount}%` : formatCurrency(qd.price)}
+                              {/* Badge de desconto por quantidade (SKU ou família) */}
+                              {(() => {
+                                const productId = item.productId || item.product?.id
+                                const productModel = item.product?.model
+                                const qtyDiscount = getQuantityDiscounts(productId, productModel)
+
+                                if (!qtyDiscount) return null
+
+                                return (
+                                  <Tooltip
+                                    title={
+                                      <Box>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                                          {qtyDiscount.type === 'family'
+                                            ? `Descontos Família ${qtyDiscount.family}:`
+                                            : 'Descontos por Quantidade:'}
                                         </Typography>
-                                      ))}
-                                    </Box>
-                                  }
-                                  arrow
-                                >
-                                  <Chip
-                                    icon={<CalculateIcon sx={{ fontSize: 14 }} />}
-                                    label="Desc. Qtde"
-                                    color="info"
-                                    size="small"
-                                    sx={{
-                                      height: 20,
-                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
-                                      '& .MuiChip-icon': { ml: 0.5 },
-                                      cursor: 'help'
-                                    }}
-                                  />
-                                </Tooltip>
-                              )}
+                                        {qtyDiscount.discounts.map((qd, idx) => (
+                                          <Typography key={idx} variant="caption" display="block">
+                                            • {qd.minQty}+ un: {qd.discount ? `-${qd.discount}%` : formatCurrency(qd.price)}
+                                          </Typography>
+                                        ))}
+                                      </Box>
+                                    }
+                                    arrow
+                                  >
+                                    <Chip
+                                      icon={<CalculateIcon sx={{ fontSize: 14 }} />}
+                                      label={qtyDiscount.type === 'family' ? `Fam. ${qtyDiscount.family}` : 'Desc. Qtde'}
+                                      color="info"
+                                      size="small"
+                                      sx={{
+                                        height: 20,
+                                        '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                                        '& .MuiChip-icon': { ml: 0.5 },
+                                        cursor: 'help'
+                                      }}
+                                    />
+                                  </Tooltip>
+                                )
+                              })()}
                               {/* Chip de estoque */}
                               {item.product?.stock !== undefined && (
                                 <Chip
