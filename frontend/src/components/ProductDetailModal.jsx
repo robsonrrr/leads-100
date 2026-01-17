@@ -36,6 +36,7 @@ import {
     LocalMall as OutletIcon,
     Straighten as MeasureIcon
 } from '@mui/icons-material';
+import OptimizedImage from './OptimizedImage';
 import MakPrimeLogo from './MakPrimeLogo';
 import { formatCurrency } from '../utils';
 import { productsService } from '../services/api';
@@ -189,18 +190,16 @@ function ProductDetailModal({
                         }}>
                             {imageUrl && !imageError ? (
                                 <>
-                                    <Box
-                                        component="img"
+                                    <OptimizedImage
                                         src={imageUrl}
                                         alt={data?.modelo || 'Produto'}
-                                        onError={() => setImageError(true)}
                                         sx={{
                                             maxWidth: '100%',
                                             maxHeight: 350,
                                             objectFit: 'contain',
+                                            cursor: imageZoom < 2 ? 'zoom-in' : 'zoom-out',
                                             transform: `scale(${imageZoom})`,
-                                            transition: 'transform 0.2s ease',
-                                            cursor: imageZoom < 2 ? 'zoom-in' : 'zoom-out'
+                                            transition: 'transform 0.2s ease'
                                         }}
                                         onClick={() => imageZoom < 2 ? handleZoomIn() : handleZoomOut()}
                                     />

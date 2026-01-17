@@ -51,6 +51,7 @@ import { productsService, pricingService } from '../services/api'
 import { useToast } from '../contexts/ToastContext'
 import ProductDetailModal from '../components/ProductDetailModal'
 import AddToLeadModal from '../components/AddToLeadModal'
+import { ProductGridItem, ProductListItem } from '../components/ProductCard'
 import { formatCurrency } from '../utils'
 import { OnlineButton } from '../hooks/useOnlineAction'
 
@@ -377,220 +378,7 @@ function ProductsPage() {
     )
 
     // Card de produto
-    const ProductCard = ({ product }) => {
-        const isPromo = promotionMap.has(product.id)
-        const isLaunch = launchMap.has(product.id)
-        const isFavorite = favorites.has(product.id)
-        const stock = product.estoque || product.stock || 0
 
-        return (
-            <Card
-                sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 6
-                    }
-                }}
-            >
-                {/* Badges */}
-                <Box sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 0.5, flexWrap: 'wrap', zIndex: 1 }}>
-                    {isPromo && (
-                        <Chip
-                            icon={<PromoIcon sx={{ fontSize: 14 }} />}
-                            label="Promoção"
-                            size="small"
-                            color="error"
-                            sx={{ height: 20, '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' } }}
-                        />
-                    )}
-                    {isLaunch && (
-                        <Chip
-                            icon={<LaunchIcon sx={{ fontSize: 14 }} />}
-                            label="Lançamento"
-                            size="small"
-                            sx={{ height: 20, bgcolor: '#9c27b0', color: 'white', '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' } }}
-                        />
-                    )}
-                </Box>
-
-                {/* Botão Favorito */}
-                <IconButton
-                    sx={{ position: 'absolute', top: 4, right: 4, zIndex: 1 }}
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id) }}
-                >
-                    {isFavorite ? (
-                        <FavoriteIcon color="error" />
-                    ) : (
-                        <FavoriteBorderIcon />
-                    )}
-                </IconButton>
-
-                {/* Imagem */}
-                <CardMedia
-                    component="img"
-                    height="160"
-                    image={`${IMAGE_BASE_URL}/${product.id}.jpg`}
-                    alt={product.model}
-                    sx={{ objectFit: 'contain', p: 2, cursor: 'pointer', bgcolor: '#f5f5f5' }}
-                    onClick={() => setDetailModal({ open: true, product })}
-                    onError={(e) => {
-                        e.target.src = '/placeholder-product.png'
-                        e.target.onerror = null
-                    }}
-                />
-
-                <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                    {/* Modelo e Marca */}
-                    <Typography variant="subtitle2" component="div" fontWeight="bold" noWrap>
-                        {product.model}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                        {product.brand}
-                    </Typography>
-
-                    {/* Nome do produto */}
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            minHeight: '2.5em',
-                            mt: 0.5
-                        }}
-                    >
-                        {product.name || product.description}
-                    </Typography>
-
-                    {/* Preço */}
-                    <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                        {formatCurrency(product.price || product.preco_tabela || 0)}
-                    </Typography>
-
-                    {/* Estoque */}
-                    <Chip
-                        icon={<InventoryIcon sx={{ fontSize: 14 }} />}
-                        label={stock <= 0 ? 'Sem estoque' : stock < 5 ? `Baixo: ${stock}` : `${stock} un.`}
-                        size="small"
-                        color={stock <= 0 ? 'error' : stock < 5 ? 'warning' : 'success'}
-                        sx={{ mt: 1, height: 20, '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' } }}
-                    />
-                </CardContent>
-
-                <CardActions sx={{ pt: 0, px: 2, pb: 2 }}>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setDetailModal({ open: true, product })}
-                    >
-                        Detalhes
-                    </Button>
-                    <OnlineButton
-                        size="small"
-                        variant="contained"
-                        startIcon={<AddCartIcon />}
-                        disabled={stock <= 0}
-                        onClick={() => setAddToLeadModal({ open: true, product })}
-                        offlineMessage="Adicionar ao lead requer conexão"
-                    >
-                        Adicionar
-                    </OnlineButton>
-                </CardActions>
-            </Card>
-        )
-    }
-
-    // Item de lista
-    const ProductListItem = ({ product }) => {
-        const isPromo = promotionMap.has(product.id)
-        const isLaunch = launchMap.has(product.id)
-        const isFavorite = favorites.has(product.id)
-        const stock = product.estoque || product.stock || 0
-
-        return (
-            <Paper
-                sx={{
-                    p: 2,
-                    display: 'flex',
-                    gap: 2,
-                    alignItems: 'center',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                        boxShadow: 4
-                    }
-                }}
-            >
-                {/* Imagem */}
-                <Box
-                    component="img"
-                    src={`${IMAGE_BASE_URL}/${product.id}.jpg`}
-                    alt={product.model}
-                    sx={{ width: 80, height: 80, objectFit: 'contain', cursor: 'pointer' }}
-                    onClick={() => setDetailModal({ open: true, product })}
-                    onError={(e) => {
-                        e.target.src = '/placeholder-product.png'
-                        e.target.onerror = null
-                    }}
-                />
-
-                {/* Info */}
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="subtitle1" fontWeight="bold" noWrap>
-                            {product.model}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {product.brand}
-                        </Typography>
-                        {isPromo && <Chip label="Promoção" size="small" color="error" sx={{ height: 18 }} />}
-                        {isLaunch && <Chip label="Lançamento" size="small" sx={{ height: 18, bgcolor: '#9c27b0', color: 'white' }} />}
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                        {product.name || product.description}
-                    </Typography>
-                </Box>
-
-                {/* Preço e Estoque */}
-                <Box sx={{ textAlign: 'right', minWidth: 120 }}>
-                    <Typography variant="h6" color="primary">
-                        {formatCurrency(product.price || product.preco_tabela || 0)}
-                    </Typography>
-                    <Chip
-                        icon={<InventoryIcon sx={{ fontSize: 12 }} />}
-                        label={stock <= 0 ? 'Sem estoque' : `${stock} un.`}
-                        size="small"
-                        color={stock <= 0 ? 'error' : stock < 5 ? 'warning' : 'success'}
-                        sx={{ height: 18 }}
-                    />
-                </Box>
-
-                {/* Ações */}
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton onClick={() => toggleFavorite(product.id)}>
-                        {isFavorite ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-                    </IconButton>
-                    <OnlineButton
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddCartIcon />}
-                        disabled={stock <= 0}
-                        onClick={() => setAddToLeadModal({ open: true, product })}
-                        offlineMessage="Adicionar ao lead requer conexão"
-                    >
-                        Adicionar
-                    </OnlineButton>
-                </Box>
-            </Paper>
-        )
-    }
 
     return (
         <Box sx={{ p: 3 }}>
@@ -705,14 +493,31 @@ function ProductsPage() {
                         <Grid container spacing={2}>
                             {products.map(product => (
                                 <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-                                    <ProductCard product={product} />
+                                    <ProductGridItem
+                                        product={product}
+                                        isPromo={promotionMap.has(product.id)}
+                                        isLaunch={launchMap.has(product.id)}
+                                        isFavorite={favorites.has(product.id)}
+                                        toggleFavorite={toggleFavorite}
+                                        setDetailModal={setDetailModal}
+                                        setAddToLeadModal={setAddToLeadModal}
+                                    />
                                 </Grid>
                             ))}
                         </Grid>
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             {products.map(product => (
-                                <ProductListItem key={product.id} product={product} />
+                                <ProductListItem
+                                    key={product.id}
+                                    product={product}
+                                    isPromo={promotionMap.has(product.id)}
+                                    isLaunch={launchMap.has(product.id)}
+                                    isFavorite={favorites.has(product.id)}
+                                    toggleFavorite={toggleFavorite}
+                                    setDetailModal={setDetailModal}
+                                    setAddToLeadModal={setAddToLeadModal}
+                                />
                             ))}
                         </Box>
                     )}

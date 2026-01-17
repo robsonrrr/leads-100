@@ -99,13 +99,13 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.3.1 | Code splitting por rotas | Frontend | ⏳ |
-| 1.3.2 | Lazy loading de componentes pesados | Frontend | ⏳ |
-| 1.3.3 | Virtual scrolling para listas > 100 itens | Frontend | ⏳ |
-| 1.3.4 | Otimização de imagens (WebP + lazy) | Frontend | ⏳ |
-| 1.3.5 | Prefetch de próximas páginas prováveis | Frontend | ⏳ |
-| 1.3.6 | React.memo em componentes frequentes | Frontend | ⏳ |
-| 1.3.7 | Bundle analysis e tree shaking | Frontend | ⏳ |
+| 1.3.1 | Code splitting por rotas | Frontend | ✅ |
+| 1.3.2 | Lazy loading de componentes pesados | Frontend | ✅ |
+| 1.3.3 | Virtual scrolling para listas > 100 itens | Frontend | ✅ |
+| 1.3.4 | Otimização de imagens (WebP + lazy) | Frontend | ✅ |
+| 1.3.5 | Prefetch de próximas páginas prováveis | Frontend | ✅ |
+| 1.3.6 | React.memo em componentes frequentes | Frontend | ✅ |
+| 1.3.7 | Bundle analysis e tree shaking | Frontend | ✅ |
 
 **Critério de Aceite:**
 ```

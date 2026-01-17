@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from "rollup-plugin-visualizer"
 import { readFileSync } from 'fs'
 
 // Ler versão do package.json
@@ -16,6 +17,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      visualizer({ open: false, filename: 'stats.html', gzipSize: true }),
       VitePWA({
         strategies: 'injectManifest',
         srcDir: 'src',
