@@ -283,12 +283,13 @@ FROM Catalogo.vw_produto_dados_basicos pdb;
 -- =====================================================
 
 -- View para produtos por segmento
+-- Nota: segmentoPOID/categoriaPOID extraídos do JSON map
 CREATE OR REPLACE VIEW Catalogo.vw_solr_produtos_segmento AS
 SELECT 
     p.*,
-    c.segmentoPOID,
-    c.categoriaPOID,
-    c.catalogoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.segmentoPOID')) as segmentoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.categoriaPOID')) as categoriaPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoPOID')) as catalogoPOID,
     -- Extrair dados do JSON do catalog map para compatibilidade
     JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoMap.descriptions.name')) as produtoNomeCatalogo,
     JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoMap.descriptions.resume')) as produtoDescricaoCurta,
@@ -319,9 +320,9 @@ JOIN Catalogo.catalog c ON p.produto_id = c.product_id;
 CREATE OR REPLACE VIEW Catalogo.vw_solr_produtos_ativos AS
 SELECT 
     p.*,
-    c.segmentoPOID,
-    c.categoriaPOID,
-    c.catalogoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.segmentoPOID')) as segmentoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.categoriaPOID')) as categoriaPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoPOID')) as catalogoPOID,
     -- Extrair dados do JSON do catalog map para compatibilidade
     JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoMap.descriptions.name')) as produtoNomeCatalogo,
     JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoMap.descriptions.resume')) as produtoDescricaoCurta,
@@ -377,13 +378,13 @@ CREATE INDEX IF NOT EXISTS idx_catalog_codes_type_code ON Catalogo.catalog_codes
 CREATE OR REPLACE VIEW Catalogo.vw_solr_ranking_segmento AS
 SELECT 
     p.*,
-    c.segmentoPOID,
-    c.categoriaPOID,
-    c.catalogoPOID,
-    ROW_NUMBER() OVER (PARTITION BY c.segmentoPOID, c.categoriaPOID ORDER BY p.modelo) as ranking_categoria,
-    ROW_NUMBER() OVER (PARTITION BY c.segmentoPOID ORDER BY p.modelo) as ranking_segmento,
-    COUNT(*) OVER (PARTITION BY c.segmentoPOID, c.categoriaPOID) as total_categoria,
-    COUNT(*) OVER (PARTITION BY c.segmentoPOID) as total_segmento
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.segmentoPOID')) as segmentoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.categoriaPOID')) as categoriaPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.catalogoPOID')) as catalogoPOID,
+    ROW_NUMBER() OVER (PARTITION BY JSON_EXTRACT(c.map, '$.segmentoPOID'), JSON_EXTRACT(c.map, '$.categoriaPOID') ORDER BY p.modelo) as ranking_categoria,
+    ROW_NUMBER() OVER (PARTITION BY JSON_EXTRACT(c.map, '$.segmentoPOID') ORDER BY p.modelo) as ranking_segmento,
+    COUNT(*) OVER (PARTITION BY JSON_EXTRACT(c.map, '$.segmentoPOID'), JSON_EXTRACT(c.map, '$.categoriaPOID')) as total_categoria,
+    COUNT(*) OVER (PARTITION BY JSON_EXTRACT(c.map, '$.segmentoPOID')) as total_segmento
 FROM Catalogo.vw_solr_produto_completo p
 JOIN Catalogo.catalog c ON p.produto_id = c.product_id
 WHERE p.habilitado = 1;
@@ -391,7 +392,7 @@ WHERE p.habilitado = 1;
 -- View com estatísticas por segmento
 CREATE OR REPLACE VIEW Catalogo.vw_solr_stats_segmento AS
 SELECT 
-    c.segmentoPOID,
+    JSON_UNQUOTE(JSON_EXTRACT(c.map, '$.segmentoPOID')) as segmentoPOID,
     COUNT(*) as total_produtos,
     SUM(CASE WHEN JSON_EXTRACT(c.map, '$.catalogoMap.ecommerce.active') = 1 THEN 1 ELSE 0 END) as produtos_ativos,
     SUM(CASE WHEN JSON_EXTRACT(c.map, '$.catalogoMap.ecommerce.feature') = 1 THEN 1 ELSE 0 END) as produtos_destaque,
@@ -400,7 +401,7 @@ SELECT
     MIN(p.modelo) as primeiro_modelo
 FROM Catalogo.catalog c
 JOIN Catalogo.vw_produto_dados_basicos p ON c.product_id = p.produto_id
-GROUP BY c.segmentoPOID;
+GROUP BY JSON_EXTRACT(c.map, '$.segmentoPOID');
 
 -- =====================================================
 -- 11. Exemplos de Uso das Views (MySQL 8.4.7)
