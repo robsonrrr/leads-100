@@ -158,6 +158,12 @@ function ProductsPage() {
             if (response.data.success) {
                 let prods = response.data.data || []
 
+                // Filtrar produtos sem preço de tabela (preço = 0)
+                prods = prods.filter(p => {
+                    const price = p.price || p.preco_tabela || 0
+                    return price > 0
+                })
+
                 // Filtrar por estoque (frontend - idealmente seria no backend)
                 if (inStockOnly) {
                     prods = prods.filter(p => p.stock > 0)
