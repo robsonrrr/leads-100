@@ -141,11 +141,11 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 3.1.1 | Criar tabela `seller_favorite_products` | Backend | ⏳ |
-| 3.1.2 | Endpoint POST /api/products/:id/favorite | Backend | ⏳ |
-| 3.1.3 | Endpoint DELETE /api/products/:id/favorite | Backend | ⏳ |
-| 3.1.4 | Endpoint GET /api/products/favorites | Backend | ⏳ |
-| 3.1.5 | Botão de favoritar (coração) no produto | Frontend | ⏳ |
+| 3.1.1 | Criar tabela `seller_favorite_products` | Backend | ✅ |
+| 3.1.2 | Endpoint POST /api/products/:id/favorite | Backend | ✅ |
+| 3.1.3 | Endpoint DELETE /api/products/:id/favorite | Backend | ✅ |
+| 3.1.4 | Endpoint GET /api/products/favorites | Backend | ✅ |
+| 3.1.5 | Botão de favoritar (coração) no produto | Frontend | ✅ |
 | 3.1.6 | Seção "Meus Favoritos" no autocomplete | Frontend | ⏳ |
 | 3.1.7 | Aba "Favoritos" na página de catálogo | Frontend | ⏳ |
 
@@ -303,13 +303,13 @@ CREATE TABLE seller_favorite_products (
 |-------|---------|------------|-----------|
 | 1. Visualização | 14 | 8 | 6 |
 | 2. Busca | 20 | 9 | 11 |
-| 3. Personalização | 14 | 2 | 12 |
+| 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 9 | 1 | 8 |
 | 5. Preços | 11 | 4 | 7 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **24** | **63** |
+| **Total** | **87** | **29** | **58** |
 
 ---
 
