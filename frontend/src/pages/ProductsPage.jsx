@@ -168,11 +168,13 @@ function ProductsPage() {
                     prods = prods.filter(p => p.brand === selectedBrand)
                 }
 
-                // Filtrar por faixa de preço
-                prods = prods.filter(p => {
-                    const price = p.price || p.preco_tabela || 0
-                    return price >= priceRange[0] && price <= priceRange[1]
-                })
+                // Filtrar por faixa de preço (só se usuário modificou os valores)
+                if (priceRange[0] > 0 || priceRange[1] < 50000) {
+                    prods = prods.filter(p => {
+                        const price = p.price || p.preco_tabela || 0
+                        return price >= priceRange[0] && price <= priceRange[1]
+                    })
+                }
 
                 // Ordenar
                 prods.sort((a, b) => {
