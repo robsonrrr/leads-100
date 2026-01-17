@@ -236,7 +236,7 @@ CREATE TABLE seller_favorite_products (
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 5.2.1 | Destacar produtos em promoção | Frontend | ⏳ |
+| 5.2.1 | Destacar produtos em promoção | Frontend | ✅ |
 | 5.2.2 | Badge "Promoção" no autocomplete | Frontend | ✅ |
 | 5.2.3 | Filtro de produtos em promoção | Frontend | ⏳ |
 | 5.2.4 | Mostrar economia (preço original x promo) | Frontend | ✅ |
@@ -305,11 +305,11 @@ CREATE TABLE seller_favorite_products (
 | 2. Busca | 20 | 9 | 11 |
 | 3. Personalização | 14 | 7 | 7 |
 | 4. Estoque | 9 | 4 | 5 |
-| 5. Preços | 11 | 6 | 5 |
+| 5. Preços | 11 | 7 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **87** | **35** | **52** |
+| **Total** | **87** | **36** | **51** |
 
 ---
 
