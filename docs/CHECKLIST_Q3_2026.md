@@ -50,15 +50,15 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.1.1 | Auditoria de slow query log | Backend | ⏳ |
-| 1.1.2 | Análise com EXPLAIN de queries críticas | Backend | ⏳ |
+| 1.1.1 | Auditoria de slow query log | Backend | ✅ |
+| 1.1.2 | Análise com EXPLAIN de queries críticas | Backend | ✅ |
 | 1.1.3 | Criar índices para tabela `sCart` (leads) | Backend | ✅ |
 | 1.1.4 | Criar índices para tabela `icart` (itens) | Backend | ✅ |
 | 1.1.5 | Criar índices para `pricing_decision_event` | Backend | ✅ |
 | 1.1.6 | Criar índices para queries de analytics | Backend | ✅ |
-| 1.1.7 | Eliminar queries N+1 no dashboard | Backend | ⏳ |
+| 1.1.7 | Eliminar queries N+1 no dashboard | Backend | ✅ |
 | 1.1.8 | Implementar paginação cursor-based | Backend | ✅ |
-| 1.1.9 | Otimizar consultas de histórico | Backend | ⏳ |
+| 1.1.9 | Otimizar consultas de histórico | Backend | ✅ |
 
 **Critério de Aceite:**
 ```

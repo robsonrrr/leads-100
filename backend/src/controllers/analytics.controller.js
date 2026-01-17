@@ -26,6 +26,11 @@ export async function getDashboard(req, res, next) {
     const year = now.getFullYear();
     const prevYear = year - 1;
 
+    const yearStart = `${year}-01-01 00:00:00`;
+    const yearEnd = `${year}-12-31 23:59:59`;
+    const prevYearStart = `${prevYear}-01-01 00:00:00`;
+    const prevYearEnd = `${prevYear}-12-31 23:59:59`;
+
     const sellerId = req.query.sellerId ? parseInt(req.query.sellerId, 10) : null;
     const sellerSegmento = req.query.sellerSegmento || null;
 
@@ -48,7 +53,7 @@ export async function getDashboard(req, res, next) {
         COALESCE(SUM(h.valor), 0) as total_value,
         COUNT(DISTINCT h.id) as orders_count
       FROM mak.hoje h
-      WHERE YEAR(h.data) = ?
+      WHERE h.data >= ? AND h.data <= ?
         AND h.valor > 0
         AND h.nop IN (27, 28, 51, 76)
         ${vendorFilterSql}
@@ -60,7 +65,7 @@ export async function getDashboard(req, res, next) {
         COALESCE(SUM(h.valor), 0) as total_value,
         COUNT(DISTINCT h.id) as orders_count
       FROM mak.hoje h
-      WHERE YEAR(h.data) = ?
+      WHERE h.data >= ? AND h.data <= ?
         AND h.valor > 0
         AND h.nop IN (27, 28, 51, 76)
         ${vendorFilterSql}
@@ -74,7 +79,7 @@ export async function getDashboard(req, res, next) {
         COALESCE(SUM(h.valor), 0) as total_value,
         COUNT(DISTINCT h.id) as orders_count
       FROM mak.hoje h
-      WHERE YEAR(h.data) = ?
+      WHERE h.data >= ? AND h.data <= ?
         AND h.valor > 0
         AND h.nop IN (27, 28, 51, 76)
         ${vendorFilterSql}
@@ -83,10 +88,10 @@ export async function getDashboard(req, res, next) {
     `;
 
     const [[currentYearRows], [previousYearRows], [byMonthRows], [byDayRows]] = await Promise.all([
-      db().execute(yearTotalsQuery, [year, ...vendorParams]),
-      db().execute(yearTotalsQuery, [prevYear, ...vendorParams]),
-      db().execute(salesByMonthQuery, [year, ...vendorParams]),
-      db().execute(salesByDayQuery, [year, ...vendorParams])
+      db().execute(yearTotalsQuery, [yearStart, yearEnd, ...vendorParams]),
+      db().execute(yearTotalsQuery, [prevYearStart, prevYearEnd, ...vendorParams]),
+      db().execute(salesByMonthQuery, [yearStart, yearEnd, ...vendorParams]),
+      db().execute(salesByDayQuery, [yearStart, yearEnd, ...vendorParams])
     ]);
 
     const currentTotals = currentYearRows[0] || {};
@@ -758,12 +763,18 @@ export async function getSellerPerformance(req, res, next) {
         COALESCE(COUNT(DISTINCT CASE WHEN MONTH(h.data) = ? THEN h.id ELSE NULL END), 0) as month_orders,
         COALESCE(COUNT(DISTINCT CASE WHEN MONTH(h.data) = ? THEN h.idcli ELSE NULL END), 0) as month_customers,
         COALESCE(SUM(h.valor), 0) as year_sales,
-        (SELECT COUNT(*) FROM staging.staging_queries l WHERE l.cVendedor = u.id AND l.cType = 1) as open_leads
+        COALESCE(leads.open_leads, 0) as open_leads
       FROM rolemak_users u
       LEFT JOIN mak.hoje h ON u.id = h.vendedor 
         AND YEAR(h.data) = ? 
         AND h.valor > 0 
         AND h.nop IN (27, 28, 51, 76)
+      LEFT JOIN (
+        SELECT cVendedor, COUNT(*) as open_leads
+        FROM staging.staging_queries
+        WHERE cType = 1
+        GROUP BY cVendedor
+      ) leads ON leads.cVendedor = u.id
       WHERE u.depto = 'VENDAS'
         AND u.blocked = 0
     `;
@@ -774,7 +785,7 @@ export async function getSellerPerformance(req, res, next) {
       params.push(segmento);
     }
 
-    query += ` GROUP BY u.id, u.nick, u.user, u.segmento`;
+    query += ` GROUP BY u.id, u.nick, u.user, u.segmento, leads.open_leads`;
     query += ` ORDER BY month_sales DESC`;
 
     const [rows] = await db().execute(query, params);

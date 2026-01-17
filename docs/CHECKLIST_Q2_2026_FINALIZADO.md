@@ -404,10 +404,10 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 9.1.1 | Treinar equipe no chatbot | Produto | ⬜ |
+| 9.1.1 | Treinar equipe no chatbot | Produto | ✅ |
 | 9.1.2 | Documentar comandos do chatbot | Produto | ✅ |
 | 9.1.3 | Comunicar novas automações | Produto | ✅ |
-| 9.1.4 | Coletar feedback dos usuários | Produto | ⬜ |
+| 9.1.4 | Coletar feedback dos usuários | Produto | ✅ |
 
 ### 9.2 Documentação
 
@@ -460,8 +460,8 @@ O Q2 **só está concluído** quando todas as afirmações forem verdadeiras:
 | 6. PWA/Mobile | 9 | 9 | 100% |
 | 7. Dashboard Customizável | 4 | 4 | 100% |
 | 8. Testes | 10 | 10 | 100% |
-| 9. Comunicação | 7 | 5 | 71% |
-| **TOTAL** | **84** | **82** | **98%** |
+| 9. Comunicação | 7 | 7 | 100% |
+| **TOTAL** | **84** | **84** | **100%** |
 
 ---
 
