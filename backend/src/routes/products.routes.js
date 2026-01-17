@@ -194,6 +194,29 @@ router.get('/', optionalAuth, productsController.searchProducts);
 
 /**
  * @swagger
+ * /products/brands:
+ *   get:
+ *     summary: Lista todas as marcas disponíveis
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Lista de marcas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ */
+router.get('/brands', optionalAuth, productsController.getBrands);
+
+/**
+ * @swagger
  * /products/favorites:
  *   get:
  *     summary: Lista produtos favoritos do vendedor

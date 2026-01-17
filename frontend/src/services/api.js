@@ -268,8 +268,9 @@ export const productsService = {
   getPriceHistory: (productId) => api.get(`/products/${productId}/price-history`),
   getCategories: () => api.get('/products/categories'),
   getSegments: () => api.get('/products/segments'),
+  getSegment: (segment, limit = 50) => api.get(`/products/segment/${segment}`, { params: { limit } }),
+  getBrands: () => api.get('/products/brands'),
   getByCategory: (category, limit = 50) => api.get(`/products/category/${category}`, { params: { limit } }),
-  getBySegment: (segment, limit = 50) => api.get(`/products/segment/${segment}`, { params: { limit } }),
   // Favoritos
   getFavorites: () => api.get('/products/favorites'),
   addFavorite: (productId) => api.post(`/products/${productId}/favorite`),

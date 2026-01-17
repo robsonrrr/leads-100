@@ -87,6 +87,7 @@ function ProductsPage() {
     // Dados de referência
     const [segments, setSegments] = useState([])
     const [categories, setCategories] = useState([])
+    const [brands, setBrands] = useState([]) // Marcas carregadas do backend
     const [favorites, setFavorites] = useState(new Set())
     const [promotions, setPromotions] = useState([])
     const [launchProducts, setLaunchProducts] = useState([])
@@ -97,13 +98,14 @@ function ProductsPage() {
     // Modal de adicionar ao lead
     const [addToLeadModal, setAddToLeadModal] = useState({ open: false, product: null })
 
-    // Carregar segmentos e categorias
+    // Carregar segmentos, categorias e marcas
     useEffect(() => {
         const loadMetadata = async () => {
             try {
-                const [segRes, catRes, favRes, promoRes, launchRes] = await Promise.all([
+                const [segRes, catRes, brandRes, favRes, promoRes, launchRes] = await Promise.all([
                     productsService.getSegments(),
                     productsService.getCategories(),
+                    productsService.getBrands().catch(() => ({ data: { data: [] } })), // Falha graciosa
                     productsService.getFavorites(),
                     pricingService.getPromotions().catch(() => ({ data: { data: [] } })),
                     pricingService.getLaunchProducts().catch(() => ({ data: { data: [] } }))
@@ -111,6 +113,7 @@ function ProductsPage() {
 
                 if (segRes.data.success) setSegments(segRes.data.data || [])
                 if (catRes.data.success) setCategories(catRes.data.data || [])
+                if (brandRes?.data?.success) setBrands(brandRes.data.data || [])
                 if (favRes.data.success) {
                     const favIds = new Set((favRes.data.data || []).map(p => p.id))
                     setFavorites(favIds)
@@ -327,7 +330,8 @@ function ProductsPage() {
                     label="Marca"
                 >
                     <MenuItem value="">Todas</MenuItem>
-                    {[...new Set(products.map(p => p.brand).filter(Boolean))].sort().map(brand => (
+                    {/* Preferir marcas do backend, fallback para extraída dos produtos se vazio */}
+                    {(brands.length > 0 ? brands : [...new Set(products.map(p => p.brand).filter(Boolean))].sort()).map(brand => (
                         <MenuItem key={brand} value={brand}>
                             {brand}
                         </MenuItem>

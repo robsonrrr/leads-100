@@ -10,9 +10,11 @@ const searchSchema = Joi.object({
   segment: Joi.string().optional(),
   segmentId: Joi.number().integer().optional(),
   category: Joi.string().optional(),
+  brand: Joi.string().optional(), // Novo filtro de marca
   ncm: Joi.string().optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
+  sort: Joi.string().valid('price_asc', 'price_desc', 'name_asc', 'model_asc', 'relevance').default('relevance'),
   simple: Joi.string().allow('1', 'true', '0', 'false').optional() // Permite formato simplificado
 });
 
@@ -39,7 +41,9 @@ export async function searchProducts(req, res, next) {
     if (value.segment) filters.segment = value.segment;
     if (value.segmentId) filters.segmentId = value.segmentId;
     if (value.category) filters.category = value.category;
+    if (value.brand) filters.brand = value.brand;
     if (value.ncm) filters.ncm = value.ncm;
+    if (value.sort) filters.sort = value.sort;
 
     const result = await productRepository.search(
       value.search || '',
@@ -62,6 +66,22 @@ export async function searchProducts(req, res, next) {
         return json;
       }),
       pagination: result.pagination
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Busca lista de marcas disponíveis
+ * GET /api/products/brands
+ */
+export async function getBrands(req, res, next) {
+  try {
+    const brands = await productRepository.getBrands();
+    res.json({
+      success: true,
+      data: brands
     });
   } catch (error) {
     next(error);

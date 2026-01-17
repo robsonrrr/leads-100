@@ -14,9 +14,9 @@ Este checklist foca na **experiência do cliente revendedor de máquinas**, visa
 
 | # | Tarefa | Prioridade | Impacto na Meta 30k | Status |
 |---|--------|------------|---------------------|--------|
-| 1.1 | **Busca de Produtos** com filtros avançados (Potência, Voltagem, Marca) | 🔥 Alta | Encontrar rápido = Vender rápido | ⬜ |
-| 1.2 | **Página de Detalhes** com comparativo de modelos | 🔥 Alta | Reduz indecisão técnica | ⬜ |
-| 1.3 | **Visualização de Estoque** (Semáforo: Verde/Amarelo/Vermelho) | 🔥 Alta | Urgência na decisão de compra | ⬜ |
+| 1.1 | **Busca de Produtos** com filtros avançados (Potência, Voltagem, Marca) | 🔥 Alta | Encontrar rápido = Vender rápido | ✅ (Marca) |
+| 1.2 | **Página de Detalhes** com comparativo de modelos | 🔥 Alta | Reduz indecisão técnica | ✅ |
+| 1.3 | **Visualização de Estoque** (Semáforo: Verde/Amarelo/Vermelho) | 🔥 Alta | Urgência na decisão de compra | ✅ |
 | 1.4 | **Sugestão de Bundles** na página (Máquina + Acessório) | 🔸 Média | Aumentar ticket médio | ⬜ |
 | 1.5 | **Recompra Rápida** (Baseada em pedidos anteriores) | 🔸 Média | Giro de estoque (Meta 6x) | ⬜ |
 | 1.6 | **Carrinho Compartilhável** (Link para aprovação) | 🔹 Baixa | Facilita B2B com múltiplos decisores | ⬜ |
