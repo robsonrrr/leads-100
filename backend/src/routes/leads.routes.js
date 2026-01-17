@@ -106,6 +106,61 @@ router.get('/', leadsController.getLeads);
 
 /**
  * @swagger
+ * /leads/export:
+ *   get:
+ *     summary: Exporta leads para Excel
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: leadId
+ *         schema:
+ *           type: integer
+ *         description: ID do lead (para exportar um único lead com detalhes)
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: integer
+ *           enum: [1, 2, 3]
+ *         description: 1=Em Aberto, 2=Convertido, 3=Cancelado
+ *       - in: query
+ *         name: dateFrom
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Data inicial (YYYY-MM-DD)
+ *       - in: query
+ *         name: dateTo
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Data final (YYYY-MM-DD)
+ *       - in: query
+ *         name: cSegment
+ *         schema:
+ *           type: string
+ *         description: Filtrar por segmento
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 1000
+ *           maximum: 1000
+ *         description: Limite de registros (máx 1000)
+ *     responses:
+ *       200:
+ *         description: Arquivo Excel
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/export', leadsController.exportLeads);
+
+/**
+ * @swagger
  * /leads/segments:
  *   get:
  *     summary: Lista segmentos únicos dos leads

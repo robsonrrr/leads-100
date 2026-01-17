@@ -178,6 +178,9 @@ export const leadsService = {
   getTransporters: () => api.get('/leads/metadata/transporters'),
   getUnits: () => api.get('/leads/metadata/units'),
   getCustomerTransporter: (customerId) => api.get('/leads/metadata/customer-transporter', { params: { customerId } }),
+  // Exportação para Excel
+  exportToExcel: (params) => api.get('/leads/export', { params, responseType: 'blob' }),
+  exportLeadToExcel: (leadId) => api.get('/leads/export', { params: { leadId }, responseType: 'blob' }),
 }
 
 export const ordersService = {

@@ -27,7 +27,8 @@ import {
     ArrowUpward as ArrowUpwardIcon,
     ArrowDownward as ArrowDownwardIcon,
     ContentCopy as CopyIcon,
-    FilterList as FilterListIcon
+    FilterList as FilterListIcon,
+    FileDownload as FileDownloadIcon
 } from '@mui/icons-material'
 import { leadsService } from '../services/api'
 import { useSelector } from 'react-redux'
@@ -113,6 +114,7 @@ function LeadsPage() {
     const [statusFilter, setStatusFilter] = useState('')
     const [sellers, setSellers] = useState([])
     const [sellerFilter, setSellerFilter] = useState('')
+    const [exporting, setExporting] = useState(false)
 
     const { isManager, selectedSellerSegment, selectedSeller, getFilterParams } = useManagerFilter()
 
@@ -183,6 +185,45 @@ function LeadsPage() {
         })
     }
 
+    // Exportar leads para Excel
+    const handleExport = async () => {
+        try {
+            setExporting(true)
+            const params = {
+                ...getFilterParams(),
+                limit: 1000
+            }
+            if (debouncedQuery?.trim()) params.q = debouncedQuery.trim()
+            if (selectedSegment) params.cSegment = selectedSegment
+            if (dateFrom) params.dateFrom = dateFrom
+            if (dateTo) params.dateTo = dateTo
+            if (statusFilter) params.status = statusFilter
+            if (sellerFilter) params.sellerId = sellerFilter
+
+            const response = await leadsService.exportToExcel(params)
+
+            // Criar blob e download
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            })
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `leads_${new Date().toISOString().split('T')[0]}.xlsx`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+
+            toast.showSuccess('Exportação concluída!')
+        } catch (err) {
+            toast.showError('Erro ao exportar leads')
+            console.error('Export error:', err)
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const SortableHeader = ({ columnKey, children, align = 'left' }) => {
         const isActive = sortConfig.key === columnKey
         return (
@@ -225,6 +266,14 @@ function LeadsPage() {
                             InputLabelProps={{ shrink: true }}
                         />
                         <ManagerFilters />
+                        <Button
+                            variant="outlined"
+                            startIcon={<FileDownloadIcon />}
+                            onClick={handleExport}
+                            disabled={exporting || loading}
+                        >
+                            {exporting ? 'Exportando...' : 'Excel'}
+                        </Button>
                         <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/leads/new')}>Novo Lead</Button>
                     </Box>
                 </Box>
@@ -237,7 +286,7 @@ function LeadsPage() {
                         <FilterListIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
                         Filtros:
                     </Typography>
-                    
+
                     {/* Filtro por Status */}
                     <Chip
                         label="Todos"

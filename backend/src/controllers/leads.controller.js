@@ -1388,3 +1388,86 @@ export async function getCustomerTransporter(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Exporta leads para Excel
+ * GET /api/leads/export?type=1&dateFrom=2024-01-01&dateTo=2024-12-31
+ */
+export async function exportLeads(req, res, next) {
+  try {
+    // Importar serviço de exportação dinamicamente
+    const { exportLeadsToExcel, exportLeadDetailToExcel } = await import('../services/export.service.js');
+
+    const leadId = req.query.leadId ? parseInt(req.query.leadId) : null;
+
+    // Se for exportação de um único lead com detalhes
+    if (leadId) {
+      const lead = await leadRepository.findById(leadId);
+      if (!lead) {
+        return next(Errors.leadNotFound(leadId));
+      }
+
+      // Verificar permissões
+      const userLevel = req.user?.level || 0;
+      const currentUserId = req.user?.userId;
+      if (userLevel <= 4 && lead.cUser !== currentUserId) {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Sem permissão para exportar este lead' }
+        });
+      }
+
+      // Buscar itens
+      const items = await cartItemRepository.findByLeadId(leadId);
+      const leadData = lead.toJSON();
+      leadData.items = items.map(item => item.toJSON());
+
+      const buffer = await exportLeadDetailToExcel(leadData);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="lead_${leadId}.xlsx"`);
+      return res.send(buffer);
+    }
+
+    // Exportação de múltiplos leads
+    const filters = {};
+    const userLevel = req.user?.level || 0;
+    const currentUserId = req.user?.userId;
+
+    // Filtros de permissão
+    if (userLevel <= 4) {
+      filters.userId = currentUserId;
+    }
+
+    // Filtros da query string
+    if (req.query.type !== undefined) filters.type = parseInt(req.query.type);
+    if (req.query.dateFrom) filters.dateFrom = req.query.dateFrom;
+    if (req.query.dateTo) filters.dateTo = req.query.dateTo;
+    if (req.query.cSegment) filters.cSegment = req.query.cSegment;
+    if (req.query.sellerId && userLevel > 4) filters.sellerId = parseInt(req.query.sellerId);
+    if (req.query.sellerSegmento && userLevel > 4) filters.sellerSegmento = req.query.sellerSegmento;
+
+    // Status padrão: leads em aberto
+    if (filters.type === undefined) {
+      filters.type = 1;
+    }
+
+    // Limitar a 1000 registros para evitar problemas de memória
+    const limit = Math.min(parseInt(req.query.limit) || 1000, 1000);
+
+    const result = await leadRepository.findAll(filters, { page: 1, limit }, false);
+    const leads = result.data.map(lead => lead.toJSON());
+
+    const buffer = await exportLeadsToExcel(leads);
+
+    // Gerar nome do arquivo
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `leads_export_${date}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
