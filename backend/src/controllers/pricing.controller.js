@@ -168,3 +168,45 @@ export async function listQuantityDiscounts(req, res, next) {
   }
 }
 
+/**
+ * Lista preços fixos de um cliente
+ * GET /api/pricing/customer-fixed-prices/:customerId
+ */
+export async function listCustomerFixedPrices(req, res, next) {
+  try {
+    const { customerId } = req.params;
+
+    if (!customerId) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const [rows] = await db().execute(`
+      SELECT 
+        pcfp.id,
+        pcfp.customer_id,
+        pcfp.sku_id,
+        pcfp.fixed_price,
+        pcfp.original_pt_at_agreement,
+        pcfp.discount_from_pt,
+        pcfp.valid_from,
+        pcfp.valid_until,
+        pcfp.notes,
+        i.marca as product_brand,
+        i.modelo as product_model,
+        i.nome as product_name
+      FROM csuite_pricing.pricing_customer_fixed_prices pcfp
+      LEFT JOIN inv i ON pcfp.sku_id = i.id
+      WHERE pcfp.customer_id = ?
+        AND pcfp.is_active = 1
+        AND CURDATE() BETWEEN pcfp.valid_from AND pcfp.valid_until
+      ORDER BY pcfp.sku_id
+    `, [customerId]);
+
+    res.json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    next(error);
+  }
+}

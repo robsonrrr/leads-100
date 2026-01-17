@@ -52,7 +52,8 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Inventory as InventoryIcon,
   LocalOffer as PromoIcon,
-  NewReleases as LaunchIcon
+  NewReleases as LaunchIcon,
+  Lock as FixedPriceIcon
 } from '@mui/icons-material'
 import { leadsService, pricingService, productsService, promotionsService } from '../services/api'
 import aiService from '../services/ai.service'
@@ -106,6 +107,7 @@ function CartItems({ leadId, lead, readOnly = false }) {
   const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
   const [quantityDiscounts, setQuantityDiscounts] = useState([]) // Lista de descontos por quantidade
   const [launchProducts, setLaunchProducts] = useState([]) // Lista de produtos em lançamento
+  const [customerFixedPrices, setCustomerFixedPrices] = useState([]) // Preços fixos do cliente
 
   // Mapa de promoções para lookup rápido
   const promotionMap = useMemo(() => {
@@ -143,6 +145,23 @@ function CartItems({ leadId, lead, readOnly = false }) {
     }
     return map
   }, [launchProducts])
+
+  // Mapa de preços fixos do cliente (SKU -> preço fixo)
+  const fixedPriceMap = useMemo(() => {
+    const map = new Map()
+    if (Array.isArray(customerFixedPrices)) {
+      customerFixedPrices.forEach(fp => {
+        map.set(fp.sku_id, {
+          fixedPrice: parseFloat(fp.fixed_price),
+          originalPt: fp.original_pt_at_agreement ? parseFloat(fp.original_pt_at_agreement) : null,
+          discountFromPt: fp.discount_from_pt ? parseFloat(fp.discount_from_pt) : null,
+          validUntil: new Date(fp.valid_until),
+          notes: fp.notes
+        })
+      })
+    }
+    return map
+  }, [customerFixedPrices])
 
   // Mapa de descontos por quantidade - separado por SKU e família
   const { skuDiscountMap, familyDiscounts } = useMemo(() => {
@@ -272,6 +291,27 @@ function CartItems({ leadId, lead, readOnly = false }) {
       }
     } catch (err) {
       console.debug('Erro ao carregar produtos em lançamento:', err)
+    }
+  }
+
+  // Carregar preços fixos do cliente quando o lead mudar
+  useEffect(() => {
+    const customerId = lead?.customerId || lead?.customer_id
+    if (customerId) {
+      loadCustomerFixedPrices(customerId)
+    } else {
+      setCustomerFixedPrices([])
+    }
+  }, [lead?.customerId, lead?.customer_id])
+
+  const loadCustomerFixedPrices = async (customerId) => {
+    try {
+      const response = await pricingService.getCustomerFixedPrices(customerId)
+      if (response.data.success) {
+        setCustomerFixedPrices(response.data.data || [])
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar preços fixos do cliente:', err)
     }
   }
 
@@ -1301,6 +1341,46 @@ function CartItems({ leadId, lead, readOnly = false }) {
                                     icon={<LaunchIcon sx={{ fontSize: 14 }} />}
                                     label="Lançamento"
                                     color="secondary"
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem', fontWeight: 'bold' },
+                                      '& .MuiChip-icon': { ml: 0.5 },
+                                      cursor: 'help'
+                                    }}
+                                  />
+                                </Tooltip>
+                              )}
+                              {/* Badge de preço fixo do cliente */}
+                              {fixedPriceMap.has(item.productId || item.product?.id) && (
+                                <Tooltip
+                                  title={
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>🔒 Preço Fixo Acordado</Typography>
+                                      <Typography variant="caption" display="block">
+                                        Preço: {formatCurrency(fixedPriceMap.get(item.productId || item.product?.id).fixedPrice)}
+                                      </Typography>
+                                      {fixedPriceMap.get(item.productId || item.product?.id).discountFromPt && (
+                                        <Typography variant="caption" display="block">
+                                          Desconto da Tabela: {fixedPriceMap.get(item.productId || item.product?.id).discountFromPt}%
+                                        </Typography>
+                                      )}
+                                      <Typography variant="caption" display="block">
+                                        Válido até: {fixedPriceMap.get(item.productId || item.product?.id).validUntil.toLocaleDateString('pt-BR')}
+                                      </Typography>
+                                      {fixedPriceMap.get(item.productId || item.product?.id).notes && (
+                                        <Typography variant="caption" display="block" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                                          {fixedPriceMap.get(item.productId || item.product?.id).notes}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  }
+                                  arrow
+                                >
+                                  <Chip
+                                    icon={<FixedPriceIcon sx={{ fontSize: 14 }} />}
+                                    label="Preço Fixo"
+                                    color="warning"
                                     size="small"
                                     sx={{
                                       height: 20,

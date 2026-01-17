@@ -278,6 +278,7 @@ export const pricingService = {
   calculate: (data) => api.post('/pricing/calculate', data),
   getQuantityDiscounts: () => api.get('/pricing/quantity-discounts'),
   getLaunchProducts: () => api.get('/pricing/launch-products'),
+  getCustomerFixedPrices: (customerId) => api.get(`/pricing/customer-fixed-prices/${customerId}`),
 }
 
 export const promotionsService = {
