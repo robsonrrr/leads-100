@@ -1,5 +1,6 @@
 import { getDatabase } from '../config/database.js';
 import { Product } from '../models/Product.js';
+import { CacheService } from '../services/cache.service.js';
 
 const db = () => getDatabase();
 
@@ -12,114 +13,121 @@ export class ProductRepository {
     const limit = parseInt(pagination.limit) || 20;
     const offset = (page - 1) * limit;
 
-    // Tabela principal é inv, JOIN com produtos para segmento e NCM
-    let query = `SELECT DISTINCT 
-      i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
-      p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
-      p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
-      p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
-    FROM inv i 
-    LEFT JOIN produtos p ON i.idcf = p.id 
-    WHERE 1=1`;
-    const params = [];
+    // Gerar chave de cache baseada nos parâmetros
+    const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}`;
 
-    // Busca por termo (ID, modelo, nome, descrição, categoria, NCM, segmento)
-    if (searchTerm) {
-      // Se o termo for numérico, também buscar por ID
-      const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
+    // Tentar cache para buscas frequentes
+    return CacheService.getProducts(cacheKey, async () => {
+      // Tabela principal é inv, JOIN com produtos para segmento e NCM
+      let query = `SELECT DISTINCT 
+        i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
+        p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
+        p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
+        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
+      FROM inv i 
+      LEFT JOIN produtos p ON i.idcf = p.id 
+      WHERE 1=1`;
+      const params = [];
 
-      if (isNumeric) {
-        query += ` AND (
-          i.id = ? OR
-          i.modelo LIKE ? OR
-          i.nome LIKE ? OR 
-          i.description LIKE ? OR 
-          p.categoria LIKE ? OR 
-          p.ncm LIKE ? OR
-          p.segmento LIKE ?
-        )`;
-        params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
-      } else {
-        query += ` AND (
-          i.modelo LIKE ? OR
-          i.nome LIKE ? OR 
-          i.description LIKE ? OR 
-          p.categoria LIKE ? OR 
-          p.ncm LIKE ? OR
-          p.segmento LIKE ?
-        )`;
-        const searchPattern = `%${searchTerm}%`;
-        params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      // Busca por termo (ID, modelo, nome, descrição, categoria, NCM, segmento)
+      if (searchTerm) {
+        const isNumeric = !isNaN(searchTerm) && !isNaN(parseFloat(searchTerm));
+
+        if (isNumeric) {
+          query += ` AND (
+            i.id = ? OR
+            i.modelo LIKE ? OR
+            i.nome LIKE ? OR 
+            i.description LIKE ? OR 
+            p.categoria LIKE ? OR 
+            p.ncm LIKE ? OR
+            p.segmento LIKE ?
+          )`;
+          params.push(parseInt(searchTerm), `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+        } else {
+          query += ` AND (
+            i.modelo LIKE ? OR
+            i.nome LIKE ? OR 
+            i.description LIKE ? OR 
+            p.categoria LIKE ? OR 
+            p.ncm LIKE ? OR
+            p.segmento LIKE ?
+          )`;
+          const searchPattern = `%${searchTerm}%`;
+          params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+        }
       }
-    }
 
-    // Filtros adicionais
-    if (filters.segment) {
-      query += ' AND p.segmento = ?';
-      params.push(filters.segment);
-    }
-
-    if (filters.segmentId) {
-      query += ' AND p.segmento_id = ?';
-      params.push(filters.segmentId);
-    }
-
-    if (filters.category) {
-      query += ' AND p.categoria LIKE ?';
-      params.push(`%${filters.category}%`);
-    }
-
-    if (filters.ncm) {
-      query += ' AND p.ncm LIKE ?';
-      params.push(`%${filters.ncm}%`);
-    }
-
-    // Ordenação por preço de revenda (maior para menor)
-    query += ' ORDER BY i.revenda DESC, i.nome ASC';
-
-    // Contar total antes de paginar
-    const countQuery = query.replace(/SELECT DISTINCT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT i.id) as total FROM').replace(/ORDER BY.*$/, '');
-    const countParams = params.slice();
-    const [countResult] = await db().execute(countQuery, countParams);
-    const total = countResult[0]?.total || 0;
-
-    // Paginação - usar valores diretos (já validados como inteiros)
-    const limitInt = parseInt(limit);
-    const offsetInt = parseInt(offset);
-    query += ` LIMIT ${limitInt} OFFSET ${offsetInt}`;
-
-    const [rows] = await db().execute(query, params);
-
-    return {
-      data: rows.map(row => new Product(row)),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+      // Filtros adicionais
+      if (filters.segment) {
+        query += ' AND p.segmento = ?';
+        params.push(filters.segment);
       }
-    };
+
+      if (filters.segmentId) {
+        query += ' AND p.segmento_id = ?';
+        params.push(filters.segmentId);
+      }
+
+      if (filters.category) {
+        query += ' AND p.categoria LIKE ?';
+        params.push(`%${filters.category}%`);
+      }
+
+      if (filters.ncm) {
+        query += ' AND p.ncm LIKE ?';
+        params.push(`%${filters.ncm}%`);
+      }
+
+      // Ordenação por preço de revenda (maior para menor)
+      query += ' ORDER BY i.revenda DESC, i.nome ASC';
+
+      // Contar total antes de paginar
+      const countQuery = query.replace(/SELECT DISTINCT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT i.id) as total FROM').replace(/ORDER BY.*$/, '');
+      const countParams = params.slice();
+      const [countResult] = await db().execute(countQuery, countParams);
+      const total = countResult[0]?.total || 0;
+
+      // Paginação
+      const limitInt = parseInt(limit);
+      const offsetInt = parseInt(offset);
+      query += ` LIMIT ${limitInt} OFFSET ${offsetInt}`;
+
+      const [rows] = await db().execute(query, params);
+
+      return {
+        data: rows.map(row => new Product(row)),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    });
   }
 
   /**
-   * Busca um produto por ID
+   * Busca um produto por ID (com cache)
    */
   async findById(id) {
-    const query = `SELECT 
-      i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
-      p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
-      p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
-      p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
-    FROM inv i 
-    LEFT JOIN produtos p ON i.idcf = p.id 
-    WHERE i.id = ?`;
-    const [rows] = await db().execute(query, [id]);
+    return CacheService.getProduct(id, async () => {
+      const query = `SELECT 
+        i.id, i.modelo, i.nome, i.description, i.codebar, i.marca, i.revenda, i.custo,
+        p.segmento, p.segmento_id, p.categoria, p.ncm, p.red, p.cf, p.frete,
+        p.icms, p.ipi, p.ii, p.pis, p.cofins, p.outras, p.nf, p.p_marca, p.p_qualidade,
+        p.p_blindagem, p.p_embalagem, p.pc_contabil, p.vip, p.cclasstrib_padrao
+      FROM inv i 
+      LEFT JOIN produtos p ON i.idcf = p.id 
+      WHERE i.id = ?`;
+      const [rows] = await db().execute(query, [id]);
 
-    if (rows.length === 0) {
-      return null;
-    }
+      if (rows.length === 0) {
+        return null;
+      }
 
-    return new Product(rows[0]);
+      return new Product(rows[0]);
+    });
   }
 
   /**

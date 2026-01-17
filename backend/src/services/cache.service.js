@@ -1,31 +1,70 @@
 /**
- * Serviço de Cache Centralizado
+ * Serviço de Cache Centralizado - Q3.1 Performance
  * Gerencia cache Redis com TTLs configuráveis e keys padronizadas
  */
 import { cacheGet, cacheSet, cacheDelete, getRedis } from '../config/redis.js';
 import logger from '../config/logger.js';
 
-// TTLs em segundos
+// =====================
+// Q3.1 CACHE CONFIGURATION
+// =====================
+
+// TTLs em segundos - otimizados para Q3.1
 const TTL = {
-  METADATA: 3600,        // 1 hora para metadados (transportadoras, NOPs, units)
-  LEAD_TOTALS: 300,      // 5 minutos para totais de carrinho
-  CUSTOMER_DATA: 1800,   // 30 minutos para dados de cliente
+  // Metadados estáticos (raramente mudam)
+  METADATA: 3600,        // 1 hora para transportadoras, NOPs, units
   SEGMENTS: 3600,        // 1 hora para segmentos
+
+  // Produtos (muda ocasionalmente)
+  PRODUCT: 300,          // 5 minutos para produto individual
+  PRODUCT_LIST: 120,     // 2 minutos para lista de produtos (busca)
+  PRODUCT_STOCK: 60,     // 1 minuto para estoque (mais volátil)
+
+  // Leads e Carrinhos (muda frequentemente)
+  LEAD_TOTALS: 300,      // 5 minutos para totais de carrinho
+  LEAD_LIST: 60,         // 1 minuto para lista de leads
+
+  // Clientes
+  CUSTOMER_DATA: 1800,   // 30 minutos para dados de cliente
+  CUSTOMER_LIST: 300,    // 5 minutos para lista de clientes
+
+  // Dashboard/Analytics (cache agressivo)
+  DASHBOARD: 300,        // 5 minutos para widgets do dashboard
+  ANALYTICS: 600,        // 10 minutos para analytics
+  REPORTS: 900,          // 15 minutos para relatórios
+
+  // Customer Goals
+  CUSTOMER_GOALS_STATIC: 1800,   // 30 minutos para metas
+  CUSTOMER_GOALS_ANNUAL: 600,    // 10 minutos para dados anuais
+
+  // Variações
   SHORT: 60,             // 1 minuto para dados voláteis
-  LONG: 86400,           // 24 horas para dados estáticos
-  // Cache para Metas por Cliente
-  CUSTOMER_GOALS_STATIC: 1800,   // 30 minutos para dados estáticos (metas, classificação)
-  CUSTOMER_GOALS_ANNUAL: 600     // 10 minutos para dados anuais (sold_2026, gap)
+  MEDIUM: 300,           // 5 minutos padrão
+  LONG: 86400            // 24 horas para dados estáticos
 };
 
-// Prefixos de chaves
+// Prefixos de chaves organizados
 const PREFIX = {
   METADATA: 'meta',
   LEAD: 'lead',
   CART: 'cart',
   CUSTOMER: 'customer',
   PRODUCT: 'product',
-  CUSTOMER_GOALS: 'cgoals'  // Cache para metas por cliente
+  STOCK: 'stock',
+  DASHBOARD: 'dash',
+  ANALYTICS: 'analytics',
+  REPORTS: 'reports',
+  CUSTOMER_GOALS: 'cgoals'
+};
+
+// Métricas de cache (Q3.1)
+const cacheMetrics = {
+  hits: 0,
+  misses: 0,
+  sets: 0,
+  deletes: 0,
+  errors: 0,
+  lastReset: Date.now()
 };
 
 /**
@@ -292,6 +331,135 @@ export const CacheService = {
 
     await Promise.all(deletePromises);
     logger.info(`Cache invalidated: customer goals for seller ${sellerId}`);
+    cacheMetrics.deletes += deletePromises.length;
+  },
+
+  // =====================
+  // Métodos de Produto (Q3.1)
+  // =====================
+
+  /**
+   * Cache de produto individual por ID
+   */
+  async getProduct(productId, fetchFn) {
+    const key = makeKey(PREFIX.PRODUCT, productId);
+
+    const cached = await cacheGet(key);
+    if (cached) {
+      cacheMetrics.hits++;
+      logger.debug(`Cache HIT: product ${productId}`);
+      return cached;
+    }
+
+    cacheMetrics.misses++;
+    logger.debug(`Cache MISS: product ${productId}`);
+    const data = await fetchFn();
+    await cacheSet(key, data, TTL.PRODUCT);
+    cacheMetrics.sets++;
+
+    return data;
+  },
+
+  /**
+   * Cache de múltiplos produtos (para busca)
+   */
+  async getProducts(searchKey, fetchFn) {
+    const key = makeKey(PREFIX.PRODUCT, 'search', searchKey);
+
+    const cached = await cacheGet(key);
+    if (cached) {
+      cacheMetrics.hits++;
+      return cached;
+    }
+
+    cacheMetrics.misses++;
+    const data = await fetchFn();
+    await cacheSet(key, data, TTL.PRODUCT_LIST);
+    cacheMetrics.sets++;
+
+    return data;
+  },
+
+  /**
+   * Cache de estoque (mais volátil)
+   */
+  async getStock(productId, fetchFn) {
+    const key = makeKey(PREFIX.STOCK, productId);
+
+    const cached = await cacheGet(key);
+    if (cached) {
+      cacheMetrics.hits++;
+      return cached;
+    }
+
+    cacheMetrics.misses++;
+    const data = await fetchFn();
+    await cacheSet(key, data, TTL.PRODUCT_STOCK);
+    cacheMetrics.sets++;
+
+    return data;
+  },
+
+  async invalidateProduct(productId) {
+    await cacheDelete(makeKey(PREFIX.PRODUCT, productId));
+    cacheMetrics.deletes++;
+  },
+
+  // =====================
+  // Métodos de Dashboard/Analytics (Q3.1)
+  // =====================
+
+  /**
+   * Cache de widget do dashboard
+   */
+  async getDashboardWidget(widgetId, userId, fetchFn) {
+    const key = makeKey(PREFIX.DASHBOARD, widgetId, userId || 'global');
+
+    const cached = await cacheGet(key);
+    if (cached) {
+      cacheMetrics.hits++;
+      logger.debug(`Cache HIT: dashboard widget ${widgetId}`);
+      return cached;
+    }
+
+    cacheMetrics.misses++;
+    logger.debug(`Cache MISS: dashboard widget ${widgetId}`);
+    const data = await fetchFn();
+    await cacheSet(key, data, TTL.DASHBOARD);
+    cacheMetrics.sets++;
+
+    return data;
+  },
+
+  /**
+   * Cache de analytics
+   */
+  async getAnalytics(reportType, params, fetchFn) {
+    const paramsKey = JSON.stringify(params);
+    const key = makeKey(PREFIX.ANALYTICS, reportType, Buffer.from(paramsKey).toString('base64').slice(0, 32));
+
+    const cached = await cacheGet(key);
+    if (cached) {
+      cacheMetrics.hits++;
+      return cached;
+    }
+
+    cacheMetrics.misses++;
+    const data = await fetchFn();
+    await cacheSet(key, data, TTL.ANALYTICS);
+    cacheMetrics.sets++;
+
+    return data;
+  },
+
+  async invalidateDashboard(userId) {
+    // Invalida widgets comuns
+    const widgets = ['summary', 'leads', 'orders', 'goals', 'performance'];
+    const promises = widgets.map(w =>
+      cacheDelete(makeKey(PREFIX.DASHBOARD, w, userId || 'global'))
+    );
+    await Promise.all(promises);
+    cacheMetrics.deletes += widgets.length;
   },
 
   // =====================
@@ -308,6 +476,7 @@ export const CacheService = {
       cacheDelete(makeKey(PREFIX.METADATA, 'units')),
       cacheDelete(makeKey(PREFIX.METADATA, 'segments'))
     ]);
+    cacheMetrics.deletes += 4;
     logger.info('All metadata cache invalidated');
   },
 
@@ -324,16 +493,62 @@ export const CacheService = {
   async cached(key, ttl, fetchFn) {
     const cached = await cacheGet(key);
     if (cached) {
+      cacheMetrics.hits++;
       return cached;
     }
 
+    cacheMetrics.misses++;
     const data = await fetchFn();
     await cacheSet(key, data, ttl);
+    cacheMetrics.sets++;
     return data;
+  },
+
+  // =====================
+  // Métricas Q3.1
+  // =====================
+
+  /**
+   * Retorna métricas de cache
+   */
+  getMetrics() {
+    const total = cacheMetrics.hits + cacheMetrics.misses;
+    const hitRate = total > 0 ? ((cacheMetrics.hits / total) * 100).toFixed(2) : 0;
+
+    return {
+      hits: cacheMetrics.hits,
+      misses: cacheMetrics.misses,
+      sets: cacheMetrics.sets,
+      deletes: cacheMetrics.deletes,
+      errors: cacheMetrics.errors,
+      hitRate: `${hitRate}%`,
+      total,
+      uptime: Math.floor((Date.now() - cacheMetrics.lastReset) / 1000)
+    };
+  },
+
+  /**
+   * Reseta métricas de cache
+   */
+  resetMetrics() {
+    cacheMetrics.hits = 0;
+    cacheMetrics.misses = 0;
+    cacheMetrics.sets = 0;
+    cacheMetrics.deletes = 0;
+    cacheMetrics.errors = 0;
+    cacheMetrics.lastReset = Date.now();
+    logger.info('Cache metrics reset');
+  },
+
+  /**
+   * Incrementa contador de erros
+   */
+  recordError() {
+    cacheMetrics.errors++;
   }
 };
 
 // Constantes exportadas para uso externo
-export { TTL, PREFIX, makeKey };
+export { TTL, PREFIX, makeKey, cacheMetrics };
 
 export default CacheService;

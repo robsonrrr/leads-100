@@ -10,7 +10,7 @@ import { CacheService } from '../services/cache.service.js';
 
 const db = () => getDatabase();
 
-// Métricas em memória
+// Métricas em memória (request metrics)
 let performanceMetrics = {
     requests: 0,
     totalResponseTime: 0,
@@ -19,13 +19,8 @@ let performanceMetrics = {
     startTime: Date.now()
 };
 
-// Métricas de cache em memória
-let cacheMetrics = {
-    hits: 0,
-    misses: 0,
-    sets: 0,
-    invalidations: 0
-};
+// Usar métricas centralizadas do CacheService
+// cacheMetrics agora vem do CacheService.getMetrics()
 
 /**
  * Middleware para coletar métricas de request
@@ -89,11 +84,8 @@ export async function getPerformanceMetrics(req, res, next) {
             dbStatus = 'disconnected';
         }
 
-        // Calcular hit rate
-        const totalCacheOps = cacheMetrics.hits + cacheMetrics.misses;
-        const hitRate = totalCacheOps > 0
-            ? ((cacheMetrics.hits / totalCacheOps) * 100).toFixed(2)
-            : 0;
+        // Obter métricas centralizadas do CacheService
+        const cacheMetrics = CacheService.getMetrics();
 
         res.json({
             success: true,
@@ -117,9 +109,11 @@ export async function getPerformanceMetrics(req, res, next) {
                     status: redisStatus,
                     hits: cacheMetrics.hits,
                     misses: cacheMetrics.misses,
-                    hitRate: `${hitRate}%`,
+                    hitRate: cacheMetrics.hitRate,
                     sets: cacheMetrics.sets,
-                    invalidations: cacheMetrics.invalidations
+                    deletes: cacheMetrics.deletes,
+                    errors: cacheMetrics.errors,
+                    total: cacheMetrics.total
                 },
                 database: {
                     status: dbStatus
