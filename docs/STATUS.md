@@ -437,10 +437,16 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Dialog SendEmailDialog com CC, mensagem personalizada
   - Registro de envio no Audit Log
   - Modo de teste quando SMTP não configurado
+- ✅ **Notificações Push em Tempo Real** (2026-01-17)
+  - NotificationBell no navbar com dropdown
+  - Notificações in-app com status lido/não-lido
+  - Service Worker para push notifications
+  - Hook useNotifications para gerenciamento
+  - Categorização com ícones e cores
+  - Integração com preferências do usuário
 
 ### Pendente
 - ⏳ Revendedor (cliente de cliente)
-- ⏳ Notificações em tempo real
 - ⏳ Testes automatizados
 
 ---
@@ -547,7 +553,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **90% - Em Andamento**
+**Status**: ⏳ **95% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
