@@ -146,8 +146,8 @@
 | 3.1.3 | Endpoint DELETE /api/products/:id/favorite | Backend | ✅ |
 | 3.1.4 | Endpoint GET /api/products/favorites | Backend | ✅ |
 | 3.1.5 | Botão de favoritar (coração) no produto | Frontend | ✅ |
-| 3.1.6 | Seção "Meus Favoritos" no autocomplete | Frontend | ⏳ |
-| 3.1.7 | Aba "Favoritos" na página de catálogo | Frontend | ⏳ |
+| 3.1.6 | Seção "Meus Favoritos" no autocomplete | Frontend | ✅ |
+| 3.1.7 | Aba "Favoritos" na página de catálogo | Frontend | ✅ |
 
 **Estrutura da Tabela:**
 ```sql
@@ -167,10 +167,10 @@ CREATE TABLE seller_favorite_products (
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 3.2.1 | Rastrear produtos visualizados/adicionados | Backend | ⏳ |
-| 3.2.2 | Endpoint GET /api/products/recent | Backend | ⏳ |
-| 3.2.3 | Seção "Usados Recentemente" no autocomplete | Frontend | ⏳ |
-| 3.2.4 | Limite de 20 produtos recentes por vendedor | Backend | ⏳ |
+| 3.2.1 | Rastrear produtos visualizados/adicionados | Backend | ✅ |
+| 3.2.2 | Endpoint GET /api/products/recent | Backend | ✅ |
+| 3.2.3 | Seção "Usados Recentemente" no autocomplete | Frontend | ✅ |
+| 3.2.4 | Limite de 20 produtos recentes por vendedor | Backend | ✅ |
 
 ---
 
@@ -180,8 +180,8 @@ CREATE TABLE seller_favorite_products (
 |---|--------|-------------|--------|
 | 3.3.1 | Analisar histórico de compras do cliente | Backend | ✅ |
 | 3.3.2 | Endpoint GET /api/customers/:id/products | Backend | ✅ |
-| 3.3.3 | Sugerir produtos frequentes ao criar lead | Frontend | ⏳ |
-| 3.3.4 | Widget "Recompra Sugerida" no lead | Frontend | ⏳ |
+| 3.3.3 | Sugerir produtos frequentes ao criar lead | Frontend | ✅ |
+| 3.3.4 | Widget "Recompra Sugerida" no lead | Frontend | ✅ |
 
 ---
 
@@ -338,13 +338,13 @@ GET /api/pricing/bundles - Combos/Bundles ativos
 |-------|---------|------------|-----------|
 | 1. Visualização | 14 | 14 | 0 |
 | 2. Busca | 20 | 16 | 4 |
-| 3. Personalização | 14 | 7 | 7 |
+| 3. Personalização | 15 | 15 | 0 |
 | 4. Estoque | 12 | 9 | 3 |
 | 5. Preços | 20 | 16 | 4 |
 | 6. Relacionados | 9 | 0 | 9 |
 | 7. Mobile | 5 | 0 | 5 |
 | 8. Analytics | 5 | 0 | 5 |
-| **Total** | **99** | **61** | **38** |
+| **Total** | **99** | **69** | **30** |
 
 ---
 

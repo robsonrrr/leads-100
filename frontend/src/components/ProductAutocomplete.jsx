@@ -15,6 +15,7 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
   const [inputValue, setInputValue] = useState('')
   const [promotions, setPromotions] = useState([]) // Lista de promoções ativas
   const [recentSearches, setRecentSearches] = useState([]) // Cache de buscas recentes
+  const [favorites, setFavorites] = useState([]) // Favoritos do vendedor
 
   // Carregar buscas recentes do localStorage
   useEffect(() => {
@@ -31,7 +32,19 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
   // Carregar promoções ativas uma vez
   useEffect(() => {
     loadPromotions()
+    loadFavorites()
   }, [])
+
+  const loadFavorites = async () => {
+    try {
+      const response = await productsService.getFavorites()
+      if (response.data.success && response.data.data) {
+        setFavorites(response.data.data.map(p => ({ ...p, isFavorite: true })))
+      }
+    } catch (err) {
+      console.debug('Erro ao carregar favoritos:', err)
+    }
+  }
 
   const loadPromotions = async () => {
     try {
@@ -79,13 +92,24 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
       }, 300)
 
       return () => clearTimeout(timeoutId)
-    } else if (inputValue.length === 0 && recentSearches.length > 0) {
-      // Mostrar buscas recentes quando campo vazio
-      setOptions(recentSearches.map(p => ({ ...p, isRecent: true })))
+    } else if (inputValue.length === 0) {
+      // Mostrar favoritos e recentes quando campo vazio
+      const combined = [
+        ...favorites.slice(0, 5).map(p => ({ ...p, isFavorite: true })),
+        ...recentSearches.slice(0, 5).map(p => ({ ...p, isRecent: true }))
+      ]
+      // Remover duplicatas (favoritos têm prioridade)
+      const seen = new Set()
+      const unique = combined.filter(p => {
+        if (seen.has(p.id)) return false
+        seen.add(p.id)
+        return true
+      })
+      setOptions(unique)
     } else {
       setOptions([])
     }
-  }, [inputValue, recentSearches])
+  }, [inputValue, recentSearches, favorites])
 
   // Função para salvar produto nas buscas recentes
   const saveToRecentSearches = (product) => {
@@ -286,7 +310,18 @@ function ProductAutocomplete({ value, onChange, error, helperText, customerFixed
                       {highlightMatch(option.brand, inputValue)}
                     </Typography>
                   )}
-                  {option.isRecent && (
+                  {option.isFavorite && (
+                    <Chip
+                      label="⭐ Favorito"
+                      size="small"
+                      color="warning"
+                      sx={{
+                        height: 16,
+                        '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' }
+                      }}
+                    />
+                  )}
+                  {option.isRecent && !option.isFavorite && (
                     <Chip
                       label="Recente"
                       size="small"

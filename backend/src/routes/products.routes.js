@@ -377,6 +377,17 @@ router.get('/trending', optionalAuth, productsController.getTrendingProducts);
  */
 router.get('/trending-terms', optionalAuth, productsController.getTrendingTerms);
 
+/**
+ * @swagger
+ * /api/products/recent:
+ *   get:
+ *     tags: [Products]
+ *     summary: Produtos usados recentemente pelo vendedor
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/recent', authenticateToken, productsController.getRecentProducts);
+
 // ========== BUSCA INTELIGENTE ==========
 
 /**

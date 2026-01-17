@@ -7,22 +7,22 @@ const db = () => getDatabase();
  */
 export class SearchHistoryRepository {
 
-    /**
-     * Registra uma busca do vendedor
-     */
-    async logSearch(sellerId, searchTerm, productId = null) {
-        const query = `
+  /**
+   * Registra uma busca do vendedor
+   */
+  async logSearch(sellerId, searchTerm, productId = null) {
+    const query = `
       INSERT INTO seller_search_history (seller_id, search_term, product_id, searched_at)
       VALUES (?, ?, ?, NOW())
     `;
-        await db().execute(query, [sellerId, searchTerm, productId]);
-    }
+    await db().execute(query, [sellerId, searchTerm, productId]);
+  }
 
-    /**
-     * Busca histórico de buscas do vendedor (últimas 20)
-     */
-    async getSellerHistory(sellerId, limit = 20) {
-        const query = `
+  /**
+   * Busca histórico de buscas do vendedor (últimas 20)
+   */
+  async getSellerHistory(sellerId, limit = 20) {
+    const query = `
       SELECT DISTINCT search_term, MAX(searched_at) as last_searched
       FROM seller_search_history
       WHERE seller_id = ?
@@ -32,15 +32,15 @@ export class SearchHistoryRepository {
       ORDER BY last_searched DESC
       LIMIT ?
     `;
-        const [rows] = await db().execute(query, [sellerId, limit]);
-        return rows;
-    }
+    const [rows] = await db().execute(query, [sellerId, limit]);
+    return rows;
+  }
 
-    /**
-     * Busca produtos mais buscados (trending) nos últimos 7 dias
-     */
-    async getTrendingProducts(limit = 10) {
-        const query = `
+  /**
+   * Busca produtos mais buscados (trending) nos últimos 7 dias
+   */
+  async getTrendingProducts(limit = 10) {
+    const query = `
       SELECT 
         sh.product_id,
         p.modelo as model,
@@ -56,15 +56,15 @@ export class SearchHistoryRepository {
       ORDER BY search_count DESC
       LIMIT ?
     `;
-        const [rows] = await db().execute(query, [limit]);
-        return rows;
-    }
+    const [rows] = await db().execute(query, [limit]);
+    return rows;
+  }
 
-    /**
-     * Busca termos mais buscados (trending) nos últimos 7 dias
-     */
-    async getTrendingTerms(limit = 10) {
-        const query = `
+  /**
+   * Busca termos mais buscados (trending) nos últimos 7 dias
+   */
+  async getTrendingTerms(limit = 10) {
+    const query = `
       SELECT 
         search_term,
         COUNT(*) as search_count,
@@ -77,9 +77,35 @@ export class SearchHistoryRepository {
       ORDER BY search_count DESC
       LIMIT ?
     `;
-        const [rows] = await db().execute(query, [limit]);
-        return rows;
-    }
+    const [rows] = await db().execute(query, [limit]);
+    return rows;
+  }
+
+  /**
+   * Busca produtos recentes do vendedor (últimos 20 produtos únicos)
+   * Item 3.2.1-3.2.4 do Checklist Produtos
+   */
+  async getRecentProducts(sellerId, limit = 20) {
+    const query = `
+      SELECT DISTINCT
+        sh.product_id as id,
+        i.modelo as model,
+        i.marca as brand,
+        i.nome as name,
+        i.revenda as price,
+        MAX(sh.searched_at) as last_used
+      FROM seller_search_history sh
+      INNER JOIN mak.inv i ON sh.product_id = i.id
+      WHERE sh.seller_id = ?
+        AND sh.product_id IS NOT NULL
+        AND i.revenda > 0
+      GROUP BY sh.product_id, i.modelo, i.marca, i.nome, i.revenda
+      ORDER BY last_used DESC
+      LIMIT ?
+    `;
+    const [rows] = await db().execute(query, [sellerId, limit]);
+    return rows;
+  }
 }
 
 export default new SearchHistoryRepository();

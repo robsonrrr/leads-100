@@ -478,6 +478,34 @@ export async function getTrendingTerms(req, res, next) {
   }
 }
 
+/**
+ * Busca produtos recentes do vendedor
+ * GET /api/products/recent
+ */
+export async function getRecentProducts(req, res, next) {
+  try {
+    const sellerId = req.user?.id;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 20); // Max 20
+
+    if (!sellerId) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Autenticação necessária' }
+      });
+    }
+
+    const recentProducts = await searchHistoryRepository.getRecentProducts(sellerId, limit);
+
+    res.json({
+      success: true,
+      data: recentProducts
+    });
+  } catch (error) {
+    console.error('Erro getRecentProducts:', error);
+    next(error);
+  }
+}
+
 // ========== BUSCA INTELIGENTE ==========
 
 import SmartSearchService from '../services/smartSearch.service.js';
