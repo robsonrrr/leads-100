@@ -54,6 +54,40 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
     return { label: `${stockNum} un.`, color: 'success', value: stockNum }
   }
 
+  // Helper para destacar o termo buscado no texto
+  const highlightMatch = (text, query) => {
+    if (!text || !query || query.length < 2) return text
+
+    const textStr = String(text)
+    const queryStr = String(query).toLowerCase()
+    const lowerText = textStr.toLowerCase()
+    const index = lowerText.indexOf(queryStr)
+
+    if (index === -1) return text
+
+    const before = textStr.slice(0, index)
+    const match = textStr.slice(index, index + queryStr.length)
+    const after = textStr.slice(index + queryStr.length)
+
+    return (
+      <>
+        {before}
+        <Box
+          component="span"
+          sx={{
+            bgcolor: 'warning.light',
+            color: 'warning.contrastText',
+            borderRadius: 0.5,
+            px: 0.25
+          }}
+        >
+          {match}
+        </Box>
+        {after}
+      </>
+    )
+  }
+
   return (
     <Autocomplete
       options={options}
@@ -125,6 +159,7 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography
                     variant="body2"
+                    component="span"
                     sx={{
                       fontWeight: 'bold',
                       overflow: 'hidden',
@@ -132,11 +167,11 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    {option.model || option.codigo || `#${option.id}`}
+                    {highlightMatch(option.model || option.codigo || `#${option.id}`, inputValue)}
                   </Typography>
                   {option.brand && (
-                    <Typography variant="caption" color="text.secondary">
-                      {option.brand}
+                    <Typography variant="caption" color="text.secondary" component="span">
+                      {highlightMatch(option.brand, inputValue)}
                     </Typography>
                   )}
                 </Box>
@@ -145,6 +180,7 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                 <Typography
                   variant="caption"
                   color="text.secondary"
+                  component="span"
                   sx={{
                     display: 'block',
                     overflow: 'hidden',
@@ -153,7 +189,7 @@ function ProductAutocomplete({ value, onChange, error, helperText }) {
                     maxWidth: 250
                   }}
                 >
-                  {option.name || option.description || option.descricao}
+                  {highlightMatch(option.name || option.description || option.descricao, inputValue)}
                 </Typography>
 
                 {/* Linha 3: Preço e Estoque */}
