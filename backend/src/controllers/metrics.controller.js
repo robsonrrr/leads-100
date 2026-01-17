@@ -201,47 +201,157 @@ export async function getCacheMetrics(req, res, next) {
 
 /**
  * GET /api/metrics/queries
- * Retorna análise de queries (requer permissão admin)
+ * Retorna análise de queries críticas com EXPLAIN
  */
 export async function getQueryMetrics(req, res, next) {
     try {
-        // Verificar nível de acesso
-        if (req.user?.level < 5) {
+        // Verificar nível de acesso (admin apenas)
+        if (req.user?.level >= 5) {
             return res.status(403).json({
                 success: false,
-                error: { message: 'Acesso negado' }
+                error: { message: 'Acesso negado - requer admin' }
             });
         }
 
-        // Tentar buscar slow queries do MySQL
-        let slowQueries = [];
+        const analyses = [];
+
+        // Query 1: Listagem de leads
         try {
-            const [rows] = await db().execute(`
-        SELECT 
-          query, 
-          exec_count, 
-          avg_latency,
-          max_latency
-        FROM performance_schema.events_statements_summary_by_digest
-        WHERE avg_latency > 1000000000
-        ORDER BY avg_latency DESC
-        LIMIT 10
-      `);
-            slowQueries = rows;
+            const [explain1] = await db().execute(`
+                EXPLAIN SELECT s.cSCart, s.dCart, s.cCustomer, s.cSeller
+                FROM mak.sCart s
+                WHERE s.cSeller = 1 AND s.cType = 1
+                ORDER BY s.dCart DESC
+                LIMIT 20
+            `);
+            analyses.push({
+                name: 'Listagem de leads por vendedor',
+                query: 'SELECT ... FROM sCart WHERE cSeller = ? ORDER BY dCart DESC',
+                explain: explain1[0] || {},
+                usesIndex: explain1[0]?.key ? true : false,
+                scanType: explain1[0]?.type || 'unknown',
+                status: explain1[0]?.key ? '✅ OK' : '⚠️ Precisa de índice'
+            });
         } catch (e) {
-            // performance_schema pode não estar disponível
-            slowQueries = [{ message: 'performance_schema não disponível' }];
+            analyses.push({ name: 'Listagem de leads', error: e.message });
         }
+
+        // Query 2: Itens do lead
+        try {
+            const [explain2] = await db().execute(`
+                EXPLAIN SELECT i.cCart, i.cProduct, i.qProduct
+                FROM mak.icart i
+                WHERE i.cSCart = 1
+            `);
+            analyses.push({
+                name: 'Itens do lead',
+                query: 'SELECT ... FROM icart WHERE cSCart = ?',
+                explain: explain2[0] || {},
+                usesIndex: explain2[0]?.key ? true : false,
+                scanType: explain2[0]?.type || 'unknown',
+                status: explain2[0]?.key ? '✅ OK' : '⚠️ Precisa de índice'
+            });
+        } catch (e) {
+            analyses.push({ name: 'Itens do lead', error: e.message });
+        }
+
+        // Query 3: Clientes por vendedor
+        try {
+            const [explain3] = await db().execute(`
+                EXPLAIN SELECT id, nome, cidade
+                FROM mak.clientes
+                WHERE vendedor = 1 AND bloqueado = 0 AND ativo = 1
+                LIMIT 50
+            `);
+            analyses.push({
+                name: 'Clientes por vendedor',
+                query: 'SELECT ... FROM clientes WHERE vendedor = ? AND bloqueado = 0',
+                explain: explain3[0] || {},
+                usesIndex: explain3[0]?.key ? true : false,
+                scanType: explain3[0]?.type || 'unknown',
+                status: explain3[0]?.key ? '✅ OK' : '⚠️ Precisa de índice'
+            });
+        } catch (e) {
+            analyses.push({ name: 'Clientes por vendedor', error: e.message });
+        }
+
+        // Query 4: Busca de produtos
+        try {
+            const [explain4] = await db().execute(`
+                EXPLAIN SELECT id, modelo, marca, nome
+                FROM mak.inv
+                WHERE marca = 'SKF' AND habilitado = '1'
+                LIMIT 20
+            `);
+            analyses.push({
+                name: 'Busca de produtos',
+                query: 'SELECT ... FROM inv WHERE marca = ? AND habilitado = 1',
+                explain: explain4[0] || {},
+                usesIndex: explain4[0]?.key ? true : false,
+                scanType: explain4[0]?.type || 'unknown',
+                status: explain4[0]?.key ? '✅ OK' : '⚠️ Precisa de índice'
+            });
+        } catch (e) {
+            analyses.push({ name: 'Busca de produtos', error: e.message });
+        }
+
+        // Query 5: Pedidos por vendedor
+        try {
+            const [explain5] = await db().execute(`
+                EXPLAIN SELECT id, datae, valor
+                FROM mak.hoje
+                WHERE vendedor = 1
+                ORDER BY datae DESC
+                LIMIT 20
+            `);
+            analyses.push({
+                name: 'Pedidos por vendedor',
+                query: 'SELECT ... FROM hoje WHERE vendedor = ? ORDER BY datae DESC',
+                explain: explain5[0] || {},
+                usesIndex: explain5[0]?.key ? true : false,
+                scanType: explain5[0]?.type || 'unknown',
+                status: explain5[0]?.key ? '✅ OK' : '⚠️ Precisa de índice'
+            });
+        } catch (e) {
+            analyses.push({ name: 'Pedidos por vendedor', error: e.message });
+        }
+
+        // Índices criados no Q3.1
+        let indexReport = [];
+        try {
+            const [indexes] = await db().execute(`
+                SELECT TABLE_NAME, INDEX_NAME, 
+                       GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = 'mak' AND INDEX_NAME LIKE 'idx_%'
+                GROUP BY TABLE_NAME, INDEX_NAME
+                ORDER BY TABLE_NAME
+            `);
+            indexReport = indexes;
+        } catch (e) {
+            indexReport = [{ error: e.message }];
+        }
+
+        // Resumo
+        const usingIndex = analyses.filter(a => a.usesIndex).length;
+        const total = analyses.filter(a => !a.error).length;
 
         res.json({
             success: true,
             data: {
-                slowQueries,
+                summary: {
+                    queriesAnalyzed: total,
+                    usingIndex,
+                    needsOptimization: total - usingIndex,
+                    score: total > 0 ? Math.round((usingIndex / total) * 100) + '%' : '0%'
+                },
+                analyses,
+                indexesQ31: indexReport,
                 recommendations: [
-                    'Executar EXPLAIN em queries lentas',
-                    'Verificar índices com SHOW INDEX',
-                    'Analisar tabelas com ANALYZE TABLE',
-                    'Considerar cache para queries frequentes'
+                    'Queries com type=ALL precisam de índice',
+                    'Queries com type=ref ou range estão otimizadas',
+                    'Executar ANALYZE TABLE após criar índices',
+                    'Monitorar performance_schema para queries lentas'
                 ]
             }
         });
