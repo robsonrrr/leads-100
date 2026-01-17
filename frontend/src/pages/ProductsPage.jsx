@@ -167,7 +167,7 @@ function ProductsPage() {
 
                 // Filtrar por estoque (frontend - idealmente seria no backend)
                 if (inStockOnly) {
-                    prods = prods.filter(p => p.stock > 0)
+                    prods = prods.filter(p => (p.estoque || p.stock || 0) > 0)
                 }
 
                 // Filtrar por marca
@@ -191,7 +191,7 @@ function ProductsPage() {
                         case 'price_desc':
                             return (b.price || 0) - (a.price || 0)
                         case 'stock':
-                            return (b.stock || 0) - (a.stock || 0)
+                            return ((b.estoque || b.stock || 0) - (a.estoque || a.stock || 0))
                         case 'name':
                         default:
                             return (a.model || '').localeCompare(b.model || '')

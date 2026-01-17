@@ -148,7 +148,7 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 5.2.1 | Banner "Modo Offline" no header | Frontend | ✅ |
-| 5.2.2 | Desabilitar ações que precisam de API | Frontend | ⏳ |
+| 5.2.2 | Desabilitar ações que precisam de API | Frontend | ✅ |
 | 5.2.3 | Badge em itens não sincronizados | Frontend | ✅ |
 | 5.2.4 | Botão "Sincronizar Agora" | Frontend | ✅ |
 | 5.2.5 | Contador de itens pendentes | Frontend | ✅ |
@@ -195,10 +195,10 @@ Implementação de cache local usando SQLite (via sql.js) para permitir funciona
 | 2. Produtos | 16 | 15 | 1 |
 | 3. Clientes | 10 | 9 | 1 |
 | 4. Leads | 10 | 9 | 1 |
-| 5. Integração | 10 | 9 | 1 |
+| 5. Integração | 10 | 10 | 0 |
 | 6. Limites | 4 | 4 | 0 |
 | 7. Métricas | 4 | 2 | 2 |
-| **TOTAL** | **64** | **55** | **9** |
+| **TOTAL** | **64** | **56** | **8** |
 
 ---
 
