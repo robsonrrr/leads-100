@@ -411,13 +411,18 @@ GET    /api/orders/:id           - Busca pedido por ID
   - Métricas: total de leads, conversão, funil, tendência mensal
   - Cards de KPIs com comparação vs mês anterior
   - Integrado na aba "IA & Inteligência" do Dashboard
+- ✅ **Exportação de Leads para Excel** (2026-01-17)
+  - Novo endpoint GET /api/leads/export
+  - ExcelJS para geração de arquivos .xlsx profissionais
+  - Colunas estilizadas, cores, linha de totais, auto-filtro
+  - Botão "Excel" na página de Leads
+  - Exportação de lead individual com itens detalhados
 
 ### Pendente
 - ⏳ Envio real de email (atualmente simulado)
 - ⏳ Revendedor (cliente de cliente)
 - ⏳ Histórico de alterações do lead
 - ⏳ Filtros avançados na listagem de leads
-- ⏳ Exportação de leads (PDF, Excel)
 - ⏳ Notificações em tempo real
 - ⏳ Testes automatizados
 
@@ -525,7 +530,7 @@ GET    /api/orders/:id           - Busca pedido por ID
 - ✅ Integração com API de Pricing
 
 ### Fase 4: Melhorias e Polimento
-**Status**: ⏳ **50% - Em Andamento**
+**Status**: ⏳ **60% - Em Andamento**
 
 ### Fase 5: Deploy e Migração
 **Status**: ⏳ **0% - Aguardando**
