@@ -62,7 +62,7 @@ class AdminRepository {
                 CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active,
                 u.created_at,
                 u.last_login,
-                (SELECT COUNT(*) FROM mak.leads l WHERE l.vendedor_id = u.id) as leads_count,
+                (SELECT COUNT(*) FROM staging.staging_queries l WHERE l.cSeller = u.id) as leads_count,
                 (SELECT GROUP_CONCAT(sp.phone_number) 
                  FROM superbot.seller_phones sp 
                  WHERE sp.user_id = u.id) as phones
