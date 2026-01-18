@@ -45,7 +45,7 @@ class AdminRepository {
         }
 
         // Validar orderBy para evitar SQL injection
-        const validColumns = ['id', 'nick', 'user', 'email', 'nivel', 'depto', 'ativo', 'created_at', 'last_login']
+        const validColumns = ['id', 'nick', 'user', 'email', 'level', 'depto', 'blocked']
         const safeOrderBy = validColumns.includes(orderBy) ? orderBy : 'nick'
         const safeOrderDir = orderDir.toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
 
@@ -60,8 +60,6 @@ class AdminRepository {
                 u.depto,
                 u.segmento,
                 CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active,
-                u.created_at,
-                u.last_login,
                 (SELECT COUNT(*) FROM staging.staging_queries l WHERE l.cSeller = u.id) as leads_count,
                 (SELECT GROUP_CONCAT(sp.phone_number) 
                  FROM superbot.seller_phones sp 
@@ -115,9 +113,7 @@ class AdminRepository {
                 u.level as level,
                 u.depto,
                 u.segmento,
-                CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active,
-                u.created_at,
-                u.last_login
+                CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active
             FROM mak.rolemak_users u
             WHERE u.id = ?
         `, [userId])
@@ -316,8 +312,9 @@ class AdminRepository {
                 SUM(CASE WHEN blocked = 1 THEN 1 ELSE 0 END) as inactive,
                 SUM(CASE WHEN level >= 5 THEN 1 ELSE 0 END) as admins,
                 SUM(CASE WHEN level < 5 THEN 1 ELSE 0 END) as sellers,
-                SUM(CASE WHEN last_login >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as active_last_week
+                0 as active_last_week
             FROM mak.rolemak_users
+            WHERE depto = 'VENDAS' OR level >= 5
         `)
 
         return stats[0]
@@ -325,19 +322,11 @@ class AdminRepository {
 
     /**
      * Histórico de login do usuário
+     * (Tabela rolemak_users não tem coluna last_login)
      */
     async getLoginHistory(userId, limit = 20) {
-        const connection = getDatabase()
-
-        // Se existir tabela de login_history, usar ela
-        // Por enquanto, retornar apenas last_login
-        const [users] = await connection.execute(`
-            SELECT last_login
-            FROM mak.rolemak_users
-            WHERE id = ?
-        `, [userId])
-
-        return users.length > 0 ? [{ login_at: users[0].last_login }] : []
+        // Não há tabela de histórico de login ainda
+        return []
     }
 }
 
