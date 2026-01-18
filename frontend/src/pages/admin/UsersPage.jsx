@@ -221,19 +221,47 @@ const UsersPage = () => {
         {
             field: 'nick',
             headerName: 'Nome',
-            flex: 1,
-            minWidth: 200,
+            flex: 1.5,
+            minWidth: 250,
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: params.row.active ? 'primary.main' : 'grey.400' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
+                    <Avatar
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            bgcolor: params.row.active ? 'primary.main' : 'grey.400',
+                            fontSize: '0.9rem',
+                            fontWeight: 600
+                        }}
+                    >
                         {params.row.nick?.charAt(0)?.toUpperCase() || '?'}
                     </Avatar>
-                    <Box>
-                        <Typography variant="body2" fontWeight="medium">
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
                             {params.row.nick}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            {params.row.user}
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                                display: 'block',
+                                lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.7rem'
+                            }}
+                        >
+                            @{params.row.user}
                         </Typography>
                     </Box>
                 </Box>
