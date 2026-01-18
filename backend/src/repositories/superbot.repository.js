@@ -514,7 +514,7 @@ export const SuperbotRepository = {
         END as confidence_score
       FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
       CROSS JOIN mak.clientes c
-      LEFT JOIN mak.users u ON u.id = c.vendedor
+      LEFT JOIN mak.rolemak_users u ON u.id = c.vendedor
       WHERE sc.is_group = 0
         AND REPLACE(REPLACE(REPLACE(c.fone, ' ', ''), '-', ''), '(', '') 
             LIKE CONCAT('%', RIGHT(sc.phone_number, 8), '%')
@@ -626,7 +626,7 @@ export const SuperbotRepository = {
         u.nick as seller_name
       FROM ${LINKS_TABLE} scl
       INNER JOIN mak.clientes c ON c.id = scl.leads_customer_id
-      LEFT JOIN mak.users u ON u.id = c.vendedor
+      LEFT JOIN mak.rolemak_users u ON u.id = c.vendedor
       WHERE scl.superbot_customer_id = ?
     `, [superbotCustomerId]);
 
@@ -666,11 +666,11 @@ export const SuperbotRepository = {
     const [rows] = await db().query(`
       SELECT 
         sp.*,
-        u.nick as seller_name,
+        COALESCE(u.nick, u.user) as seller_name,
         u.email as seller_email,
         u.level as seller_level
       FROM ${SUPERBOT_SCHEMA}.seller_phones sp
-      LEFT JOIN mak.users u ON u.id = sp.user_id
+      LEFT JOIN mak.rolemak_users u ON u.id = sp.user_id
       WHERE sp.is_active = 1
       ORDER BY sp.user_id, sp.is_primary DESC
     `);
@@ -735,7 +735,7 @@ export const SuperbotRepository = {
         u.email as seller_email,
         u.level as seller_level
       FROM ${SUPERBOT_SCHEMA}.seller_phones sp
-      INNER JOIN mak.users u ON u.id = sp.user_id
+      INNER JOIN mak.rolemak_users u ON u.id = sp.user_id
       WHERE sp.is_active = 1
         AND (sp.phone_number = ? OR sp.phone_number LIKE ?)
     `, [phoneNumber, `%${suffix}`]);
