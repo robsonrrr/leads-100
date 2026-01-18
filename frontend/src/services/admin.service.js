@@ -111,7 +111,25 @@ export const adminService = {
      * Testar resposta do chatbot
      */
     testChatbotResponse: (message) => api.post('/admin/chatbot/test', { message }),
+
+    // ============================================
+    // LOGS E AUDITORIA
+    // ============================================
+
+    /**
+     * Listar logs de auditoria
+     */
+    getLogs: (params = {}) => api.get('/admin/logs', { params }),
+
+    /**
+     * Listar tipos de ações disponíveis
+     */
+    getLogActions: () => api.get('/admin/logs/actions'),
+
+    /**
+     * Estatísticas de logs
+     */
+    getLogStats: () => api.get('/admin/logs/stats'),
 }
 
 export default adminService
-

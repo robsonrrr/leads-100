@@ -158,5 +158,27 @@ router.put('/chatbot/config',
  */
 router.post('/chatbot/test', AdminController.testChatbotResponse)
 
+// ============================================
+// LOGS E AUDITORIA
+// ============================================
+
+/**
+ * GET /api/admin/logs
+ * Listar logs de auditoria
+ */
+router.get('/logs', AdminController.listAuditLogs)
+
+/**
+ * GET /api/admin/logs/actions
+ * Listar tipos de ações disponíveis
+ */
+router.get('/logs/actions', AdminController.getLogActions)
+
+/**
+ * GET /api/admin/logs/stats
+ * Estatísticas de logs
+ */
+router.get('/logs/stats', AdminController.getLogStats)
+
 export default router
 

@@ -518,6 +518,155 @@ const testChatbotResponse = async (req, res) => {
     }
 }
 
+// ==========================================
+// LOGS E AUDITORIA
+// ==========================================
+
+import { auditLog, AuditAction } from '../services/auditLog.service.js'
+
+/**
+ * GET /api/admin/logs
+ * Listar logs de auditoria
+ */
+const listAuditLogs = async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 50,
+            action,
+            userId,
+            resourceType,
+            dateFrom,
+            dateTo
+        } = req.query
+
+        // Calcular offset para paginação
+        const offset = (parseInt(page) - 1) * parseInt(limit)
+
+        const filters = {
+            action: action || null,
+            userId: userId ? parseInt(userId) : null,
+            resourceType: resourceType || null,
+            dateFrom: dateFrom || null,
+            dateTo: dateTo || null,
+            limit: parseInt(limit) + 1 // +1 para checar se há mais
+        }
+
+        const logs = await auditLog.findLogs(filters)
+
+        // Verificar se há mais páginas
+        const hasMore = logs.length > parseInt(limit)
+        const data = hasMore ? logs.slice(0, -1) : logs
+
+        res.json({
+            success: true,
+            data: data.map(log => ({
+                id: log.id,
+                action: log.action,
+                userId: log.user_id,
+                userName: log.user_name,
+                resourceType: log.resource_type,
+                resourceId: log.resource_id,
+                oldValue: log.old_value ? JSON.parse(log.old_value) : null,
+                newValue: log.new_value ? JSON.parse(log.new_value) : null,
+                ipAddress: log.ip_address,
+                userAgent: log.user_agent,
+                metadata: log.metadata ? JSON.parse(log.metadata) : null,
+                createdAt: log.created_at
+            })),
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                hasMore
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao listar logs:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao listar logs'
+        })
+    }
+}
+
+/**
+ * GET /api/admin/logs/actions
+ * Listar tipos de ações disponíveis
+ */
+const getLogActions = async (req, res) => {
+    res.json({
+        success: true,
+        data: Object.keys(AuditAction).map(key => ({
+            value: AuditAction[key],
+            label: key.replace(/_/g, ' ')
+        }))
+    })
+}
+
+/**
+ * GET /api/admin/logs/stats
+ * Estatísticas de logs
+ */
+const getLogStats = async (req, res) => {
+    try {
+        await auditLog.initialize()
+        const db = (await import('../config/database.js')).getDatabase()
+
+        const [stats] = await db.execute(`
+            SELECT 
+                COUNT(*) as total,
+                COUNT(DISTINCT user_id) as unique_users,
+                COUNT(DISTINCT action) as unique_actions,
+                MIN(created_at) as first_log,
+                MAX(created_at) as last_log
+            FROM audit_log
+        `)
+
+        const [byAction] = await db.execute(`
+            SELECT action, COUNT(*) as count
+            FROM audit_log
+            GROUP BY action
+            ORDER BY count DESC
+            LIMIT 10
+        `)
+
+        const [byUser] = await db.execute(`
+            SELECT user_name, user_id, COUNT(*) as count
+            FROM audit_log
+            WHERE user_id IS NOT NULL
+            GROUP BY user_id, user_name
+            ORDER BY count DESC
+            LIMIT 10
+        `)
+
+        const [recent] = await db.execute(`
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as count
+            FROM audit_log
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date
+        `)
+
+        res.json({
+            success: true,
+            data: {
+                summary: stats[0],
+                byAction,
+                byUser,
+                recentActivity: recent
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao buscar estatísticas de logs:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao buscar estatísticas'
+        })
+    }
+}
+
 export default {
     listUsers,
     getUserById,
@@ -534,6 +683,8 @@ export default {
     removeSellerPhone,
     getChatbotConfig,
     updateChatbotConfig,
-    testChatbotResponse
+    testChatbotResponse,
+    listAuditLogs,
+    getLogActions,
+    getLogStats
 }
-

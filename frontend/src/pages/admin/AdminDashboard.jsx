@@ -184,8 +184,6 @@ const AdminDashboard = () => {
             icon: <LogsIcon />,
             path: '/admin/logs',
             color: '#607d8b',
-            badge: 'Em breve',
-            badgeColor: 'warning',
         },
         {
             title: 'Configurações do Sistema',
