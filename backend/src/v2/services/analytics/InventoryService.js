@@ -186,7 +186,11 @@ export class InventoryService {
         const validSortColumns = ['valor_total_fob', 'cobertura_dias', 'estoque_atual', 'dias_ultima_venda'];
         const orderBy = validSortColumns.includes(sortBy) ? sortBy : 'valor_total_fob';
 
-        const [results] = await database.execute(`
+        // Sanitizar valores numéricos para evitar erro de prepared statement
+        const safeLimit = parseInt(limit) || 50;
+        const safeMinDays = parseInt(minDays) || 90;
+
+        const [results] = await database.query(`
             SELECT 
                 produto_id,
                 codigo,
@@ -205,10 +209,10 @@ export class InventoryService {
                 sugestao_acao,
                 prioridade_acao
             FROM mak.p_machines
-            WHERE cobertura_dias > ? AND estoque_atual > 0
+            WHERE cobertura_dias > ${safeMinDays} AND estoque_atual > 0
             ORDER BY ${orderBy} DESC
-            LIMIT ?
-        `, [minDays, limit]);
+            LIMIT ${safeLimit}
+        `);
 
         return {
             min_coverage_days: minDays,
