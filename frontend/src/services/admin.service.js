@@ -92,6 +92,26 @@ export const adminService = {
      */
     removeSellerPhone: (userId, phoneNumber) =>
         api.delete('/admin/seller-phones', { data: { userId, phoneNumber } }),
+
+    // ============================================
+    // CHATBOT CONFIG
+    // ============================================
+
+    /**
+     * Buscar configuração do chatbot
+     */
+    getChatbotConfig: () => api.get('/admin/chatbot/config'),
+
+    /**
+     * Atualizar configuração do chatbot
+     */
+    updateChatbotConfig: (config) => api.put('/admin/chatbot/config', { config }),
+
+    /**
+     * Testar resposta do chatbot
+     */
+    testChatbotResponse: (message) => api.post('/admin/chatbot/test', { message }),
 }
 
 export default adminService
+

@@ -168,8 +168,6 @@ const AdminDashboard = () => {
             icon: <ChatbotIcon />,
             path: '/admin/chatbot',
             color: '#9c27b0',
-            badge: 'Em breve',
-            badgeColor: 'warning',
         },
         {
             title: 'Status do Webhook',

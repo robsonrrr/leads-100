@@ -403,6 +403,121 @@ const removeSellerPhone = async (req, res) => {
     }
 }
 
+// ============================================
+// CHATBOT CONFIG
+// ============================================
+
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const CONFIG_FILE = path.join(__dirname, '../../config/chatbot-config.json')
+
+/**
+ * GET /api/admin/chatbot/config
+ * Buscar configuração do chatbot
+ */
+const getChatbotConfig = async (req, res) => {
+    try {
+        let config = {}
+
+        if (fs.existsSync(CONFIG_FILE)) {
+            const data = fs.readFileSync(CONFIG_FILE, 'utf-8')
+            config = JSON.parse(data)
+        }
+
+        res.json({
+            success: true,
+            data: config
+        })
+    } catch (error) {
+        logger.error('Erro ao buscar configuração do chatbot:', error)
+        res.status(500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * PUT /api/admin/chatbot/config
+ * Atualizar configuração do chatbot
+ */
+const updateChatbotConfig = async (req, res) => {
+    try {
+        const { config } = req.body
+        const updatedBy = req.user?.userId
+
+        if (!config) {
+            return res.status(400).json({
+                success: false,
+                error: 'Configuração é obrigatória'
+            })
+        }
+
+        // Garantir que o diretório existe
+        const configDir = path.dirname(CONFIG_FILE)
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true })
+        }
+
+        // Adicionar metadata
+        const configWithMeta = {
+            ...config,
+            _updatedAt: new Date().toISOString(),
+            _updatedBy: updatedBy
+        }
+
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(configWithMeta, null, 2))
+
+        logger.info('🤖 Configuração do chatbot atualizada', {
+            updatedBy,
+            enabled: config.enabled
+        })
+
+        res.json({
+            success: true,
+            message: 'Configuração salva com sucesso'
+        })
+    } catch (error) {
+        logger.error('Erro ao salvar configuração do chatbot:', error)
+        res.status(500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * POST /api/admin/chatbot/test
+ * Testar resposta do chatbot
+ */
+const testChatbotResponse = async (req, res) => {
+    try {
+        const { message } = req.body
+
+        // Por enquanto, retornar resposta mock
+        // TODO: Integrar com o serviço real de chatbot
+        res.json({
+            success: true,
+            data: {
+                input: message,
+                response: `[Teste] Resposta simulada para: "${message}"`,
+                intent: 'test',
+                confidence: 0.95
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao testar chatbot:', error)
+        res.status(500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
 export default {
     listUsers,
     getUserById,
@@ -416,5 +531,9 @@ export default {
     getStats,
     listSellerPhones,
     addSellerPhone,
-    removeSellerPhone
+    removeSellerPhone,
+    getChatbotConfig,
+    updateChatbotConfig,
+    testChatbotResponse
 }
+

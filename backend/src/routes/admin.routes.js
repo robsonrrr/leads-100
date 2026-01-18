@@ -133,4 +133,30 @@ router.delete('/seller-phones',
     AdminController.removeSellerPhone
 )
 
+// ============================================
+// CHATBOT CONFIG
+// ============================================
+
+/**
+ * GET /api/admin/chatbot/config
+ * Buscar configuração do chatbot
+ */
+router.get('/chatbot/config', AdminController.getChatbotConfig)
+
+/**
+ * PUT /api/admin/chatbot/config
+ * Atualizar configuração do chatbot
+ */
+router.put('/chatbot/config',
+    logAdminAction('UPDATE_CHATBOT_CONFIG'),
+    AdminController.updateChatbotConfig
+)
+
+/**
+ * POST /api/admin/chatbot/test
+ * Testar resposta do chatbot
+ */
+router.post('/chatbot/test', AdminController.testChatbotResponse)
+
 export default router
+
