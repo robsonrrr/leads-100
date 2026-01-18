@@ -97,8 +97,8 @@ const SellerPhonesPage = () => {
         if (!acc[userId]) {
             acc[userId] = {
                 user_id: userId,
-                nick: item.nick,
-                user: item.user,
+                seller_name: item.seller_name || 'Sem nome',
+                seller_email: item.seller_email,
                 phones: [],
             }
         }
@@ -279,19 +279,19 @@ const SellerPhonesPage = () => {
                                 <ListItem alignItems="flex-start">
                                     <ListItemAvatar>
                                         <Avatar sx={{ bgcolor: 'primary.main' }}>
-                                            {seller.nick?.charAt(0)?.toUpperCase() || '?'}
+                                            {seller.seller_name?.charAt(0)?.toUpperCase() || '?'}
                                         </Avatar>
                                     </ListItemAvatar>
                                     <ListItemText
                                         primary={
                                             <Typography variant="subtitle1" fontWeight="medium">
-                                                {seller.nick}
+                                                {seller.seller_name}
                                             </Typography>
                                         }
                                         secondary={
                                             <Box sx={{ mt: 1 }}>
                                                 <Typography variant="caption" color="text.secondary" display="block">
-                                                    @{seller.user}
+                                                    {seller.seller_email || `ID: ${seller.user_id}`}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
                                                     {seller.phones.map((phone, phoneIdx) => (
@@ -306,7 +306,7 @@ const SellerPhonesPage = () => {
                                                                 data: {
                                                                     userId: seller.user_id,
                                                                     phoneNumber: phone.phone_number,
-                                                                    nick: seller.nick,
+                                                                    nick: seller.seller_name,
                                                                 },
                                                             })}
                                                             deleteIcon={<DeleteIcon />}
