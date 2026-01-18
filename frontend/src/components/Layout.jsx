@@ -35,7 +35,8 @@ import {
   ListAlt as ListAltIcon,
   GpsFixed as TargetIcon,
   Inventory as ProductsIcon,
-  WhatsApp as WhatsAppIcon
+  WhatsApp as WhatsAppIcon,
+  AdminPanelSettings as AdminIcon
 } from '@mui/icons-material'
 import { logout } from '../store/slices/authSlice'
 import { interactionsService } from '../services/api'
@@ -169,6 +170,7 @@ function Layout({ children }) {
     { text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp' },
     { text: 'Novo Lead', icon: <AddIcon />, path: '/leads/new' },
     { text: 'Segurança', icon: <SecurityIcon />, path: '/security' },
+    ...(isManager ? [{ text: 'Admin', icon: <AdminIcon sx={{ color: '#1a237e' }} />, path: '/admin' }] : []),
   ]
 
   // Versão do app (importada do package.json via Vite)

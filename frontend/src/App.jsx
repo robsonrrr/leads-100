@@ -30,6 +30,12 @@ const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 
+// Admin pages
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'))
+const UserFormPage = lazy(() => import('./pages/admin/UserFormPage'))
+const SellerPhonesPage = lazy(() => import('./pages/admin/SellerPhonesPage'))
+
 const theme = createTheme({
   palette: {
     primary: { main: '#1976d2' },
@@ -121,6 +127,58 @@ function App() {
               <Route path="/security" element={<ProtectedRoute><Layout><SecurityPage /></Layout></ProtectedRoute>} />
               <Route path="/whatsapp" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
               <Route path="/whatsapp/:phone" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
+
+              {/* Admin Routes (level >= 5) */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <AdminDashboard /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <UsersPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/new"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <UserFormPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <UserFormPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/seller-phones"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <SellerPhonesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
