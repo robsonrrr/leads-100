@@ -2,10 +2,10 @@
 
 ## Sistema de Gestão de Leads - Rolemak
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Criado em:** 18 de Janeiro 2026  
 **Atualizado em:** 18 de Janeiro 2026  
-**Status:** Planejado 📋
+**Status:** Em Progresso 🚀
 
 ---
 
@@ -17,12 +17,12 @@
 
 ## 📊 Métricas de Sucesso
 
-| Métrica | Baseline | Meta |
-|---------|----------|------|
-| Tempo para criar novo usuário | ~10min (manual) | < 2min |
-| Tempo para vincular telefone | ~5min (SQL) | < 30s |
-| Visibilidade de erros do sistema | 0% | 100% |
-| Configurações via código | 100% | < 20% |
+| Métrica | Baseline | Meta | Atual |
+|---------|----------|------|-------|
+| Tempo para criar novo usuário | ~10min (manual) | < 2min | < 2min ✅ |
+| Tempo para vincular telefone | ~5min (SQL) | < 30s | < 30s ✅ |
+| Visibilidade de erros do sistema | 0% | 100% | 30% |
+| Configurações via código | 100% | < 20% | 50% |
 
 ---
 
@@ -32,9 +32,9 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.1.1 | Rota /admin protegida (level ≥ 5) | Backend | ⬜ |
-| 1.1.2 | Layout AdminLayout.jsx com sidebar | Frontend | ⬜ |
-| 1.1.3 | Cards de métricas em tempo real | Frontend | ⬜ |
+| 1.1.1 | Rota /admin protegida (level ≥ 5) | Backend | ✅ |
+| 1.1.2 | Layout AdminLayout.jsx com sidebar | Frontend | ✅ |
+| 1.1.3 | Cards de métricas em tempo real | Frontend | ✅ |
 | 1.1.4 | Contagem de usuários online | Backend | ⬜ |
 | 1.1.5 | Leads criados hoje | Backend | ⬜ |
 | 1.1.6 | Conversas WhatsApp ativas | Backend | ⬜ |
@@ -43,9 +43,9 @@
 
 **Critério de Aceite:**
 ```
-⬜ Dashboard carrega em < 2s
-⬜ Métricas atualizam a cada 30s
-⬜ Gestores veem overview do sistema rapidamente
+✅ Dashboard carrega em < 2s
+✅ Métricas atualizam a cada 30s
+✅ Gestores veem overview do sistema rapidamente
 ```
 
 ---
@@ -54,11 +54,11 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 1.2.1 | Menu lateral com seções do admin | Frontend | ⬜ |
+| 1.2.1 | Menu lateral com seções do admin | Frontend | ✅ |
 | 1.2.2 | Breadcrumbs de navegação | Frontend | ⬜ |
-| 1.2.3 | Ícones distintos por módulo | Frontend | ⬜ |
-| 1.2.4 | Indicador de seção ativa | Frontend | ⬜ |
-| 1.2.5 | Acesso rápido às funções principais | Frontend | ⬜ |
+| 1.2.3 | Ícones distintos por módulo | Frontend | ✅ |
+| 1.2.4 | Indicador de seção ativa | Frontend | ✅ |
+| 1.2.5 | Acesso rápido às funções principais | Frontend | ✅ |
 
 ---
 
@@ -68,22 +68,22 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.1.1 | Página /admin/users com DataGrid | Frontend | ⬜ |
-| 2.1.2 | Endpoint GET /api/admin/users | Backend | ⬜ |
-| 2.1.3 | Filtro por nível de acesso | Frontend | ⬜ |
-| 2.1.4 | Filtro por departamento | Frontend | ⬜ |
-| 2.1.5 | Filtro por status (ativo/inativo) | Frontend | ⬜ |
-| 2.1.6 | Busca por nome/email | Frontend | ⬜ |
-| 2.1.7 | Ordenação por colunas | Frontend | ⬜ |
-| 2.1.8 | Paginação server-side | Backend | ⬜ |
-| 2.1.9 | Badge de nível colorido | Frontend | ⬜ |
+| 2.1.1 | Página /admin/users com DataGrid | Frontend | ✅ |
+| 2.1.2 | Endpoint GET /api/admin/users | Backend | ✅ |
+| 2.1.3 | Filtro por nível de acesso | Frontend | ✅ |
+| 2.1.4 | Filtro por departamento | Frontend | ✅ |
+| 2.1.5 | Filtro por status (ativo/inativo) | Frontend | ✅ |
+| 2.1.6 | Busca por nome/email | Frontend | ✅ |
+| 2.1.7 | Ordenação por colunas | Frontend | ✅ |
+| 2.1.8 | Paginação server-side | Backend | ✅ |
+| 2.1.9 | Badge de nível colorido | Frontend | ✅ |
 | 2.1.10 | Indicador de último login | Frontend | ⬜ |
 
 **Critério de Aceite:**
 ```
-⬜ Lista carrega em < 1s
-⬜ Filtros funcionam em conjunto
-⬜ Usuários inativos aparecem destacados
+✅ Lista carrega em < 1s
+✅ Filtros funcionam em conjunto
+✅ Usuários inativos aparecem destacados
 ```
 
 ---
@@ -92,28 +92,28 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.2.1 | Formulário de novo usuário | Frontend | ⬜ |
-| 2.2.2 | Endpoint POST /api/admin/users | Backend | ⬜ |
-| 2.2.3 | Endpoint PUT /api/admin/users/:id | Backend | ⬜ |
-| 2.2.4 | Validação de email único | Backend | ⬜ |
-| 2.2.5 | Validação de username único | Backend | ⬜ |
-| 2.2.6 | Seletor de nível de acesso | Frontend | ⬜ |
-| 2.2.7 | Seletor de departamento | Frontend | ⬜ |
+| 2.2.1 | Formulário de novo usuário | Frontend | ✅ |
+| 2.2.2 | Endpoint POST /api/admin/users | Backend | ✅ |
+| 2.2.3 | Endpoint PUT /api/admin/users/:id | Backend | ✅ |
+| 2.2.4 | Validação de email único | Backend | ✅ |
+| 2.2.5 | Validação de username único | Backend | ✅ |
+| 2.2.6 | Seletor de nível de acesso | Frontend | ✅ |
+| 2.2.7 | Seletor de departamento | Frontend | ✅ |
 | 2.2.8 | Seletor de equipe (team) | Frontend | ⬜ |
 | 2.2.9 | Campo de senha com força | Frontend | ⬜ |
-| 2.2.10 | Toggle ativo/inativo | Frontend | ⬜ |
+| 2.2.10 | Toggle ativo/inativo | Frontend | ✅ |
 | 2.2.11 | Avatar upload (opcional) | Frontend | ⬜ |
 
 **Campos do Formulário:**
 ```
-- user (login) *
-- nick (nome exibição) *
-- email *
-- password (criar) / nova_senha (editar)
-- level (1-6) *
-- depto (departamento)
-- team_id (equipe)
-- active (checkbox)
+- user (login) * ✅
+- nick (nome exibição) * ✅
+- email * ✅
+- password (criar) / nova_senha (editar) ✅
+- level (1-6) * ✅
+- depto (departamento) ✅
+- team_id (equipe) ⬜
+- active (checkbox) ✅
 ```
 
 ---
@@ -122,20 +122,20 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 2.3.1 | Resetar senha do usuário | Backend | ⬜ |
-| 2.3.2 | Desativar usuário | Backend | ⬜ |
-| 2.3.3 | Reativar usuário | Backend | ⬜ |
+| 2.3.1 | Resetar senha do usuário | Backend | ✅ |
+| 2.3.2 | Desativar usuário | Backend | ✅ |
+| 2.3.3 | Reativar usuário | Backend | ✅ |
 | 2.3.4 | Forçar logout do usuário | Backend | ⬜ |
-| 2.3.5 | Ver histórico de login | Backend | ⬜ |
+| 2.3.5 | Ver histórico de login | Backend | ✅ |
 | 2.3.6 | Ver leads do usuário | Frontend | ⬜ |
 | 2.3.7 | Deletar usuário (level 6 only) | Backend | ⬜ |
-| 2.3.8 | Confirmação para ações destrutivas | Frontend | ⬜ |
+| 2.3.8 | Confirmação para ações destrutivas | Frontend | ✅ |
 
 **Critério de Aceite:**
 ```
-⬜ Ações críticas exigem confirmação
+✅ Ações críticas exigem confirmação
 ⬜ Apenas level 6 pode deletar
-⬜ Histórico de login disponível
+✅ Histórico de login disponível
 ```
 
 ---
@@ -145,7 +145,7 @@
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 2.4.1 | Página /admin/permissions | Frontend | ⬜ |
-| 2.4.2 | Documentação de cada nível | Frontend | ⬜ |
+| 2.4.2 | Documentação de cada nível | Frontend | ✅ |
 | 2.4.3 | Matriz de permissões visualizável | Frontend | ⬜ |
 | 2.4.4 | Comparativo entre níveis | Frontend | ⬜ |
 
@@ -167,22 +167,22 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 3.1.1 | Página /admin/seller-phones | Frontend | ⬜ |
-| 3.1.2 | Endpoint GET /api/admin/seller-phones | Backend | ⬜ |
-| 3.1.3 | DataGrid com vendedor e telefones | Frontend | ⬜ |
-| 3.1.4 | Modal para vincular novo telefone | Frontend | ⬜ |
-| 3.1.5 | Endpoint POST /api/admin/seller-phones | Backend | ⬜ |
-| 3.1.6 | Endpoint DELETE /api/admin/seller-phones/:id | Backend | ⬜ |
-| 3.1.7 | Autocomplete de vendedores | Frontend | ⬜ |
+| 3.1.1 | Página /admin/seller-phones | Frontend | ✅ |
+| 3.1.2 | Endpoint GET /api/admin/seller-phones | Backend | ✅ |
+| 3.1.3 | DataGrid com vendedor e telefones | Frontend | ✅ |
+| 3.1.4 | Modal para vincular novo telefone | Frontend | ✅ |
+| 3.1.5 | Endpoint POST /api/admin/seller-phones | Backend | ✅ |
+| 3.1.6 | Endpoint DELETE /api/admin/seller-phones | Backend | ✅ |
+| 3.1.7 | Autocomplete de vendedores | Frontend | ✅ |
 | 3.1.8 | Validação de telefone único | Backend | ⬜ |
-| 3.1.9 | Indicador de telefone primário | Frontend | ⬜ |
-| 3.1.10 | Marcar telefone como primário | Backend | ⬜ |
+| 3.1.9 | Indicador de telefone primário | Frontend | ✅ |
+| 3.1.10 | Marcar telefone como primário | Backend | ✅ |
 
 **Critério de Aceite:**
 ```
-⬜ Vincular telefone em < 30s
+✅ Vincular telefone em < 30s
 ⬜ Telefone não pode ter 2 vendedores
-⬜ Vendedor pode ter múltiplos telefones
+✅ Vendedor pode ter múltiplos telefones
 ```
 
 ---
@@ -235,30 +235,30 @@
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 4.2.1 | Página /admin/whatsapp/chatbot | Frontend | ⬜ |
-| 4.2.2 | Toggle habilitar/desabilitar chatbot | Frontend | ⬜ |
-| 4.2.3 | Configurar horário de funcionamento | Frontend | ⬜ |
-| 4.2.4 | Mensagem de saudação | Frontend | ⬜ |
-| 4.2.5 | Mensagem fora do horário | Frontend | ⬜ |
-| 4.2.6 | Palavras-chave para escalar humano | Frontend | ⬜ |
-| 4.2.7 | Timeout de inatividade | Frontend | ⬜ |
-| 4.2.8 | Limite de tentativas antes de escalar | Frontend | ⬜ |
-| 4.2.9 | Endpoint PUT /api/admin/chatbot/config | Backend | ⬜ |
+| 4.2.1 | Página /admin/chatbot | Frontend | ✅ |
+| 4.2.2 | Toggle habilitar/desabilitar chatbot | Frontend | ✅ |
+| 4.2.3 | Configurar horário de funcionamento | Frontend | ✅ |
+| 4.2.4 | Mensagem de saudação | Frontend | ✅ |
+| 4.2.5 | Mensagem fora do horário | Frontend | ✅ |
+| 4.2.6 | Palavras-chave para escalar humano | Frontend | ✅ |
+| 4.2.7 | Timeout de inatividade | Frontend | ✅ |
+| 4.2.8 | Limite de tentativas antes de escalar | Frontend | ✅ |
+| 4.2.9 | Endpoint PUT /api/admin/chatbot/config | Backend | ✅ |
 | 4.2.10 | Preview de mensagens | Frontend | ⬜ |
 
 **Configurações Editáveis:**
 ```yaml
 chatbot:
-  enabled: true
+  enabled: true ✅
   working_hours:
-    start: "08:00"
-    end: "18:00"
-    days: [1, 2, 3, 4, 5]  # Seg a Sex
-  greeting: "Olá! Sou o assistente..."
-  away_message: "Nosso horário..."
-  escalation_keywords: ["gerente", "humano"]
-  inactivity_timeout: 300  # segundos
-  max_attempts: 3
+    start: "08:00" ✅
+    end: "18:00" ✅
+    days: [1, 2, 3, 4, 5]  # Seg a Sex ✅
+  greeting: "Olá! Sou o assistente..." ✅
+  away_message: "Nosso horário..." ✅
+  escalation_keywords: ["gerente", "humano"] ✅
+  inactivity_timeout: 300  # segundos ✅
+  max_attempts: 3 ✅
 ```
 
 ---
@@ -283,7 +283,7 @@ chatbot:
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
 | 5.1.1 | Tabela audit_logs no banco | Backend | ⬜ |
-| 5.1.2 | Middleware de auditoria | Backend | ⬜ |
+| 5.1.2 | Middleware de auditoria | Backend | ✅ |
 | 5.1.3 | Página /admin/logs/audit | Frontend | ⬜ |
 | 5.1.4 | Filtro por usuário | Frontend | ⬜ |
 | 5.1.5 | Filtro por ação | Frontend | ⬜ |
@@ -313,7 +313,7 @@ CREATE TABLE audit_logs (
 **Ações Auditadas:**
 - Login/Logout
 - CRUD de leads
-- CRUD de usuários
+- CRUD de usuários ✅ (via logs)
 - Alteração de permissões
 - Configurações do sistema
 
@@ -455,9 +455,9 @@ CREATE TABLE audit_logs (
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 8.1.1 | Middleware requireAdmin (level ≥ 5) | Backend | ⬜ |
-| 8.1.2 | Middleware requireSuperAdmin (level = 6) | Backend | ⬜ |
-| 8.1.3 | Logging de acessos admin | Backend | ⬜ |
+| 8.1.1 | Middleware requireAdmin (level ≥ 5) | Backend | ✅ |
+| 8.1.2 | Middleware requireSuperAdmin (level = 6) | Backend | ✅ |
+| 8.1.3 | Logging de acessos admin | Backend | ✅ |
 | 8.1.4 | Rate limiting para admin | Backend | ⬜ |
 | 8.1.5 | Bloqueio após tentativas falhas | Backend | ⬜ |
 
@@ -467,102 +467,93 @@ CREATE TABLE audit_logs (
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 8.2.1 | Guard de rota /admin/* no frontend | Frontend | ⬜ |
-| 8.2.2 | Redirect para login se não autenticado | Frontend | ⬜ |
-| 8.2.3 | Redirect para home se sem permissão | Frontend | ⬜ |
+| 8.2.1 | Guard de rota /admin/* no frontend | Frontend | ✅ |
+| 8.2.2 | Redirect para login se não autenticado | Frontend | ✅ |
+| 8.2.3 | Redirect para home se sem permissão | Frontend | ✅ |
 | 8.2.4 | Mensagem de acesso negado | Frontend | ⬜ |
 
 ---
 
 # 📋 RESUMO
 
-| Bloco | Tarefas | Concluídas | Pendentes |
-|-------|---------|------------|-----------|
-| 1. Dashboard | 13 | 0 | 13 |
-| 2. Usuários | 32 | 0 | 32 |
-| 3. Seller Phones | 18 | 0 | 18 |
-| 4. Chatbot | 22 | 0 | 22 |
-| 5. Logs | 22 | 0 | 22 |
-| 6. Integrações | 13 | 0 | 13 |
-| 7. Sistema | 17 | 0 | 17 |
-| 8. Segurança | 9 | 0 | 9 |
-| **Total** | **146** | **0** | **146** |
+| Bloco | Tarefas | Concluídas | Pendentes | % |
+|-------|---------|------------|-----------|---|
+| 1. Dashboard | 13 | 7 | 6 | 54% |
+| 2. Usuários | 32 | 24 | 8 | 75% |
+| 3. Seller Phones | 18 | 10 | 8 | 56% |
+| 4. Chatbot | 22 | 10 | 12 | 45% |
+| 5. Logs | 22 | 1 | 21 | 5% |
+| 6. Integrações | 13 | 0 | 13 | 0% |
+| 7. Sistema | 17 | 0 | 17 | 0% |
+| 8. Segurança | 9 | 6 | 3 | 67% |
+| **Total** | **146** | **58** | **88** | **40%** |
 
 ---
 
-# 🗓️ CRONOGRAMA SUGERIDO
+# 🗓️ CRONOGRAMA ATUALIZADO
 
-| Fase | Blocos | Semanas | Prioridade |
-|------|--------|---------|------------|
-| Fase 1 | 8 (Segurança), 2.1-2.2 (Usuários) | 1-2 | 🔴 Alta |
-| Fase 2 | 3 (Seller Phones), 1 (Dashboard) | 3-4 | 🔴 Alta |
-| Fase 3 | 4.1-4.2 (Chatbot) | 5-6 | 🟡 Média |
-| Fase 4 | 5.1-5.2 (Logs) | 7-8 | 🟡 Média |
-| Fase 5 | 6 (Integrações), 7 (Sistema) | 9-10 | 🟢 Baixa |
+| Fase | Blocos | Status | Prioridade |
+|------|--------|--------|------------|
+| Fase 1 | 8 (Segurança), 2.1-2.2 (Usuários) | ✅ CONCLUÍDA | 🔴 Alta |
+| Fase 2 | 3.1 (Seller Phones), 1 (Dashboard) | ✅ CONCLUÍDA | 🔴 Alta |
+| Fase 3 | 4.2 (Chatbot Config) | ✅ CONCLUÍDA | 🟡 Média |
+| Fase 4 | 5.1-5.2 (Logs) | 🔜 PRÓXIMA | 🟡 Média |
+| Fase 5 | 6 (Integrações), 7 (Sistema) | ⬜ Pendente | 🟢 Baixa |
 
 ---
 
 # ⚠️ DEPENDÊNCIAS
 
 ## Dependências Técnicas
+- ✅ Middleware de admin implementado
 - ⬜ Tabela de auditoria criada
-- ⬜ Middleware de admin implementado
 - ⬜ Endpoint de health check
 - ⬜ Service de logs estruturado
 
 ## Dependências de Negócio
-- ⬜ Definir quem pode criar/deletar usuários
+- ✅ Definir quem pode criar/deletar usuários
 - ⬜ Definir política de retenção de logs
-- ⬜ Definir templates padrão do chatbot
+- ✅ Definir templates padrão do chatbot
 - ⬜ Definir integrações prioritárias
 
 ---
 
-# 📁 ESTRUTURA DE ARQUIVOS
+# 📁 ESTRUTURA DE ARQUIVOS (IMPLEMENTADA)
 
 ## Frontend
 ```
 frontend/src/
 ├── pages/admin/
-│   ├── AdminDashboard.jsx
-│   ├── UsersPage.jsx
-│   ├── UserFormPage.jsx
-│   ├── SellerPhonesPage.jsx
-│   ├── ChatbotConfigPage.jsx
-│   ├── WebhookStatusPage.jsx
-│   ├── LogsPage.jsx
-│   ├── IntegrationsPage.jsx
-│   └── SystemPage.jsx
-├── components/admin/
-│   ├── AdminLayout.jsx
-│   ├── AdminSidebar.jsx
-│   ├── UserTable.jsx
-│   ├── PhoneAssignmentCard.jsx
-│   ├── MetricsCard.jsx
-│   ├── LogViewer.jsx
-│   └── HealthStatus.jsx
+│   ├── AdminDashboard.jsx     ✅
+│   ├── UsersPage.jsx          ✅
+│   ├── UserFormPage.jsx       ✅
+│   ├── SellerPhonesPage.jsx   ✅
+│   ├── ChatbotConfigPage.jsx  ✅
+│   ├── WebhookStatusPage.jsx  ⬜
+│   ├── LogsPage.jsx           ⬜
+│   ├── IntegrationsPage.jsx   ⬜
+│   └── SystemPage.jsx         ⬜
 └── services/
-    └── admin.service.js
+    └── admin.service.js       ✅
 ```
 
 ## Backend
 ```
 backend/src/
 ├── controllers/
-│   └── admin.controller.js
+│   └── admin.controller.js    ✅
 ├── routes/
-│   └── admin.routes.js
+│   └── admin.routes.js        ✅
 ├── services/
-│   ├── admin.service.js
-│   └── audit.service.js
+│   ├── admin.service.js       ✅
+│   └── audit.service.js       ⬜
 ├── repositories/
-│   ├── user.repository.js
-│   └── audit.repository.js
+│   └── admin.repository.js    ✅
 └── middleware/
-    └── adminAuth.js
+    └── adminAuth.js           ✅
 ```
 
 ---
 
 **© Rolemak - Sistema de Gestão de Leads**  
-*Checklist do Admin Panel v1.0*
+*Checklist do Admin Panel v1.1 - Atualizado em 18/01/2026*

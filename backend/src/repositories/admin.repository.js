@@ -22,7 +22,7 @@ class AdminRepository {
         const params = []
 
         if (level !== undefined && level !== null && level !== '') {
-            whereClause += ' AND u.nivel = ?'
+            whereClause += ' AND u.level = ?'
             params.push(parseInt(level))
         }
 
@@ -32,8 +32,10 @@ class AdminRepository {
         }
 
         if (active !== undefined && active !== null && active !== '') {
-            whereClause += ' AND u.ativo = ?'
-            params.push(active === 'true' || active === true ? 1 : 0)
+            // active=true significa blocked=0 (não bloqueado)
+            // active=false significa blocked=1 (bloqueado)
+            whereClause += ' AND u.blocked = ?'
+            params.push(active === 'true' || active === true ? 0 : 1)
         }
 
         if (search) {
@@ -54,17 +56,17 @@ class AdminRepository {
                 u.user,
                 u.nick,
                 u.email,
-                u.nivel as level,
+                u.level as level,
                 u.depto,
                 u.segmento,
-                u.ativo as active,
+                CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active,
                 u.created_at,
                 u.last_login,
                 (SELECT COUNT(*) FROM mak.leads l WHERE l.vendedor_id = u.id) as leads_count,
                 (SELECT GROUP_CONCAT(sp.phone_number) 
                  FROM superbot.seller_phones sp 
                  WHERE sp.user_id = u.id) as phones
-            FROM mak.users u
+            FROM mak.rolemak_users u
             ${whereClause}
             ORDER BY u.${safeOrderBy} ${safeOrderDir}
             LIMIT ? OFFSET ?
@@ -77,7 +79,7 @@ class AdminRepository {
         // Query de contagem total
         const countQuery = `
             SELECT COUNT(*) as total
-            FROM mak.users u
+            FROM mak.rolemak_users u
             ${whereClause}
         `
 
@@ -110,13 +112,13 @@ class AdminRepository {
                 u.user,
                 u.nick,
                 u.email,
-                u.nivel as level,
+                u.level as level,
                 u.depto,
                 u.segmento,
-                u.ativo as active,
+                CASE WHEN u.blocked = 0 THEN 1 ELSE 0 END as active,
                 u.created_at,
                 u.last_login
-            FROM mak.users u
+            FROM mak.rolemak_users u
             WHERE u.id = ?
         `, [userId])
 
@@ -143,8 +145,8 @@ class AdminRepository {
         const connection = getDatabase()
 
         const [result] = await connection.execute(`
-            INSERT INTO mak.users (user, nick, email, senha, nivel, depto, segmento, ativo, created_at)
-            VALUES (?, ?, ?, MD5(?), ?, ?, ?, 1, NOW())
+            INSERT INTO mak.rolemak_users (user, nick, email, newpassword, level, depto, segmento, blocked)
+            VALUES (?, ?, ?, MD5(?), ?, ?, ?, 0)
         `, [user, nick, email, password, level, depto || null, segmento || null])
 
         return result.insertId
@@ -170,7 +172,7 @@ class AdminRepository {
         }
 
         if (level !== undefined) {
-            updates.push('nivel = ?')
+            updates.push('level = ?')
             params.push(level)
         }
 
@@ -185,8 +187,8 @@ class AdminRepository {
         }
 
         if (active !== undefined) {
-            updates.push('ativo = ?')
-            params.push(active ? 1 : 0)
+            updates.push('blocked = ?')
+            params.push(active ? 0 : 1)  // active=true -> blocked=0
         }
 
         if (updates.length === 0) {
@@ -196,7 +198,7 @@ class AdminRepository {
         params.push(userId)
 
         await connection.execute(`
-            UPDATE mak.users
+            UPDATE mak.rolemak_users
             SET ${updates.join(', ')}
             WHERE id = ?
         `, params)
@@ -211,8 +213,8 @@ class AdminRepository {
         const connection = getDatabase()
 
         await connection.execute(`
-            UPDATE mak.users
-            SET senha = MD5(?)
+            UPDATE mak.rolemak_users
+            SET newpassword = MD5(?)
             WHERE id = ?
         `, [newPassword, userId])
 
@@ -226,8 +228,8 @@ class AdminRepository {
         const connection = getDatabase()
 
         await connection.execute(`
-            UPDATE mak.users
-            SET ativo = 0
+            UPDATE mak.rolemak_users
+            SET blocked = 1
             WHERE id = ?
         `, [userId])
 
@@ -241,8 +243,8 @@ class AdminRepository {
         const connection = getDatabase()
 
         await connection.execute(`
-            UPDATE mak.users
-            SET ativo = 1
+            UPDATE mak.rolemak_users
+            SET blocked = 0
             WHERE id = ?
         `, [userId])
 
@@ -255,7 +257,7 @@ class AdminRepository {
     async usernameExists(username, excludeUserId = null) {
         const connection = getDatabase()
 
-        let query = 'SELECT COUNT(*) as count FROM mak.users WHERE user = ?'
+        let query = 'SELECT COUNT(*) as count FROM mak.rolemak_users WHERE user = ?'
         const params = [username]
 
         if (excludeUserId) {
@@ -273,7 +275,7 @@ class AdminRepository {
     async emailExists(email, excludeUserId = null) {
         const connection = getDatabase()
 
-        let query = 'SELECT COUNT(*) as count FROM mak.users WHERE email = ?'
+        let query = 'SELECT COUNT(*) as count FROM mak.rolemak_users WHERE email = ?'
         const params = [email]
 
         if (excludeUserId) {
@@ -293,7 +295,7 @@ class AdminRepository {
 
         const [result] = await connection.execute(`
             SELECT DISTINCT depto
-            FROM mak.users
+            FROM mak.rolemak_users
             WHERE depto IS NOT NULL AND depto != ''
             ORDER BY depto
         `)
@@ -310,12 +312,12 @@ class AdminRepository {
         const [stats] = await connection.execute(`
             SELECT 
                 COUNT(*) as total,
-                SUM(CASE WHEN ativo = 1 THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN ativo = 0 THEN 1 ELSE 0 END) as inactive,
-                SUM(CASE WHEN nivel >= 5 THEN 1 ELSE 0 END) as admins,
-                SUM(CASE WHEN nivel < 5 THEN 1 ELSE 0 END) as sellers,
+                SUM(CASE WHEN blocked = 0 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN blocked = 1 THEN 1 ELSE 0 END) as inactive,
+                SUM(CASE WHEN level >= 5 THEN 1 ELSE 0 END) as admins,
+                SUM(CASE WHEN level < 5 THEN 1 ELSE 0 END) as sellers,
                 SUM(CASE WHEN last_login >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as active_last_week
-            FROM mak.users
+            FROM mak.rolemak_users
         `)
 
         return stats[0]
@@ -331,7 +333,7 @@ class AdminRepository {
         // Por enquanto, retornar apenas last_login
         const [users] = await connection.execute(`
             SELECT last_login
-            FROM mak.users
+            FROM mak.rolemak_users
             WHERE id = ?
         `, [userId])
 

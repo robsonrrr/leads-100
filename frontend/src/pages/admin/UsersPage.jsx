@@ -34,7 +34,8 @@ import {
     Select,
     Grid,
 } from '@mui/material'
-import { DataGrid, ptBR } from '@mui/x-data-grid'
+import { DataGrid } from '@mui/x-data-grid'
+import { ptBR } from '@mui/x-data-grid/locales'
 import {
     Search as SearchIcon,
     Add as AddIcon,
