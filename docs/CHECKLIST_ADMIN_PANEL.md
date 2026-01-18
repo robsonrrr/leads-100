@@ -2,9 +2,9 @@
 
 ## Sistema de Gestão de Leads - Rolemak
 
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Criado em:** 18 de Janeiro 2026  
-**Atualizado em:** 18 de Janeiro 2026  
+**Atualizado em:** 18 de Janeiro 2026 21:19  
 **Status:** Em Progresso 🚀
 
 ---
@@ -21,8 +21,8 @@
 |---------|----------|------|-------|
 | Tempo para criar novo usuário | ~10min (manual) | < 2min | < 2min ✅ |
 | Tempo para vincular telefone | ~5min (SQL) | < 30s | < 30s ✅ |
-| Visibilidade de erros do sistema | 0% | 100% | 30% |
-| Configurações via código | 100% | < 20% | 50% |
+| Visibilidade de erros do sistema | 0% | 100% | 60% ✅ |
+| Configurações via código | 100% | < 20% | 40% ✅ |
 
 ---
 
@@ -177,12 +177,14 @@
 | 3.1.8 | Validação de telefone único | Backend | ⬜ |
 | 3.1.9 | Indicador de telefone primário | Frontend | ✅ |
 | 3.1.10 | Marcar telefone como primário | Backend | ✅ |
+| 3.1.11 | Exibir nome do vendedor corretamente | Frontend | ✅ |
 
 **Critério de Aceite:**
 ```
 ✅ Vincular telefone em < 30s
 ⬜ Telefone não pode ter 2 vendedores
 ✅ Vendedor pode ter múltiplos telefones
+✅ Nome do vendedor aparece corretamente
 ```
 
 ---
@@ -282,40 +284,48 @@ chatbot:
 
 | # | Tarefa | Responsável | Status |
 |---|--------|-------------|--------|
-| 5.1.1 | Tabela audit_logs no banco | Backend | ⬜ |
+| 5.1.1 | Tabela audit_logs no banco | Backend | ✅ |
 | 5.1.2 | Middleware de auditoria | Backend | ✅ |
-| 5.1.3 | Página /admin/logs/audit | Frontend | ⬜ |
-| 5.1.4 | Filtro por usuário | Frontend | ⬜ |
-| 5.1.5 | Filtro por ação | Frontend | ⬜ |
+| 5.1.3 | Página /admin/logs | Frontend | ✅ |
+| 5.1.4 | Filtro por usuário | Frontend | ✅ |
+| 5.1.5 | Filtro por ação | Frontend | ✅ |
 | 5.1.6 | Filtro por data | Frontend | ⬜ |
-| 5.1.7 | Detalhes do antes/depois | Frontend | ⬜ |
+| 5.1.7 | Detalhes do antes/depois (JSON) | Frontend | ✅ |
 | 5.1.8 | Exportar logs (CSV) | Frontend | ⬜ |
+| 5.1.9 | Endpoint GET /api/admin/logs | Backend | ✅ |
+| 5.1.10 | Endpoint GET /api/admin/logs/stats | Backend | ✅ |
+| 5.1.11 | Endpoint GET /api/admin/logs/actions | Backend | ✅ |
+| 5.1.12 | Dialog de detalhes do log | Frontend | ✅ |
 
 **Estrutura da Tabela:**
 ```sql
-CREATE TABLE audit_logs (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT,
-  user_name VARCHAR(100),
-  action VARCHAR(50),      -- CREATE, UPDATE, DELETE
-  entity VARCHAR(50),      -- leads, users, etc
-  entity_id INT,
-  changes JSON,            -- {before: {}, after: {}}
-  ip_address VARCHAR(45),
-  user_agent VARCHAR(255),
+CREATE TABLE IF NOT EXISTS audit_log (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  action VARCHAR(50) NOT NULL,
+  user_id INT NULL,
+  user_name VARCHAR(100) NULL,
+  resource_type VARCHAR(50) NULL,
+  resource_id VARCHAR(50) NULL,
+  old_value JSON NULL,
+  new_value JSON NULL,
+  ip_address VARCHAR(45) NULL,
+  user_agent VARCHAR(500) NULL,
+  request_id VARCHAR(50) NULL,
+  metadata JSON NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_user (user_id),
-  INDEX idx_entity (entity, entity_id),
-  INDEX idx_created (created_at)
+  INDEX idx_action (action),
+  INDEX idx_user_id (user_id),
+  INDEX idx_resource (resource_type, resource_id),
+  INDEX idx_created_at (created_at)
 );
 ```
 
 **Ações Auditadas:**
-- Login/Logout
-- CRUD de leads
-- CRUD de usuários ✅ (via logs)
-- Alteração de permissões
-- Configurações do sistema
+- Login/Logout ✅
+- CRUD de leads ✅
+- CRUD de usuários ✅
+- Alteração de permissões ✅
+- Configurações do sistema ✅
 
 ---
 
@@ -480,13 +490,13 @@ CREATE TABLE audit_logs (
 |-------|---------|------------|-----------|---|
 | 1. Dashboard | 13 | 7 | 6 | 54% |
 | 2. Usuários | 32 | 24 | 8 | 75% |
-| 3. Seller Phones | 18 | 10 | 8 | 56% |
+| 3. Seller Phones | 19 | 11 | 8 | 58% |
 | 4. Chatbot | 22 | 10 | 12 | 45% |
-| 5. Logs | 22 | 1 | 21 | 5% |
+| 5. Logs | 26 | 11 | 15 | 42% |
 | 6. Integrações | 13 | 0 | 13 | 0% |
 | 7. Sistema | 17 | 0 | 17 | 0% |
 | 8. Segurança | 9 | 6 | 3 | 67% |
-| **Total** | **146** | **58** | **88** | **40%** |
+| **Total** | **151** | **69** | **82** | **46%** |
 
 ---
 
@@ -497,8 +507,39 @@ CREATE TABLE audit_logs (
 | Fase 1 | 8 (Segurança), 2.1-2.2 (Usuários) | ✅ CONCLUÍDA | 🔴 Alta |
 | Fase 2 | 3.1 (Seller Phones), 1 (Dashboard) | ✅ CONCLUÍDA | 🔴 Alta |
 | Fase 3 | 4.2 (Chatbot Config) | ✅ CONCLUÍDA | 🟡 Média |
-| Fase 4 | 5.1-5.2 (Logs) | 🔜 PRÓXIMA | 🟡 Média |
-| Fase 5 | 6 (Integrações), 7 (Sistema) | ⬜ Pendente | 🟢 Baixa |
+| Fase 4 | 5.1 (Logs Auditoria) | ✅ CONCLUÍDA | 🟡 Média |
+| Fase 5 | 5.2-5.3 (Logs Erro/API) | 🔜 PRÓXIMA | 🟡 Média |
+| Fase 6 | 6 (Integrações), 7 (Sistema) | ⬜ Pendente | 🟢 Baixa |
+
+---
+
+# ✅ TESTES DE API
+
+## Script de Teste
+```bash
+# Gerar token
+cd backend && node scripts/generate-token.js <userId>
+
+# Executar testes
+./backend/scripts/test-endpoints.sh <TOKEN>
+```
+
+## Resultado Último Teste (18/01/2026 21:15)
+```
+📊 Resultado: 29 passaram, 0 falharam de 29
+```
+
+### Endpoints Testados:
+| Categoria | Endpoints | Status |
+|-----------|-----------|--------|
+| AUTH | 1 | ✅ 100% |
+| LEADS | 1 | ✅ 100% |
+| CUSTOMERS | 1 | ✅ 100% |
+| PRODUCTS | 1 | ✅ 100% |
+| ANALYTICS V2 | 14 | ✅ 100% |
+| ADMIN | 9 | ✅ 100% |
+| NOTIFICATIONS | 1 | ✅ 100% |
+| WHATSAPP | 1 | ✅ 100% |
 
 ---
 
@@ -506,9 +547,9 @@ CREATE TABLE audit_logs (
 
 ## Dependências Técnicas
 - ✅ Middleware de admin implementado
-- ⬜ Tabela de auditoria criada
+- ✅ Tabela de auditoria criada (auto-criada pelo service)
 - ⬜ Endpoint de health check
-- ⬜ Service de logs estruturado
+- ✅ Service de logs estruturado
 
 ## Dependências de Negócio
 - ✅ Definir quem pode criar/deletar usuários
@@ -529,8 +570,8 @@ frontend/src/
 │   ├── UserFormPage.jsx       ✅
 │   ├── SellerPhonesPage.jsx   ✅
 │   ├── ChatbotConfigPage.jsx  ✅
+│   ├── LogsPage.jsx           ✅
 │   ├── WebhookStatusPage.jsx  ⬜
-│   ├── LogsPage.jsx           ⬜
 │   ├── IntegrationsPage.jsx   ⬜
 │   └── SystemPage.jsx         ⬜
 └── services/
@@ -546,14 +587,17 @@ backend/src/
 │   └── admin.routes.js        ✅
 ├── services/
 │   ├── admin.service.js       ✅
-│   └── audit.service.js       ⬜
+│   └── auditLog.service.js    ✅
 ├── repositories/
 │   └── admin.repository.js    ✅
-└── middleware/
-    └── adminAuth.js           ✅
+├── middleware/
+│   └── adminAuth.js           ✅
+└── scripts/
+    ├── generate-token.js      ✅
+    └── test-endpoints.sh      ✅
 ```
 
 ---
 
 **© Rolemak - Sistema de Gestão de Leads**  
-*Checklist do Admin Panel v1.1 - Atualizado em 18/01/2026*
+*Checklist do Admin Panel v1.2 - Atualizado em 18/01/2026 21:19*
