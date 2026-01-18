@@ -49,7 +49,11 @@ class AdminRepository {
         const safeOrderBy = validColumns.includes(orderBy) ? orderBy : 'nick'
         const safeOrderDir = orderDir.toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
 
-        // Query principal
+        // Garantir que limit e offset são números inteiros
+        const safeLimit = parseInt(limit) || 20
+        const safeOffset = parseInt(offset) || 0
+
+        // Query principal - usar valores diretos para LIMIT/OFFSET
         const query = `
             SELECT 
                 u.id,
@@ -67,10 +71,8 @@ class AdminRepository {
             FROM mak.rolemak_users u
             ${whereClause}
             ORDER BY u.${safeOrderBy} ${safeOrderDir}
-            LIMIT ? OFFSET ?
+            LIMIT ${safeLimit} OFFSET ${safeOffset}
         `
-
-        params.push(limit, offset)
 
         const [users] = await connection.execute(query, params)
 
@@ -81,7 +83,7 @@ class AdminRepository {
             ${whereClause}
         `
 
-        const [countResult] = await connection.execute(countQuery, params.slice(0, -2))
+        const [countResult] = await connection.execute(countQuery, params)
         const total = countResult[0]?.total || 0
 
         return {
@@ -91,9 +93,9 @@ class AdminRepository {
             })),
             pagination: {
                 page,
-                limit,
+                limit: safeLimit,
                 total,
-                pages: Math.ceil(total / limit)
+                pages: Math.ceil(total / safeLimit)
             }
         }
     }
