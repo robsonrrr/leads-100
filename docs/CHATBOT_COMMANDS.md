@@ -46,6 +46,25 @@ Acompanhamento de vendas finalizadas e disponibilidade de produtos.
 
 ---
 
+## 🔧 Pós-Venda e Suporte Técnico
+
+Gestão completa do ciclo de vida pós-venda, desde ordens de serviço até suporte financeiro.
+
+| Comando | O que faz | Exemplo de consulta |
+|:---|:---|:---|
+| `create_service_order` | Cria ordem de serviço para conserto/manutenção. | "Criar OS para cliente 123 - impressora com defeito de impressão" |
+| `search_service_orders` | Busca ordens de serviço por status, cliente ou período. | "Quais OS estão em aberto?" ou "OS do cliente 456" |
+| `get_service_order_details` | Detalhes completos da OS (status, técnico, peças). | "Detalhes da OS 2024-001" |
+| `update_service_order` | Atualiza status, adiciona peças ou observações. | "Atualizar OS 2024-001 para 'em andamento' com técnico João" |
+| `schedule_technical_visit` | Agenda visita técnica com cliente. | "Agendar visita para cliente 123 amanhã às 14h" |
+| `get_warranty_info` | Consulta validade e cobertura de garantia. | "Garantia do produto 789 para cliente 123?" |
+| `create_support_ticket` | Abre chamado de suporte técnico. | "Abrir chamado - cliente reclama de ruído na máquina" |
+| `get_billing_info` | Consulta boletos, pagamentos e pendências. | "Boletos em aberto do cliente 456" |
+| `send_payment_reminder` | Envia lembrete de pagamento por email/SMS. | "Enviar cobrança para cliente 123 do boleto vencido" |
+| `get_maintenance_schedule` | Agenda preventivo de equipamentos. | "Quando é a próxima manutenção do cliente 789?" |
+
+---
+
 ### 💬 Interações e Follow-ups
 Registro de contatos e agendamento de próximas ações.
 
@@ -77,6 +96,67 @@ Ferramentas de inteligência de dados para suporte à decisão.
 
 ---
 
+## 🧠 RECURSOS DECISÓRIOS AVANÇADOS
+
+### Sistema de Risco e Política
+O chatbot agora opera como **interface conversacional do sistema de decisão**, com:
+
+- ✅ **Classificação automática de risco** (LOW/MEDIUM/HIGH/CRITICAL)
+- ✅ **Referência explícita à política** aplicada
+- ✅ **Verbalização de impacto econômico**
+- ✅ **Modos adaptativos por perfil** (Vendedor/Gerente/Diretoria)
+- ✅ **Integração completa ao Context Graph**
+
+### Respostas Estruturadas por Risco
+Todas as respostas seguem formato padronizado:
+
+```
+🎯 AÇÃO
+[Descrição da ação executada]
+
+📊 RESULTADO
+[Dados/resultados obtidos]
+
+⚠️ RISCO
+[Nível: LOW/MEDIUM/HIGH/CRITICAL]
+[Explicação do risco identificado]
+
+📋 POLÍTICA
+[Referência à política aplicável]
+
+➡️ PRÓXIMO PASSO
+[Recomendação de ação seguinte]
+```
+
+### Modos Operacionais por Perfil
+
+| Perfil | Foco | Exemplos de Comandos |
+|:---|:---|:---|
+| **👤 Vendedor** | Operacional e prático | `create_lead`, `simulate_pricing`, `get_product_stock` |
+| **👥 Gerente** | Decisório e supervision | `approve_discount`, `get_team_metrics`, `override_policy` |
+| **🏛️ Diretoria** | Estratégico e analítico | `get_company_metrics`, `review_policy`, `analyze_trends` |
+
+---
+
+## 📢 Marketing e Campanhas
+
+Ferramentas completas para gestão de marketing digital, campanhas e geração de leads.
+
+| Comando | O que faz | Exemplo de consulta |
+|:---|:---|:---|
+| `create_campaign` | Cria campanha de marketing com público-alvo. | "Criar campanha 'Black Friday' para clientes de SP" |
+| `search_campaigns` | Lista campanhas ativas ou por período. | "Quais campanhas estão rodando?" ou "Campanhas do último trimestre" |
+| `get_campaign_performance` | Métricas detalhadas: cliques, conversões, ROI. | "Performance da campanha Black Friday" |
+| `segment_customers` | Segmenta clientes por perfil/demografia/comportamento. | "Segmentar clientes por região e volume de compra" |
+| `send_marketing_email` | Dispara email marketing para segmento específico. | "Enviar newsletter para clientes inativos há 6 meses" |
+| `schedule_social_post` | Agenda posts para redes sociais. | "Agendar post no LinkedIn para amanhã às 10h" |
+| `get_lead_sources` | Análise de origem dos leads (orgânico, pago, indicação). | "De onde vieram os leads deste mês?" |
+| `create_landing_page` | Gera landing page otimizada para conversão. | "Criar LP para promoção de impressoras" |
+| `get_marketing_roi` | Calcula retorno sobre investimento de campanhas. | "ROI da campanha Google Ads do mês passado" |
+| `generate_content_ideas` | Sugestões de conteúdo baseadas em dados. | "Ideias de posts para LinkedIn sobre sustentabilidade" |
+
+---
+
 ## 🔧 Referência Técnica (Para Desenvolvedores)
 
 ### APIs Subjacentes
@@ -94,6 +174,14 @@ Todos os comandos do chatbot mapeiam para endpoints REST documentados:
 | `create_lead` | `/leads` | POST | Criação de lead |
 | `simulate_pricing` | `/pricing/simulate` | POST | Simulação de preços |
 | `get_sales_forecast` | `/analytics/forecast` | GET | Previsões de IA |
+| `create_service_order` | `/service-orders` | POST | Criação de OS |
+| `search_service_orders` | `/service-orders/search` | GET | Busca de OS |
+| `get_billing_info` | `/billing/customer/{id}` | GET | Informações financeiras |
+| `schedule_technical_visit` | `/service-orders/{id}/schedule` | POST | Agendamento de visita |
+| `create_campaign` | `/marketing/campaigns` | POST | Criação de campanha |
+| `get_campaign_performance` | `/marketing/campaigns/{id}/performance` | GET | Métricas de campanha |
+| `segment_customers` | `/marketing/segments` | POST | Criação de segmento |
+| `send_marketing_email` | `/marketing/emails/send` | POST | Disparo de email |
 
 ### Limites e Performance
 - **Rate Limit**: 100 requisições/minuto por usuário
@@ -107,6 +195,37 @@ Todos os comandos do chatbot mapeiam para endpoints REST documentados:
 - **Custom Fields**: Campos personalizados por cliente/empresa
 - **Multi-tenant**: Isolamento completo entre empresas
 - **Audit Logs**: Rastreamento completo de todas as operações
+- **Risk Engine**: Classificação automática de risco em tempo real
+- **Policy Guardian**: Validação automática contra políticas vigentes
+- **Context Graph**: Integração estrutural com sistema de decisão
+- **Role-Based Modes**: Adaptação contextual por perfil de usuário
+
+### Métricas de Marketing
+- **CAC (Customer Acquisition Cost)**: Custo por cliente conquistado
+- **LTV (Lifetime Value)**: Valor do cliente ao longo do tempo
+- **Conversion Rate**: Taxa de conversão por canal/campanha
+- **ROI por Canal**: Retorno sobre investimento segmentado
+- **Engagement Rate**: Taxa de engajamento em redes sociais
+
+### Integrações Pós-Venda
+- **Gateway de Pagamento**: Integração com bancos para boletos e PIX
+- **Sistema de OS**: Sincronização com software de gestão de serviços
+- **Email/SMS**: Disparos automáticos de lembretes e confirmações
+- **Calendário**: Sincronização com Google Calendar/Outlook
+- **ERP**: Integração com sistemas de gestão empresarial
+
+### Integrações de Marketing
+- **Google Ads/Facebook Ads**: Importação automática de dados de campanhas
+- **Mailchimp/SendGrid**: Sincronização de listas e automações
+- **LinkedIn/Instagram**: Agendamento e análise de posts sociais
+- **Google Analytics**: Métricas de tráfego e conversão
+- **HubSpot/RD Station**: CRM e automação de marketing integrada
+
+### Documentação Técnica Relacionada
+- **📄 [CHATBOT_POLICY_PROMPT.md](CHATBOT_POLICY_PROMPT.md)**: Prompt oficial e regras invioláveis
+- **📄 [CHATBOT_RISK_RESPONSES.md](CHATBOT_RISK_RESPONSES.md)**: Sistema de respostas por nível de risco
+- **📄 [CHATBOT_CONTEXT_GRAPH.md](CHATBOT_CONTEXT_GRAPH.md)**: Integração como nó do Context Graph
+- **📄 [CHATBOT_ROLE_MODES.md](CHATBOT_ROLE_MODES.md)**: Modos adaptativos por perfil
 
 ---
 
@@ -135,6 +254,15 @@ Acompanhamento rápido de resultados.
 - **Conexão perdida**: O chatbot tenta reconectar automaticamente por 3 minutos
 - **Dados incorretos**: Use "corrigir" ou "editar" nos comandos seguintes
 - **Comando não reconhecido**: O chatbot sugere alternativas similares
+- **OS duplicada**: Sistema detecta automaticamente e sugere mesclar
+
+### SLA e Prioridades no Pós-Venda
+| Prioridade | Tempo de Resposta | Descrição |
+|:---|:---|:---|
+| 🔴 **Crítica** | Imediata (< 2h) | Equipamento parado, produção interrompida |
+| 🟡 **Alta** | 4 horas | Problema funcional significativo |
+| 🟠 **Média** | 24 horas | Problema menor, trabalho alternativo possível |
+| 🟢 **Baixa** | 72 horas | Consultoria, melhoria ou manutenção preventiva |
 
 ---
 
@@ -147,6 +275,28 @@ Acompanhamento rápido de resultados.
 3. "Criar lead para cliente 123 com 5 impressoras" → Lead criado
 4. "Simular preço do lead atual em 2x" → Cálculo com desconto
 5. "Registrar que cliente pediu prazo de 30 dias" → Interação salva
+```
+
+### Fluxo de Pós-Venda Completo
+```
+1. "Cliente 123 ligou reclamando da impressora" → Registrar interação
+2. "Criar OS para cliente 123 - defeito de impressão" → OS criada automaticamente
+3. "Agendar visita técnica amanhã às 10h" → Visita agendada
+4. "Verificar garantia do produto 456" → Status de garantia consultado
+5. "Atualizar OS para 'concluída' com peças trocadas" → OS finalizada
+6. "Enviar lembrete de pagamento para cliente 123" → Cobrança enviada
+```
+
+### Fluxo de Marketing Completo
+```
+1. "Segmentar clientes por região SP e volume > 10k" → Lista de prospects criada
+2. "Criar campanha 'Q4 2024' para segmento acima" → Campanha configurada
+3. "Gerar ideias de conteúdo sobre eficiência energética" → Sugestões de posts
+4. "Agendar post no LinkedIn para quinta-feira" → Publicação programada
+5. "Criar landing page para promoção especial" → Página otimizada gerada
+6. "Enviar email marketing para segmento inativo" → Campanha disparada
+7. "Performance da campanha Q4 até agora" → Métricas em tempo real
+8. "De onde vieram os leads desta semana?" → Análise de origens
 ```
 
 ### Fluxo de Análise de Performance
@@ -167,6 +317,12 @@ Acompanhamento rápido de resultados.
 4.  **Linguagem Natural**: Não precisa decorar os nomes técnicos. A IA entende frases como "O Zé da Silva comprou algo este mês?" ou "Projeta minhas vendas".
 5.  **Correção**: Se errar algo, diga "corrigir" seguido do que precisa mudar.
 6.  **Contexto**: O chatbot lembra da conversa anterior por até 30 minutos.
+7.  **Pós-Venda**: Para suporte técnico, use "OS" para ordens de serviço e seja específico sobre sintomas/problemas.
+8.  **Urgência**: Use palavras como "urgente" ou "emergência" para priorizar atendimentos.
+9.  **Marketing**: Use termos como "campanha", "segmento", "ROI" para comandos de marketing. Seja específico sobre públicos-alvo e canais.
+10. **Risco e Política**: O chatbot sempre classifica risco e referencia política. Use isso para tomar decisões informadas.
+11. **Modos por Perfil**: Vendedores veem ações práticas, gerentes supervision e diretoria análises estratégicas.
+12. **Decisões Consientes**: Sempre leia o nível de risco antes de prosseguir com ações críticas.
 
 ---
 

@@ -28,6 +28,7 @@ const SecurityPage = lazy(() => import('./pages/SecurityPage'))
 const LeadMailView = lazy(() => import('./pages/LeadMailView'))
 const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
+const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 
 const theme = createTheme({
   palette: {
@@ -118,6 +119,8 @@ function App() {
                 }
               />
               <Route path="/security" element={<ProtectedRoute><Layout><SecurityPage /></Layout></ProtectedRoute>} />
+              <Route path="/whatsapp" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
+              <Route path="/whatsapp/:phone" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

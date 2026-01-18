@@ -1,5 +1,6 @@
 import express from 'express';
 import { pushService } from '../services/push.service.js';
+import { NotificationsService, NOTIFICATION_TYPES, PRIORITY } from '../services/notifications.service.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getDatabase } from '../config/database.js';
 import logger from '../config/logger.js';
@@ -118,6 +119,154 @@ router.post('/test', async (req, res) => {
     } catch (error) {
         logger.error('Error sending test notification:', error);
         res.status(500).json({ success: false, error: { message: error.message } });
+    }
+});
+
+// ======================================================
+// ENDPOINTS PARA LISTA E POLLING (TEMPO REAL)
+// ======================================================
+
+/**
+ * @swagger
+ * /api/notifications/list:
+ *   get:
+ *     summary: Lista notificações do usuário (paginado)
+ *     tags: [Notifications]
+ */
+router.get('/list', async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.userId;
+        const { page = 1, limit = 20, unread_only = false } = req.query;
+
+        const result = await NotificationsService.getByUser(userId, {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            unreadOnly: unread_only === 'true'
+        });
+
+        res.json({
+            success: true,
+            data: result.notifications,
+            unreadCount: result.unreadCount,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        logger.error('Erro ao listar notificações', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: { message: 'Erro ao listar notificações' }
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /api/notifications/poll:
+ *   get:
+ *     summary: Polling para novas notificações (tempo real)
+ *     tags: [Notifications]
+ */
+router.get('/poll', async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.userId;
+        const { last_check } = req.query;
+
+        const pending = await NotificationsService.getPending(userId, last_check);
+        const unreadCount = await NotificationsService.getUnreadCount(userId);
+
+        res.json({
+            success: true,
+            data: pending,
+            unreadCount,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Erro no polling de notificações', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: { message: 'Erro ao buscar notificações' }
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /api/notifications/count:
+ *   get:
+ *     summary: Contagem de notificações não lidas
+ *     tags: [Notifications]
+ */
+router.get('/count', async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.userId;
+        const count = await NotificationsService.getUnreadCount(userId);
+
+        res.json({
+            success: true,
+            count
+        });
+    } catch (error) {
+        logger.error('Erro ao contar notificações', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: { message: 'Erro ao contar notificações' }
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /api/notifications/{id}/read:
+ *   post:
+ *     summary: Marca notificação como lida
+ *     tags: [Notifications]
+ */
+router.post('/:id/read', async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.userId;
+        const { id } = req.params;
+
+        const success = await NotificationsService.markAsRead(id, userId);
+
+        res.json({
+            success,
+            message: success ? 'Notificação marcada como lida' : 'Notificação não encontrada'
+        });
+    } catch (error) {
+        logger.error('Erro ao marcar notificação como lida', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: { message: 'Erro ao marcar como lida' }
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /api/notifications/read-all:
+ *   post:
+ *     summary: Marca todas as notificações como lidas
+ *     tags: [Notifications]
+ */
+router.post('/read-all', async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.userId;
+        const count = await NotificationsService.markAllAsRead(userId);
+
+        res.json({
+            success: true,
+            count,
+            message: `${count} notificações marcadas como lidas`
+        });
+    } catch (error) {
+        logger.error('Erro ao marcar todas como lidas', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: { message: 'Erro ao marcar como lidas' }
+        });
     }
 });
 

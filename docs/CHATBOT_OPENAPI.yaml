@@ -1,0 +1,970 @@
+openapi: 3.0.3
+info:
+  title: Leads Agent - Chatbot & Approvals API
+  version: "2.0"
+  description: |
+    API para interação com o Chatbot Decisório e sistema de aprovações.
+
+    ## Funcionalidades
+    - Conversação inteligente com processamento de linguagem natural
+    - Sistema de aprovações para exceções de desconto
+    - Audit trail completo de interações
+    - Governança policy-bound
+
+    ## Autenticação
+    - OAuth2 Bearer Token (JWT)
+    - Rate limit: 100 req/min por usuário
+
+    ## Versionamento
+    - Base path: /v2
+    - Versionamento por URL (breaking changes)
+servers:
+  - url: https://api.leadsagent.com/v2
+    description: Production server
+  - url: https://staging-api.leadsagent.com/v2
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via OAuth2 /auth/token"
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "RATE_LIMIT_429"
+        message:
+          type: string
+          example: "Rate limit exceeded. Try again in 60 seconds"
+        details:
+          type: object
+          nullable: true
+
+    ChatMessageRequest:
+      type: object
+      required: [conversation_id, message]
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: "ID único da conversa (gerado pelo cliente)"
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        message:
+          type: string
+          description: "Mensagem do usuário em linguagem natural"
+          example: "simule 10% desconto no lead 123"
+          maxLength: 2000
+        channel:
+          type: string
+          enum: [web, mobile, whatsapp, api]
+          default: web
+          description: "Canal de origem da mensagem"
+        context:
+          type: object
+          description: "Contexto adicional opcional"
+          properties:
+            current_lead_id:
+              type: integer
+              nullable: true
+            current_customer_id:
+              type: integer
+              nullable: true
+            user_role:
+              type: string
+              enum: [seller, manager, director]
+              nullable: true
+
+    ChatMessageResponse:
+      type: object
+      required: [conversation_id, reply, status]
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        reply:
+          type: string
+          description: "Resposta do chatbot (pode conter formatação markdown)"
+          example: |
+            🎯 AÇÃO
+            Simulação executada
+
+            📊 RESULTADO
+            Preço: R$ 13.500,00
+            Margem: 18%
+
+            ⚠️ RISCO
+            🔴 HIGH
+            Desconto reduz margem abaixo do mínimo
+
+            📋 POLÍTICA
+            Pricing Policy v2026.01
+
+            ➡️ PRÓXIMO PASSO
+            Deseja solicitar aprovação?
+        status:
+          type: string
+          enum: [OK, NEEDS_CONFIRMATION, DENIED, ERROR]
+          description: "Status da resposta"
+        intent_key:
+          type: string
+          nullable: true
+          description: "Intent identificado (para debug)"
+          example: "simulate_pricing"
+        tool_call:
+          type: object
+          nullable: true
+          description: "Detalhes da tool call executada"
+          properties:
+            tool_name:
+              type: string
+              example: "pricing.simulate"
+            args:
+              type: object
+              example: {"lead_id": 123, "discount_percent": 10}
+            result:
+              type: object
+              example: {"original_price": 15000, "final_price": 13500, "margin": 18}
+        metadata:
+          type: object
+          properties:
+            latency_ms:
+              type: integer
+              example: 450
+            tokens_used:
+              type: integer
+              example: 125
+            confidence:
+              type: number
+              format: float
+              example: 0.95
+
+    ChatConversationEvents:
+      type: array
+      items:
+        type: object
+        properties:
+          event_id:
+            type: integer
+            format: int64
+          role:
+            type: string
+            enum: [USER, ASSISTANT, SYSTEM, TOOL]
+          message_text:
+            type: string
+            nullable: true
+          intent_key:
+            type: string
+            nullable: true
+          tool_name:
+            type: string
+            nullable: true
+          status:
+            type: string
+            enum: [OK, NEEDS_CONFIRMATION, DENIED, ERROR]
+          created_at:
+            type: string
+            format: date-time
+
+    ApprovalRequest:
+      type: object
+      required: [lead_id, discount_requested, reason]
+      properties:
+        lead_id:
+          type: integer
+          description: "ID do lead que precisa de aprovação"
+          example: 123
+        discount_requested:
+          type: number
+          format: float
+          description: "Percentual de desconto solicitado (%)"
+          example: 10.5
+          minimum: 0
+          maximum: 100
+        reason:
+          type: string
+          description: "Justificativa para o desconto"
+          example: "Cliente âncora solicitando desconto competitivo"
+          maxLength: 500
+        current_margin:
+          type: number
+          format: float
+          nullable: true
+          description: "Margem atual do lead (%)"
+        projected_margin:
+          type: number
+          format: float
+          nullable: true
+          description: "Margem projetada após desconto (%)"
+        pricing_snapshot:
+          type: object
+          nullable: true
+          description: "Snapshot completo do pricing agent"
+          example: {"inputs": {"price": 15000}, "outputs": {"margin": 25}}
+
+    ApprovalActionResponse:
+      type: object
+      required: [approval_id, status]
+      properties:
+        approval_id:
+          type: integer
+          format: int64
+          description: "ID único da aprovação"
+          example: 1001
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, EXPIRED, ESCALATED]
+          description: "Status atual da aprovação"
+        message:
+          type: string
+          description: "Mensagem explicativa"
+          example: "Aprovação concedida por gerente - cliente estratégico"
+        approver_id:
+          type: integer
+          nullable: true
+          description: "ID do aprovador (se aplicável)"
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Timestamp da aprovação"
+
+    ApprovalSummary:
+      type: object
+      properties:
+        approval_id:
+          type: integer
+          format: int64
+        lead_id:
+          type: integer
+        requester_id:
+          type: integer
+        discount_requested:
+          type: number
+          format: float
+        current_margin:
+          type: number
+          format: float
+        projected_margin:
+          type: number
+          format: float
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+        approver_role:
+          type: string
+          nullable: true
+        sla_minutes:
+          type: integer
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ApprovalsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/ApprovalSummary'
+
+paths:
+  /chat/messages:
+    post:
+      summary: "Envia mensagem ao chatbot e recebe resposta"
+      description: |
+        Endpoint principal para interação com o chatbot decisório.
+
+        **Funcionalidades:**
+        - Processamento de linguagem natural
+        - Tool calling automático baseado em intents
+        - Validação de política em tempo real
+        - Respostas estruturadas com risco e política
+
+        **Rate Limit:** 100 req/min por usuário
+      operationId: sendChatMessage
+      tags: [chatbot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageRequest'
+            examples:
+              simple_simulation:
+                summary: "Simulação simples de preço"
+                value:
+                  conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                  message: "simule 10% desconto no lead 123"
+                  channel: "web"
+              with_context:
+                summary: "Com contexto adicional"
+                value:
+                  conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                  message: "qual o status do cliente?"
+                  context:
+                    current_customer_id: 456
+                    user_role: "manager"
+      responses:
+        "200":
+          description: "Mensagem processada com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageResponse'
+        "400":
+          description: "Requisição inválida"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "401":
+          description: "Token inválido ou expirado"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "429":
+          description: "Rate limit excedido"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: "RATE_LIMIT_429"
+                message: "Rate limit exceeded. Try again in 60 seconds"
+
+  /chat/conversations/{conversation_id}/events:
+    get:
+      summary: "Lista eventos de uma conversa (audit trail)"
+      description: |
+        Recupera o histórico completo de uma conversa para auditoria.
+
+        **Fonte de dados:** View `vw_chat_conversation_timeline`
+
+        **Usos:**
+        - Debug de conversas problemáticas
+        - Análise de padrões de uso
+        - Auditoria de compliance
+        - Reconstrução de contexto
+        - Extração de risco/política aplicada
+      operationId: getConversationEvents
+      tags: [chatbot, audit]
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "ID único da conversa"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+            minimum: 1
+          description: "Número máximo de eventos a retornar"
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            nullable: true
+          description: "Cursor para paginação (timestamp do último evento)"
+        - name: include_tool_calls
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: "Incluir detalhes de tool calls"
+      responses:
+        "200":
+          description: "Eventos retornados com sucesso"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [conversation_id, events, pagination]
+                properties:
+                  conversation_id:
+                    type: string
+                    format: uuid
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        event_id:
+                          type: integer
+                          format: int64
+                        role:
+                          type: string
+                          enum: [USER, ASSISTANT, SYSTEM, TOOL]
+                        message_text:
+                          type: string
+                          nullable: true
+                        intent_key:
+                          type: string
+                          nullable: true
+                        tool_name:
+                          type: string
+                          nullable: true
+                        risk_level:
+                          type: string
+                          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                          nullable: true
+                        policy_version:
+                          type: string
+                          nullable: true
+                        margin_estimated:
+                          type: number
+                          format: float
+                          nullable: true
+                        latency_ms:
+                          type: integer
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    type: object
+                    properties:
+                      has_more:
+                        type: boolean
+                      next_cursor:
+                        type: string
+                        nullable: true
+        "404":
+          description: "Conversa não encontrada"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /approvals/request:
+    post:
+      summary: "Solicita aprovação de desconto (governança Q3.2)"
+      description: |
+        Inicia o workflow de aprovação para exceções de desconto.
+
+        **Processo:**
+        1. Validação automática contra política
+        2. Criação de approval com SLA
+        3. Notificação para aprovadores
+        4. Tracking de status
+
+        **SLAs por perfil:**
+        - Gerente: 4 horas
+        - Diretor: 8 horas
+        - CEO: 24 horas
+      operationId: requestDiscountApproval
+      tags: [approvals, governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        "200":
+          description: "Solicitação criada com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalActionResponse'
+        "400":
+          description: "Dados inválidos ou política violada"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /approvals/{approval_id}/decide:
+    post:
+      summary: "Decide sobre solicitação de aprovação (approve/reject)"
+      description: |
+        Endpoint unificado para gestores decidirem sobre aprovações pendentes.
+
+        **Implementação:** Chama `sp_approvals_decide()`
+
+        **Validações automáticas:**
+        - Status deve ser PENDING
+        - Não deve estar expirado
+        - Usuário deve ter permissões adequadas
+        - Registra decisão no audit trail
+      operationId: decideApprovalRequest
+      tags: [approvals, governance]
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "ID da aprovação"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [APPROVE, REJECT]
+                  description: "Decisão tomada"
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: "Justificativa obrigatória para a decisão"
+                  example: "Cliente âncora com volume estratégico"
+      responses:
+        "200":
+          description: "Decisão registrada com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalActionResponse'
+        "400":
+          description: "Dados inválidos ou decisão não permitida"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "403":
+          description: "Usuário não autorizado para decidir"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: "Aprovação não encontrada"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /approvals/{approval_id}/approve:
+    put:
+      summary: "Aprova solicitação de desconto"
+      description: "Ação executada por gestores para aprovar exceções de desconto."
+      operationId: approveDiscountRequest
+      tags: [approvals, governance]
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "ID da aprovação"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                justification:
+                  type: string
+                  maxLength: 500
+                  description: "Justificativa da aprovação (obrigatório para exceções)"
+                  example: "Cliente âncora com volume estratégico"
+                notes:
+                  type: string
+                  maxLength: 1000
+                  description: "Notas adicionais"
+      responses:
+        "200":
+          description: "Aprovação concedida"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalActionResponse'
+        "403":
+          description: "Usuário não autorizado para aprovar"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: "Aprovação não encontrada"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /approvals/{approval_id}/reject:
+    put:
+      summary: "Rejeita solicitação de desconto"
+      description: "Ação executada por gestores para rejeitar exceções de desconto."
+      operationId: rejectDiscountRequest
+      tags: [approvals, governance]
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "ID da aprovação"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: "Motivo da rejeição"
+                  example: "Margem resultante abaixo do mínimo corporativo"
+                alternative_suggestion:
+                  type: string
+                  maxLength: 1000
+                  description: "Sugestão de alternativa"
+                  example: "Considere desconto de 5% + frete grátis"
+      responses:
+        "200":
+          description: "Rejeição registrada"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalActionResponse'
+        "403":
+          description: "Usuário não autorizado para rejeitar"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /approvals/request:
+    post:
+      summary: "Cria solicitação de aprovação automaticamente (chamado internamente)"
+      description: |
+        Endpoint interno chamado pelo Pricing Agent quando desconto excepcional é detectado.
+
+        **Implementação:** Chama `sp_approvals_request_from_pricing()`
+
+        **Matriz Q3.2 aplicada automaticamente:**
+        - 0-5%: AUTO_APPROVED (sem SLA)
+        - 5-10%: MANAGER (4h SLA)
+        - 10-15%: DIRECTOR (8h SLA)
+        - >15%: CEO (24h SLA)
+
+        **Uso típico:** Chamado automaticamente pelo sistema, não por usuários diretos.
+      operationId: createApprovalFromPricing
+      tags: [approvals, internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, lead_id, requester_id, discount_requested, reason]
+              properties:
+                tenant_id:
+                  type: integer
+                  format: int64
+                  description: "ID do tenant"
+                lead_id:
+                  type: integer
+                  description: "ID do lead"
+                requester_id:
+                  type: integer
+                  description: "ID do usuário solicitante"
+                discount_requested:
+                  type: number
+                  format: float
+                  description: "Percentual de desconto solicitado"
+                  minimum: 0
+                  maximum: 100
+                current_margin:
+                  type: number
+                  format: float
+                  nullable: true
+                  description: "Margem atual (%)"
+                projected_margin:
+                  type: number
+                  format: float
+                  nullable: true
+                  description: "Margem projetada (%)"
+                reason:
+                  type: string
+                  description: "Justificativa para o desconto"
+                  maxLength: 500
+                pricing_snapshot:
+                  type: object
+                  description: "Snapshot completo do Pricing Agent"
+      responses:
+        "200":
+          description: "Aprovação criada com sucesso"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [approval_id, status]
+                properties:
+                  approval_id:
+                    type: integer
+                    format: int64
+                    description: "ID único da aprovação criada"
+                  status:
+                    type: string
+                    enum: [APPROVED, PENDING]
+                    description: "Status inicial da aprovação"
+                  approver_role:
+                    type: string
+                    nullable: true
+                    description: "Papel do aprovador (se PENDING)"
+                  sla_minutes:
+                    type: integer
+                    nullable: true
+                    description: "SLA em minutos (se PENDING)"
+                  expires_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: "Prazo de expiração (se PENDING)"
+
+  /approvals/pending:
+    get:
+      summary: "Lista aprovações pendentes (para gestores)"
+      description: |
+        Retorna todas as aprovações aguardando decisão do usuário logado.
+
+        **Fonte de dados:** View `vw_discount_approvals_current`
+
+        **Filtragem automática por permissões:**
+        - Gerente: aprovações de sua equipe
+        - Diretor: todas as exceções
+        - CEO: casos especiais
+
+        **Regras de status:**
+        - PENDING: Último evento REQUESTED/ESCALATED + dentro do prazo
+        - EXPIRED: Passou do expires_at sem decisão
+      operationId: getPendingApprovals
+      tags: [approvals, governance]
+      parameters:
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [all, urgent, expiring_soon]
+            default: all
+          description: "Filtrar por prioridade"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: "Número máximo de resultados"
+      responses:
+        "200":
+          description: "Lista de aprovações pendentes"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [approvals, total_count]
+                properties:
+                  approvals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        approval_id:
+                          type: integer
+                          format: int64
+                        lead_id:
+                          type: integer
+                        requester_id:
+                          type: integer
+                        discount_requested:
+                          type: number
+                          format: float
+                        current_margin:
+                          type: number
+                          format: float
+                        projected_margin:
+                          type: number
+                          format: float
+                        reason:
+                          type: string
+                        status:
+                          type: string
+                          enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+                        approver_role:
+                          type: string
+                          nullable: true
+                        sla_minutes:
+                          type: integer
+                          nullable: true
+                        expires_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        sla_minutes_remaining:
+                          type: integer
+                          nullable: true
+                          description: "Minutos restantes até expiração do SLA"
+                        sla_status:
+                          type: string
+                          enum: [NO_SLA, OK, DUE_SOON, OVERDUE]
+                          description: "Status visual do SLA para UI"
+                        requested_at:
+                          type: string
+                          format: date-time
+                          description: "Quando a aprovação foi solicitada"
+                        created_at:
+                          type: string
+                          format: date-time
+                  total_count:
+                    type: integer
+                    description: "Total de aprovações pendentes"
+
+  /approvals/history:
+    get:
+      summary: "Histórico de aprovações (por usuário/lead/período)"
+      description: |
+        Consulta histórica de aprovações para auditoria e analytics.
+
+        **Fonte de dados:** View `vw_discount_approvals_current`
+
+        **Filtros disponíveis:**
+        - Por lead específico
+        - Por requester (quem solicitou)
+        - Por período
+        - Por status
+        - Por tipo de desconto
+
+        **Inclui event sourcing completo:**
+        - Histórico de eventos por approval
+        - Pricing snapshots preservados
+        - Justificativas e decisões
+      operationId: getApprovalsHistory
+      tags: [approvals, analytics]
+      parameters:
+        - name: lead_id
+          in: query
+          schema:
+            type: integer
+            nullable: true
+          description: "Filtrar por lead específico"
+        - name: requester_id
+          in: query
+          schema:
+            type: integer
+            nullable: true
+          description: "Filtrar por quem solicitou"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, PENDING, APPROVED, REJECTED, EXPIRED]
+            default: all
+          description: "Filtrar por status"
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+            nullable: true
+          description: "Data inicial (YYYY-MM-DD)"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+            nullable: true
+          description: "Data final (YYYY-MM-DD)"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+          description: "Número máximo de resultados"
+      responses:
+        "200":
+          description: "Histórico retornado com sucesso"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [approvals, total_count, filters_applied]
+                properties:
+                  approvals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        approval_id:
+                          type: integer
+                          format: int64
+                        lead_id:
+                          type: integer
+                        requester_id:
+                          type: integer
+                        discount_requested:
+                          type: number
+                          format: float
+                        current_margin:
+                          type: number
+                          format: float
+                        projected_margin:
+                          type: number
+                          format: float
+                        reason:
+                          type: string
+                        status:
+                          type: string
+                          enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+                        approver_role:
+                          type: string
+                          nullable: true
+                        last_event_type:
+                          type: string
+                          enum: [REQUESTED, APPROVED, REJECTED, EXPIRED, ESCALATED]
+                        pricing_snapshot:
+                          type: object
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+                  total_count:
+                    type: integer
+                  filters_applied:
+                    type: object
+                    description: "Filtros aplicados na consulta"
+
+tags:
+  - name: chatbot
+    description: "Endpoints para interação com o chatbot"
+  - name: approvals
+    description: "Sistema de aprovações de desconto"
+  - name: governance
+    description: "Funcionalidades de governança e compliance"
+  - name: audit
+    description: "Auditoria e rastreabilidade"
+  - name: analytics
+    description: "Dados e métricas"

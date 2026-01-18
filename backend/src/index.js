@@ -16,6 +16,7 @@ import { initSecurity } from './migrations/initSecurity.js';
 import { createSearchHistoryTable } from './migrations/createSearchHistory.js';
 import { updateSearchHistoryTable } from './migrations/updateSearchHistory.js';
 import { createFulltextIndex } from './migrations/createFulltextIndex.js';
+import { initSuperbotIntegration } from './migrations/initSuperbot.js';
 import logger from './config/logger.js';
 import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -37,6 +38,7 @@ import reportsRoutes from './routes/reports.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
 import syncRoutes from './routes/sync.routes.js';
+import superbotRoutes from './routes/superbot.routes.js';
 import v2Routes from './v2/index.js';
 
 // Load environment variables
@@ -189,6 +191,7 @@ app.get('/api', (req, res) => {
       pricing: '/api/pricing',
       orders: '/api/orders',
       analytics: '/api/analytics',
+      superbot: '/api/superbot',
       health: '/api/health',
       docs: '/api/docs'
     }
@@ -211,6 +214,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/metrics', metricsRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/superbot', superbotRoutes);
 
 // API V2 Routes (Plan 2026)
 app.use('/api/v2', v2Routes);
@@ -241,6 +245,9 @@ async function startServer() {
 
     // Initialize FULLTEXT Index (Q3 2026 - Bloco 2.2.9)
     await createFulltextIndex();
+
+    // Initialize Superbot Integration (Q1 2026)
+    await initSuperbotIntegration();
 
     // Start Automation Scheduler (Q2 2026)
     const { automationScheduler } = await import('./v2/services/automation/Scheduler.js');

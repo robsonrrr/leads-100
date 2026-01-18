@@ -34,7 +34,8 @@ import {
   Security as SecurityIcon,
   ListAlt as ListAltIcon,
   GpsFixed as TargetIcon,
-  Inventory as ProductsIcon
+  Inventory as ProductsIcon,
+  WhatsApp as WhatsAppIcon
 } from '@mui/icons-material'
 import { logout } from '../store/slices/authSlice'
 import { interactionsService } from '../services/api'
@@ -42,7 +43,7 @@ import ChatBot from './ChatBot/ChatBot'
 import PWAInstallPrompt from './PWAInstallPrompt'
 import OfflineIndicator from './OfflineIndicator'
 import InAppNotification from './InAppNotification'
-import NotificationBell from './NotificationBell'
+import NotificationBell from './common/NotificationBell'
 import SyncErrorNotifications from './SyncErrorNotifications'
 import useServiceWorker from '../hooks/useServiceWorker'
 
@@ -165,6 +166,7 @@ function Layout({ children }) {
     { text: 'Lançamentos', icon: <PromotionsIcon />, path: '/pricing/launch-products' },
     ...(isManager ? [{ text: 'Metas', icon: <FlagIcon />, path: '/goals' }] : []),
     ...(!isRestricted ? [{ text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' }] : []),
+    { text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp' },
     { text: 'Novo Lead', icon: <AddIcon />, path: '/leads/new' },
     { text: 'Segurança', icon: <SecurityIcon />, path: '/security' },
   ]

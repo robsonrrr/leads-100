@@ -1,0 +1,133 @@
+{
+  "app": {
+    "name": "DECISIONA CRM Assistant",
+    "version": "2.2",
+    "locale": "pt-BR",
+    "tenant_mode": "multi-tenant"
+  },
+  "runtime": {
+    "session_ttl_minutes": 30,
+    "max_turns_per_session": 80,
+    "response_timeout_ms": 1200,
+    "cache": {
+      "enabled": true,
+      "ttl_seconds": 300,
+      "scope": ["tenant", "user", "intent+entities"]
+    }
+  },
+  "llm": {
+    "provider": "openai_or_claude",
+    "model": "gpt-4.1-or-equivalent",
+    "temperature": 0.2,
+    "max_tokens": 900,
+    "safety": {
+      "refuse_secrets": true,
+      "refuse_unverified_actions": true,
+      "pii_redaction": true
+    }
+  },
+  "security": {
+    "auth": {
+      "mode": "oauth2",
+      "required": true
+    },
+    "rate_limit": {
+      "per_user_per_minute": 100
+    },
+    "audit": {
+      "enabled": true,
+      "log_body": false,
+      "retain_days": 90
+    }
+  },
+  "governance": {
+    "policy_bound": true,
+    "pricing_authority": "pricing_agent",
+    "require_confirmation_for": [
+      "WRITE_LEAD",
+      "APPLY_DISCOUNT",
+      "CONVERT_ORDER",
+      "REQUEST_EXCEPTION",
+      "APPROVE_EXCEPTION"
+    ],
+    "always_explain": [
+      "risk_level",
+      "policy_version",
+      "economic_impact"
+    ]
+  },
+  "roles": {
+    "seller": {
+      "permissions": {
+        "read": ["customers", "leads", "orders", "stock", "pricing", "metrics_self"],
+        "write": ["create_lead", "update_lead", "create_followup", "log_interaction", "simulate_pricing", "request_discount_approval"]
+      },
+      "tone": "operational",
+      "outputs": {
+        "include_manager_analytics": false
+      }
+    },
+    "manager": {
+      "permissions": {
+        "read": ["team_metrics", "exceptions_queue", "risk_distribution", "pricing_integrity"],
+        "write": ["approve_discount", "reject_discount", "override_with_justification", "snooze_alerts"]
+      },
+      "tone": "decisive",
+      "outputs": {
+        "include_manager_analytics": true
+      }
+    },
+    "director": {
+      "permissions": {
+        "read": ["org_metrics", "policy_drift", "margin_trends", "approval_pressure_hotspots"],
+        "write": ["policy_change_request", "temporary_policy_override"]
+      },
+      "tone": "executive",
+      "outputs": {
+        "include_manager_analytics": true
+      }
+    }
+  },
+  "risk_policy": {
+    "levels": {
+      "LOW": {
+        "action": "allow",
+        "message_template": "ok_low"
+      },
+      "MEDIUM": {
+        "action": "confirm",
+        "message_template": "warn_medium"
+      },
+      "HIGH": {
+        "action": "require_approval",
+        "message_template": "need_approval_high"
+      },
+      "CRITICAL": {
+        "action": "block",
+        "message_template": "blocked_critical"
+      }
+    }
+  },
+  "templates": {
+    "ok_low": "✔️ Permitido.\nRisco: BAIXO | Política: {policy_version}\nMargem estimada: {margin}% | Impacto: {impact}\nDeseja aplicar?",
+    "warn_medium": "⚠️ Atenção.\nRisco: MÉDIO | Política: {policy_version}\nMargem estimada: {margin}% | Impacto: {impact}\nDeseja continuar?",
+    "need_approval_high": "🚨 Requer aprovação.\nRisco: ALTO | Política: {policy_version}\nMargem estimada: {margin}% | Impacto: {impact}\nDeseja solicitar aprovação?",
+    "blocked_critical": "⛔ Bloqueado pela política.\nRisco: CRÍTICO | Política: {policy_version}\nMotivo: {policy_reason}\nQuer simular alternativa segura?"
+  },
+  "events": {
+    "emit": [
+      {
+        "name": "chat_interaction_event",
+        "sink": "csuite_context.ctx_event"
+      },
+      {
+        "name": "pricing_decision_event",
+        "sink": "csuite_pricing.pricing_decision_events"
+      },
+      {
+        "name": "approval_event",
+        "sink": "csuite_governance.approval_events"
+      }
+    ]
+  }
+}
