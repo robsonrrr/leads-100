@@ -1039,119 +1039,159 @@ function LeadDetailPage() {
                 </Typography>
               </Box>
               <Divider sx={{ mb: 2 }} />
-              {lead.remarks && (
+
+              {lead.orderWeb ? (
+                // Modo leitura para pedidos convertidos
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {lead.remarks.finance && (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        bgcolor: 'rgba(76, 175, 80, 0.05)',
-                        borderLeft: '4px solid',
-                        borderLeftColor: 'success.main',
-                        transition: 'all 0.2s ease',
-                        '&:hover': { boxShadow: 2, transform: 'translateX(4px)' }
-                      }}
-                    >
+                  {lead.remarks?.finance && (
+                    <Card variant="outlined" sx={{ bgcolor: 'rgba(76, 175, 80, 0.05)', borderLeft: '4px solid', borderLeftColor: 'success.main' }}>
                       <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.dark', mb: 1 }}>
-                          💰 Financeiro
-                        </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                          {lead.remarks.finance}
-                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'success.dark', mb: 1 }}>💰 Financeiro</Typography>
+                        <Typography variant="body2">{lead.remarks.finance}</Typography>
                       </CardContent>
                     </Card>
                   )}
-                  {lead.remarks.logistic && (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        bgcolor: 'rgba(33, 150, 243, 0.05)',
-                        borderLeft: '4px solid',
-                        borderLeftColor: 'primary.main',
-                        transition: 'all 0.2s ease',
-                        '&:hover': { boxShadow: 2, transform: 'translateX(4px)' }
-                      }}
-                    >
+                  {lead.remarks?.logistic && (
+                    <Card variant="outlined" sx={{ bgcolor: 'rgba(33, 150, 243, 0.05)', borderLeft: '4px solid', borderLeftColor: 'primary.main' }}>
                       <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.dark', mb: 1 }}>
-                          🚚 Logística
-                        </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                          {lead.remarks.logistic}
-                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.dark', mb: 1 }}>🚚 Logística</Typography>
+                        <Typography variant="body2">{lead.remarks.logistic}</Typography>
                       </CardContent>
                     </Card>
                   )}
-                  {lead.remarks.nfe && (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        bgcolor: 'rgba(255, 152, 0, 0.05)',
-                        borderLeft: '4px solid',
-                        borderLeftColor: 'warning.main',
-                        transition: 'all 0.2s ease',
-                        '&:hover': { boxShadow: 2, transform: 'translateX(4px)' }
-                      }}
-                    >
+                  {lead.remarks?.nfe && (
+                    <Card variant="outlined" sx={{ bgcolor: 'rgba(255, 152, 0, 0.05)', borderLeft: '4px solid', borderLeftColor: 'warning.main' }}>
                       <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'warning.dark', mb: 1 }}>
-                          📄 NFE
-                        </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                          {lead.remarks.nfe}
-                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'warning.dark', mb: 1 }}>📄 NFE</Typography>
+                        <Typography variant="body2">{lead.remarks.nfe}</Typography>
                       </CardContent>
                     </Card>
                   )}
-                  {lead.remarks.obs && (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        bgcolor: 'rgba(158, 158, 158, 0.05)',
-                        borderLeft: '4px solid',
-                        borderLeftColor: 'grey.500',
-                        transition: 'all 0.2s ease',
-                        '&:hover': { boxShadow: 2, transform: 'translateX(4px)' }
-                      }}
-                    >
+                  {lead.remarks?.obs && (
+                    <Card variant="outlined" sx={{ bgcolor: 'rgba(158, 158, 158, 0.05)', borderLeft: '4px solid', borderLeftColor: 'grey.500' }}>
                       <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
-                          📝 Gerais
-                        </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                          {lead.remarks.obs}
-                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>📝 Gerais</Typography>
+                        <Typography variant="body2">{lead.remarks.obs}</Typography>
                       </CardContent>
                     </Card>
                   )}
-                  {lead.remarks.manager && (
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        bgcolor: 'rgba(156, 39, 176, 0.05)',
-                        borderLeft: '4px solid',
-                        borderLeftColor: 'secondary.main',
-                        transition: 'all 0.2s ease',
-                        '&:hover': { boxShadow: 2, transform: 'translateX(4px)' }
-                      }}
-                    >
+                  {lead.remarks?.manager && (
+                    <Card variant="outlined" sx={{ bgcolor: 'rgba(156, 39, 176, 0.05)', borderLeft: '4px solid', borderLeftColor: 'secondary.main' }}>
                       <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'secondary.dark', mb: 1 }}>
-                          👤 Gerente
-                        </Typography>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                          {lead.remarks.manager}
-                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'secondary.dark', mb: 1 }}>👤 Gerente</Typography>
+                        <Typography variant="body2">{lead.remarks.manager}</Typography>
                       </CardContent>
                     </Card>
                   )}
-                  {!lead.remarks.finance && !lead.remarks.logistic && !lead.remarks.nfe &&
-                    !lead.remarks.obs && !lead.remarks.manager && (
-                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                        Nenhuma observação cadastrada
-                      </Typography>
-                    )}
+                  {!lead.remarks?.finance && !lead.remarks?.logistic && !lead.remarks?.nfe && !lead.remarks?.obs && !lead.remarks?.manager && (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                      Nenhuma observação cadastrada
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                // Modo edição para leads
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="💰 Financeiro"
+                    placeholder="Observações sobre condições de pagamento, crédito, etc."
+                    value={lead.remarks?.finance || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value
+                      setLead(prev => ({
+                        ...prev,
+                        remarks: { ...prev.remarks, finance: newValue }
+                      }))
+                    }}
+                    onBlur={(e) => {
+                      leadsService.update(id, { remarks: { ...lead.remarks, finance: e.target.value } })
+                    }}
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(76, 175, 80, 0.03)' } }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="🚚 Logística"
+                    placeholder="Observações sobre entrega, transporte, etc."
+                    value={lead.remarks?.logistic || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value
+                      setLead(prev => ({
+                        ...prev,
+                        remarks: { ...prev.remarks, logistic: newValue }
+                      }))
+                    }}
+                    onBlur={(e) => {
+                      leadsService.update(id, { remarks: { ...lead.remarks, logistic: e.target.value } })
+                    }}
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(33, 150, 243, 0.03)' } }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="📄 NFE"
+                    placeholder="Observações para nota fiscal eletrônica"
+                    value={lead.remarks?.nfe || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value
+                      setLead(prev => ({
+                        ...prev,
+                        remarks: { ...prev.remarks, nfe: newValue }
+                      }))
+                    }}
+                    onBlur={(e) => {
+                      leadsService.update(id, { remarks: { ...lead.remarks, nfe: e.target.value } })
+                    }}
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(255, 152, 0, 0.03)' } }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="📝 Observações Gerais"
+                    placeholder="Outras observações relevantes"
+                    value={lead.remarks?.obs || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value
+                      setLead(prev => ({
+                        ...prev,
+                        remarks: { ...prev.remarks, obs: newValue }
+                      }))
+                    }}
+                    onBlur={(e) => {
+                      leadsService.update(id, { remarks: { ...lead.remarks, obs: e.target.value } })
+                    }}
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(158, 158, 158, 0.03)' } }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="👤 Gerente"
+                    placeholder="Observações do gerente"
+                    value={lead.remarks?.manager || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value
+                      setLead(prev => ({
+                        ...prev,
+                        remarks: { ...prev.remarks, manager: newValue }
+                      }))
+                    }}
+                    onBlur={(e) => {
+                      leadsService.update(id, { remarks: { ...lead.remarks, manager: e.target.value } })
+                    }}
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(156, 39, 176, 0.03)' } }}
+                  />
                 </Box>
               )}
             </Paper>
