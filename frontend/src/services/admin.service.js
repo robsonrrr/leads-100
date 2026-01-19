@@ -159,6 +159,21 @@ export const adminService = {
      * Estatísticas de vinculações
      */
     getCustomerLinksStats: () => api.get('/admin/customer-links/stats'),
+
+    /**
+     * Vinculação automática em massa por telefone
+     */
+    autoLinkCustomers: (dryRun = false) => api.post('/admin/customer-links/auto-link', { dryRun }),
+
+    /**
+     * Listar contatos SuperBot não vinculados
+     */
+    getUnlinkedSuperbotCustomers: (params = {}) => api.get('/admin/customer-links/unlinked', { params }),
+
+    /**
+     * Buscar clientes leads-agent para vincular
+     */
+    searchLeadsCustomers: (q, limit = 20) => api.get('/admin/customer-links/search-leads', { params: { q, limit } }),
 }
 
 export default adminService

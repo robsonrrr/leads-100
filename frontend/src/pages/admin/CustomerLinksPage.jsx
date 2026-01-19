@@ -81,6 +81,11 @@ const CustomerLinksPage = () => {
     const [linkToDelete, setLinkToDelete] = useState(null)
     const [deleting, setDeleting] = useState(false)
 
+    // Auto-link dialog
+    const [autoLinkDialogOpen, setAutoLinkDialogOpen] = useState(false)
+    const [autoLinkResult, setAutoLinkResult] = useState(null)
+    const [autoLinking, setAutoLinking] = useState(false)
+
     // Load data
     const loadLinks = useCallback(async () => {
         setLoading(true)
@@ -199,6 +204,37 @@ const CustomerLinksPage = () => {
         }
     }
 
+    // Auto-link functions
+    const handleAutoLinkPreview = async () => {
+        setAutoLinking(true)
+        setAutoLinkResult(null)
+        try {
+            const response = await adminService.autoLinkCustomers(true) // dryRun = true
+            setAutoLinkResult(response.data)
+            setAutoLinkDialogOpen(true)
+        } catch (err) {
+            console.error('Erro no preview:', err)
+            setError(err.response?.data?.error || 'Erro ao verificar vinculações automáticas')
+        } finally {
+            setAutoLinking(false)
+        }
+    }
+
+    const handleAutoLinkExecute = async () => {
+        setAutoLinking(true)
+        try {
+            const response = await adminService.autoLinkCustomers(false) // dryRun = false
+            setAutoLinkResult(response.data)
+            loadLinks()
+            loadStats()
+        } catch (err) {
+            console.error('Erro no auto-link:', err)
+            setError(err.response?.data?.error || 'Erro na vinculação automática')
+        } finally {
+            setAutoLinking(false)
+        }
+    }
+
     const formatDate = (dateStr) => {
         if (!dateStr) return '-'
         return new Date(dateStr).toLocaleDateString('pt-BR', {
@@ -225,13 +261,22 @@ const CustomerLinksPage = () => {
                         </Typography>
                     </Box>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Button
                         variant="outlined"
                         startIcon={<RefreshIcon />}
                         onClick={() => { loadLinks(); loadStats(); }}
                     >
                         Atualizar
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        startIcon={autoLinking ? <CircularProgress size={18} /> : <LinkIcon />}
+                        onClick={handleAutoLinkPreview}
+                        disabled={autoLinking}
+                    >
+                        Auto-Link por Telefone
                     </Button>
                     <Button
                         variant="contained"
@@ -562,6 +607,92 @@ const CustomerLinksPage = () => {
                     >
                         Excluir
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Auto-Link Dialog */}
+            <Dialog open={autoLinkDialogOpen} onClose={() => setAutoLinkDialogOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LinkIcon color="secondary" />
+                    Vinculação Automática por Telefone
+                </DialogTitle>
+                <DialogContent>
+                    {autoLinkResult?.dryRun ? (
+                        <>
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                                <strong>{autoLinkResult.message}</strong>
+                            </Alert>
+                            {autoLinkResult.data && autoLinkResult.data.length > 0 ? (
+                                <>
+                                    <Typography variant="body2" sx={{ mb: 2 }}>
+                                        Prévia das primeiras {Math.min(autoLinkResult.data.length, 100)} vinculações:
+                                    </Typography>
+                                    <TableContainer sx={{ maxHeight: 400 }}>
+                                        <Table size="small" stickyHeader>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>Telefone SuperBot</TableCell>
+                                                    <TableCell>Nome SuperBot</TableCell>
+                                                    <TableCell>→</TableCell>
+                                                    <TableCell>Cliente Leads</TableCell>
+                                                    <TableCell>CNPJ</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {autoLinkResult.data.slice(0, 50).map((item, idx) => (
+                                                    <TableRow key={idx}>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                                <WhatsAppIcon sx={{ color: '#25D366', fontSize: 16 }} />
+                                                                {item.superbot_phone}
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>{item.superbot_name || item.push_name || '-'}</TableCell>
+                                                        <TableCell><LinkIcon fontSize="small" /></TableCell>
+                                                        <TableCell>{item.leads_customer_name}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="caption" fontFamily="monospace">
+                                                                {item.cnpj || '-'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </>
+                            ) : (
+                                <Alert severity="warning">
+                                    Nenhuma vinculação automática disponível. Todos os contatos já estão vinculados ou não há correspondência de telefone.
+                                </Alert>
+                            )}
+                        </>
+                    ) : autoLinkResult?.data ? (
+                        <Alert severity={autoLinkResult.data.created > 0 ? 'success' : 'warning'} sx={{ mb: 2 }}>
+                            <strong>Resultado:</strong><br />
+                            • Candidatos encontrados: {autoLinkResult.data.candidates}<br />
+                            • Vinculações criadas: {autoLinkResult.data.created}<br />
+                            • Erros: {autoLinkResult.data.errors}
+                        </Alert>
+                    ) : (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                            <CircularProgress />
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAutoLinkDialogOpen(false)}>Fechar</Button>
+                    {autoLinkResult?.dryRun && autoLinkResult?.data?.length > 0 && (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleAutoLinkExecute}
+                            disabled={autoLinking}
+                            startIcon={autoLinking ? <CircularProgress size={18} /> : <LinkIcon />}
+                        >
+                            {autoLinking ? 'Vinculando...' : `Vincular ${autoLinkResult.data.length} Contatos`}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
         </Box>
