@@ -311,6 +311,7 @@ const WhatsAppConversation = ({
     }
 
     const handleSessionSelect = (session) => {
+        setMessages([]) // Limpar mensagens anteriores imediatamente
         setSelectedSession(session)
         loadMessages(session.session_id)
     }
@@ -491,6 +492,7 @@ const WhatsAppConversation = ({
                     }}
                 >
                     <ConversationTimeline
+                        key={`timeline-${selectedSession?.session_id || 'none'}`}
                         phone={phone}
                         sessionId={selectedSession?.session_id}
                         initialMessages={messages}

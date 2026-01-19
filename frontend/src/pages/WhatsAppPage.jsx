@@ -427,6 +427,7 @@ const WhatsAppPage = () => {
                                     {/* Tab: Conversas */}
                                     <TabPanel value={activeTab} index={0} sx={{ flex: 1, overflow: 'hidden' }}>
                                         <WhatsAppConversation
+                                            key={`conversation-${selectedPhone}`}
                                             phone={selectedPhone}
                                             showAnalysis={showAnalysis}
                                             maxHeight="calc(100vh - 280px)"
