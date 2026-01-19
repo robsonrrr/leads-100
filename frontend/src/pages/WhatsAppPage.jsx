@@ -374,9 +374,22 @@ const WhatsAppPage = () => {
                                                         </Typography>
                                                     }
                                                     secondary={
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {customer.phone_number}
-                                                        </Typography>
+                                                        <>
+                                                            <Typography variant="caption" color="text.secondary" component="span" display="block">
+                                                                {customer.phone_number}
+                                                            </Typography>
+                                                            {customer.seller_name && (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="primary.main"
+                                                                    component="span"
+                                                                    display="block"
+                                                                    sx={{ fontWeight: 500 }}
+                                                                >
+                                                                    👤 {customer.seller_name}
+                                                                </Typography>
+                                                            )}
+                                                        </>
                                                     }
                                                 />
 

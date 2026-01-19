@@ -210,13 +210,57 @@ export const SuperbotRepository = {
       }
     }
 
+    // PASSO 3.5: Buscar vendedor associado (para admins/gerentes)
+    // O vendedor é identificado pelo telefone que participou das conversas
+    let sellerMap = {};
+    if (customers.length > 0) {
+      const phoneNumbers = customers.map(c => c.phone_number);
+      const placeholders = phoneNumbers.map(() => '?').join(',');
+
+      try {
+        // Buscar o vendedor que tem telefone vinculado e conversou com cada cliente
+        const [sellers] = await db().query(`
+          SELECT DISTINCT
+            m.sender_phone as client_phone,
+            sp.phone_number as seller_phone,
+            COALESCE(u.nick, u.user) as seller_name
+          FROM ${SUPERBOT_SCHEMA}.messages m
+          INNER JOIN ${SUPERBOT_SCHEMA}.seller_phones sp ON sp.phone_number = m.recipient_phone
+          INNER JOIN mak.rolemak_users u ON u.id = sp.user_id
+          WHERE m.sender_phone IN (${placeholders})
+            AND sp.is_active = 1
+          
+          UNION
+          
+          SELECT DISTINCT
+            m.recipient_phone as client_phone,
+            sp.phone_number as seller_phone,
+            COALESCE(u.nick, u.user) as seller_name
+          FROM ${SUPERBOT_SCHEMA}.messages m
+          INNER JOIN ${SUPERBOT_SCHEMA}.seller_phones sp ON sp.phone_number = m.sender_phone
+          INNER JOIN mak.rolemak_users u ON u.id = sp.user_id
+          WHERE m.recipient_phone IN (${placeholders})
+            AND sp.is_active = 1
+        `, [...phoneNumbers, ...phoneNumbers]);
+
+        sellers.forEach(s => {
+          if (s.client_phone && !sellerMap[s.client_phone]) {
+            sellerMap[s.client_phone] = s.seller_name;
+          }
+        });
+      } catch (err) {
+        console.warn('Erro ao buscar vendedores:', err.message);
+      }
+    }
+
     // PASSO 4: Combinar resultados
     const rows = customers.map(c => ({
       ...c,
       total_sessions: statsMap[c.phone_number]?.total_sessions || 0,
       total_messages: statsMap[c.phone_number]?.total_messages || 0,
       last_message_at: statsMap[c.phone_number]?.last_message_at || null,
-      has_linked_customer: !!linksMap[c.id]
+      has_linked_customer: !!linksMap[c.id],
+      seller_name: sellerMap[c.phone_number] || null
     }));
 
     // Contagem total (query separada, rápida)
