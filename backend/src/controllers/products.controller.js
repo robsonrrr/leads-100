@@ -46,12 +46,14 @@ export async function searchProducts(req, res, next) {
     if (value.sort) filters.sort = value.sort;
 
     const sellerId = req.user?.id || null;
+    const userSegment = req.user?.segmento || null; // Filtrar por segmento do vendedor
 
     const result = await productRepository.search(
       value.search || '',
       filters,
       { page: value.page, limit: value.limit },
-      sellerId // Logar busca
+      sellerId, // Logar busca
+      userSegment // Filtrar por segmento do usuário
     );
 
     // Buscar estoque em lote para os produtos retornados

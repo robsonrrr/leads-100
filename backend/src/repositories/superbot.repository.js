@@ -125,7 +125,7 @@ export const SuperbotRepository = {
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
-    // PASSO 1: Buscar clientes (query rápida, sem JOINs)
+    // PASSO 1: Buscar clientes ordenados pela última mensagem (query otimizada com subquery)
     const [customers] = await db().query(`
       SELECT 
         sc.id,
@@ -135,10 +135,22 @@ export const SuperbotRepository = {
         sc.phone_number,
         sc.is_group,
         sc.created_at,
-        sc.updated_at
+        sc.updated_at,
+        msg_stats.last_message_at
       FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
+      LEFT JOIN (
+        SELECT 
+          CASE 
+            WHEN sender_phone LIKE '55%' AND LENGTH(sender_phone) >= 12 THEN sender_phone
+            ELSE recipient_phone 
+          END as phone,
+          MAX(received_at) as last_message_at
+        FROM ${SUPERBOT_SCHEMA}.messages
+        WHERE is_group = 0
+        GROUP BY phone
+      ) msg_stats ON msg_stats.phone = sc.phone_number
       ${whereClause}
-      ORDER BY sc.updated_at DESC
+      ORDER BY COALESCE(msg_stats.last_message_at, '1970-01-01') DESC, sc.updated_at DESC
       LIMIT ? OFFSET ?
     `, [...params, parseInt(limit), parseInt(offset)]);
 
@@ -270,12 +282,13 @@ export const SuperbotRepository = {
 
   /**
    * Busca mensagens de uma sessão específica
+   * NOTA: Página 1 retorna as mensagens MAIS RECENTES (para exibição inicial no chat)
+   * As mensagens são ordenadas cronologicamente (ASC) para display correto
    */
   async getMessagesBySession(sessionId, options = {}) {
     const { page = 1, limit = 50, includeMedia = true } = options;
-    const offset = (page - 1) * limit;
 
-    const cacheKey = `superbot:messages:${sessionId}:${page}`;
+    const cacheKey = `superbot:messages:${sessionId}:${page}:${limit}`;
     const cached = await cacheGet(cacheKey);
     if (cached) return cached;
 
@@ -286,42 +299,53 @@ export const SuperbotRepository = {
       WHERE session_id = ?
     `, [sessionId]);
 
+    const total = countResult[0]?.total || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    // Offset normal: página 1 com offset 0 + ORDER BY DESC = mensagens mais recentes
+    const offset = (page - 1) * limit;
+
     // Busca mensagens com mídia e transcrições
+    // ESTRATÉGIA: ORDER BY DESC para pegar as mais recentes primeiro,
+    // depois reordenar em ASC para display cronológico no chat
     const [rows] = await db().query(`
-      SELECT 
-        m.id,
-        m.message_id,
-        m.session_id,
-        m.sender_phone,
-        m.recipient_phone,
-        m.message_text,
-        m.source,
-        m.message_type,
-        m.direction,
-        m.status,
-        m.original_timestamp,
-        m.received_at,
-        m.read_at,
-        m.delivered_at,
-        mm.id as media_id,
-        mm.type as media_type,
-        mm.file_name as media_filename,
-        mm.s3_url as media_url,
-        mm.is_voice_note,
-        mm.duration as media_duration,
-        mt.transcription_text,
-        mt.confidence as transcription_confidence,
-        mt.language as transcription_language,
-        mr.ai_service,
-        mr.formatted_response as ai_response,
-        mr.status as ai_status
-      FROM ${SUPERBOT_SCHEMA}.messages m
-      LEFT JOIN ${SUPERBOT_SCHEMA}.message_media mm ON mm.message_id = m.id
-      LEFT JOIN ${SUPERBOT_SCHEMA}.message_transcriptions mt ON mt.media_id = mm.id
-      LEFT JOIN ${SUPERBOT_SCHEMA}.message_responses mr ON mr.message_id = m.id
-      WHERE m.session_id = ?
-      ORDER BY m.received_at ASC
-      LIMIT ? OFFSET ?
+      SELECT * FROM (
+        SELECT 
+          m.id,
+          m.message_id,
+          m.session_id,
+          m.sender_phone,
+          m.recipient_phone,
+          m.message_text,
+          m.source,
+          m.message_type,
+          m.direction,
+          m.status,
+          m.original_timestamp,
+          m.received_at,
+          m.read_at,
+          m.delivered_at,
+          mm.id as media_id,
+          mm.type as media_type,
+          mm.file_name as media_filename,
+          mm.s3_url as media_url,
+          mm.is_voice_note,
+          mm.duration as media_duration,
+          mt.transcription_text,
+          mt.confidence as transcription_confidence,
+          mt.language as transcription_language,
+          mr.ai_service,
+          mr.formatted_response as ai_response,
+          mr.status as ai_status
+        FROM ${SUPERBOT_SCHEMA}.messages m
+        LEFT JOIN ${SUPERBOT_SCHEMA}.message_media mm ON mm.message_id = m.id
+        LEFT JOIN ${SUPERBOT_SCHEMA}.message_transcriptions mt ON mt.media_id = mm.id
+        LEFT JOIN ${SUPERBOT_SCHEMA}.message_responses mr ON mr.message_id = m.id
+        WHERE m.session_id = ?
+        ORDER BY m.received_at DESC
+        LIMIT ? OFFSET ?
+      ) recent_messages
+      ORDER BY received_at ASC
     `, [sessionId, parseInt(limit), parseInt(offset)]);
 
     const result = {
@@ -329,8 +353,8 @@ export const SuperbotRepository = {
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: countResult[0]?.total || 0,
-        totalPages: Math.ceil((countResult[0]?.total || 0) / limit)
+        total: total,
+        totalPages: totalPages
       }
     };
 

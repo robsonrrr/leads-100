@@ -28,6 +28,12 @@ const RATE_LIMIT_CONFIG = {
     windowMs: 1 * 60 * 1000, // 1 minuto
     max: 300, // 300 buscas por minuto
     message: 'Muitas buscas. Aguarde um momento.'
+  },
+  // Limite para polling (notificações, status, etc) - muito mais permissivo
+  polling: {
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 600, // 600 requisições por minuto (10 por segundo)
+    message: 'Polling muito frequente. Reduza a frequência.'
   }
 };
 
@@ -122,6 +128,19 @@ export const searchLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter para polling (notificações, status, etc)
+ * Muito mais permissivo pois polling é frequente
+ */
+export const pollingLimiter = rateLimit({
+  windowMs: RATE_LIMIT_CONFIG.polling.windowMs,
+  max: RATE_LIMIT_CONFIG.polling.max,
+  keyGenerator,
+  handler: createLimitHandler('polling'),
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+/**
  * Factory para criar rate limiter customizado
  * @param {Object} options - Opções do rate limit
  */
@@ -142,5 +161,6 @@ export default {
   authLimiter,
   writeLimiter,
   searchLimiter,
+  pollingLimiter,
   createRateLimiter
 };

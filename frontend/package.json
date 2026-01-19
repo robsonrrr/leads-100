@@ -1,6 +1,6 @@
 {
   "name": "leads-agent-frontend",
-  "version": "1.7.0",
+  "version": "1.7.5",
   "type": "module",
   "description": "Frontend moderno para gestão de leads",
   "scripts": {

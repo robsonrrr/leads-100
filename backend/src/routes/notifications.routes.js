@@ -2,6 +2,7 @@ import express from 'express';
 import { pushService } from '../services/push.service.js';
 import { NotificationsService, NOTIFICATION_TYPES, PRIORITY } from '../services/notifications.service.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { pollingLimiter } from '../middleware/rateLimiter.js';
 import { getDatabase } from '../config/database.js';
 import logger from '../config/logger.js';
 
@@ -169,25 +170,40 @@ router.get('/list', async (req, res) => {
  *     summary: Polling para novas notificações (tempo real)
  *     tags: [Notifications]
  */
-router.get('/poll', async (req, res) => {
+router.get('/poll', pollingLimiter, async (req, res) => {
     try {
         const userId = req.user.id || req.user.userId;
         const { last_check } = req.query;
 
-        const pending = await NotificationsService.getPending(userId, last_check);
-        const unreadCount = await NotificationsService.getUnreadCount(userId);
+        // Executar em paralelo com timeout de 5 segundos
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000)
+        );
+
+        const [pending, unreadCount] = await Promise.race([
+            Promise.all([
+                NotificationsService.getPending(userId, last_check),
+                NotificationsService.getUnreadCount(userId)
+            ]),
+            timeout.then(() => [[], 0]) // Retorna vazio se timeout
+        ]);
 
         res.json({
             success: true,
-            data: pending,
-            unreadCount,
+            data: pending || [],
+            unreadCount: unreadCount || 0,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        logger.error('Erro no polling de notificações', { error: error.message });
-        res.status(500).json({
-            success: false,
-            error: { message: 'Erro ao buscar notificações' }
+        // Log apenas erros não-timeout para não poluir os logs
+        if (error.message !== 'timeout') {
+            logger.error('Erro no polling de notificações', { error: error.message });
+        }
+        res.json({
+            success: true,
+            data: [],
+            unreadCount: 0,
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -199,7 +215,7 @@ router.get('/poll', async (req, res) => {
  *     summary: Contagem de notificações não lidas
  *     tags: [Notifications]
  */
-router.get('/count', async (req, res) => {
+router.get('/count', pollingLimiter, async (req, res) => {
     try {
         const userId = req.user.id || req.user.userId;
         const count = await NotificationsService.getUnreadCount(userId);

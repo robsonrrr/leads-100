@@ -9,15 +9,20 @@ const db = () => getDatabase();
 export class ProductRepository {
   /**
    * Busca produtos com filtros e paginação
+   * @param {string} searchTerm - Termo de busca
+   * @param {Object} filters - Filtros (segment, category, brand, etc)
+   * @param {Object} pagination - Paginação (page, limit)
+   * @param {number} sellerId - ID do vendedor (para log)
+   * @param {string|number} userSegment - Segmento do usuário logado (para filtrar produtos)
    */
-  async search(searchTerm = '', filters = {}, pagination = { page: 1, limit: 20 }, sellerId = null) {
+  async search(searchTerm = '', filters = {}, pagination = { page: 1, limit: 20 }, sellerId = null, userSegment = null) {
     try {
       const page = parseInt(pagination.page) || 1;
       const limit = parseInt(pagination.limit) || 20;
       const offset = (page - 1) * limit;
 
-      // Gerar chave de cache baseada nos parâmetros
-      const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}`;
+      // Gerar chave de cache baseada nos parâmetros (incluindo userSegment)
+      const cacheKey = `${searchTerm}:${JSON.stringify(filters)}:${page}:${limit}:${userSegment || 'all'}`;
 
       // Tentar cache para buscas frequentes
       const result = await CacheService.getProducts(cacheKey, async () => {
@@ -33,6 +38,23 @@ export class ProductRepository {
         LEFT JOIN mak.produtos p ON i.idcf = p.id
         WHERE i.revenda > 0`;
         const params = [];
+
+        // ===== FILTRO POR SEGMENTO DO USUÁRIO =====
+        // Se o usuário tem um segmento específico (não é "GERAL" ou vazio),
+        // filtrar produtos apenas desse segmento
+        if (userSegment && userSegment !== 'GERAL' && userSegment !== 'geral' && userSegment !== '') {
+          // userSegment pode ser um ID numérico (ex: 1) ou nome (ex: "MAQUINAS")
+          const segmentValue = String(userSegment).trim();
+          if (!isNaN(segmentValue) && segmentValue !== '') {
+            // Segmento numérico (segmento_id)
+            query += ' AND p.segmento_id = ?';
+            params.push(parseInt(segmentValue));
+          } else {
+            // Segmento por nome
+            query += ' AND p.segmento = ?';
+            params.push(segmentValue.toUpperCase());
+          }
+        }
 
         // Busca por termo usando FULLTEXT (MySQL 8+) ou LIKE como fallback
         if (searchTerm) {
