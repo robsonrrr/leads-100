@@ -1,7 +1,7 @@
 # ✅ CHECKLIST DE IMPLEMENTAÇÃO — LEADS-AGENT (CSuite)
 
 **Última Atualização:** 2026-01-19
-**Versão Atual:** 1.7.5
+**Versão Atual:** 1.7.6
 
 Use isso como **lista de corte**: se algo não estiver marcado, o agente **não está pronto para rodar em produção**.
 
@@ -401,4 +401,4 @@ CREATE TABLE ctx_memory_unit (
 
 ---
 
-*Atualizado automaticamente em 2026-01-19 - Versão 1.7.5*
+*Atualizado automaticamente em 2026-01-19 - Versão 1.7.6*
