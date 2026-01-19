@@ -364,8 +364,12 @@ function LeadDetailPage() {
 
   const handleFieldUpdate = async (field, value) => {
     try {
+      // Mapear campo do backend para campo do estado local
+      // O backend usa cType mas o toJSON() retorna como 'type'
+      const stateField = field === 'cType' ? 'type' : field
+
       // Atualizar localmente
-      setLead(prev => ({ ...prev, [field]: value }))
+      setLead(prev => ({ ...prev, [stateField]: value }))
 
       const updateData = { [field]: value }
 
@@ -380,7 +384,7 @@ function LeadDetailPage() {
         if (response.data.data) {
           setLead(prev => ({
             ...prev,
-            [field]: response.data.data[field] !== undefined ? response.data.data[field] : value
+            [stateField]: response.data.data[stateField] !== undefined ? response.data.data[stateField] : value
           }))
         }
         setError('')
