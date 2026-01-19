@@ -811,9 +811,70 @@ export async function updateItem(req, res, next) {
 
     const item = await cartItemRepository.update(itemId, itemData);
 
+    // Se o times foi alterado, atualizar também os acessórios vinculados (motor, tampo)
+    const updatedAccessories = [];
+    if (value.times !== undefined && value.times !== existingItem.tProduct) {
+      const parseAccessoryIds = (raw) => {
+        if (raw === undefined || raw === null) return [];
+        const str = String(raw).trim();
+        if (str === '' || str.toLowerCase() === 'null') return [];
+
+        const tokens = str
+          .split(/[\s,;|]+/g)
+          .map(t => t.trim())
+          .filter(Boolean);
+
+        const ids = [];
+        for (const t of tokens) {
+          const n = Number(t);
+          if (!Number.isNaN(n) && Number.isFinite(n) && n > 0) {
+            ids.push(Math.trunc(n));
+          }
+        }
+        return ids;
+      };
+
+      try {
+        const db = getDatabase();
+        const productId = existingItem.cProduct;
+        const [accRows] = await db.execute(
+          'SELECT motor, tampo FROM inv WHERE id = ? LIMIT 1',
+          [productId]
+        );
+
+        if (accRows.length > 0) {
+          const motorIds = parseAccessoryIds(accRows[0]?.motor);
+          const tampoIds = parseAccessoryIds(accRows[0]?.tampo);
+          const accessoryIds = Array.from(new Set([
+            ...motorIds,
+            ...tampoIds
+          ].filter((id) => id && id !== productId)));
+
+          for (const accessoryId of accessoryIds) {
+            const existingAccessory = await cartItemRepository.findByLeadIdAndProductId(leadId, accessoryId);
+            if (existingAccessory) {
+              // Atualizar o tProduct do acessório para o mesmo valor
+              await cartItemRepository.update(existingAccessory.cCart, {
+                ...existingAccessory,
+                tProduct: value.times
+              });
+              updatedAccessories.push({
+                id: existingAccessory.cCart,
+                productId: accessoryId,
+                newTimes: value.times
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao atualizar prazo dos acessórios (motor/tampo):', e);
+      }
+    }
+
     res.json({
       success: true,
       data: item.toJSON(),
+      updatedAccessories,
       message: 'Item updated successfully'
     });
   } catch (error) {
