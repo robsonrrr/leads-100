@@ -584,7 +584,7 @@ const ConversationTimeline = ({
     const messagesEndRef = useRef(null)
     const previousScrollHeight = useRef(0)
 
-    // Carregar mensagens iniciais
+    // Carregar mensagens iniciais - SEMPRE recarregar quando sessionId ou phone mudar
     useEffect(() => {
         // Limpar mensagens ao mudar de conversa
         setMessages([])
@@ -592,12 +592,10 @@ const ConversationTimeline = ({
         setHasMore(true)
         setError(null)
 
-        const safeMsgs = Array.isArray(initialMessages) ? initialMessages : []
-        if (phone && !safeMsgs.length) {
+        // SEMPRE carregar mensagens frescas quando há um sessionId ou phone
+        // Não confiar em initialMessages pois podem estar desatualizados
+        if (sessionId || phone) {
             loadMessages(true)
-        } else if (safeMsgs.length) {
-            setMessages(safeMsgs)
-            setOffset(safeMsgs.length)
         }
     }, [phone, sessionId])
 
