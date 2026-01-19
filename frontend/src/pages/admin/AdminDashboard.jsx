@@ -170,6 +170,13 @@ const AdminDashboard = () => {
             color: '#128C7E',
         },
         {
+            title: 'Contatos WhatsApp',
+            description: 'Vincular contatos do WhatsApp a clientes',
+            icon: <PhoneIcon />,
+            path: '/admin/whatsapp-contacts',
+            color: '#25D366',
+        },
+        {
             title: 'Configuração do Chatbot',
             description: 'Configurar respostas automáticas e IA',
             icon: <ChatbotIcon />,

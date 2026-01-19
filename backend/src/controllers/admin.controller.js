@@ -1122,6 +1122,7 @@ const getUnlinkedSuperbotCustomers = async (req, res) => {
 /**
  * GET /api/admin/customer-links/search-leads
  * Buscar clientes do leads-agent para vincular manualmente
+ * Busca em mak.clientes e crm.contatos
  */
 const searchLeadsCustomers = async (req, res) => {
     try {
@@ -1133,23 +1134,29 @@ const searchLeadsCustomers = async (req, res) => {
 
         const db = (await import('../config/database.js')).getDatabase()
 
+        // Busca em mak.clientes e também nos contatos via crm.contatos
         const [customers] = await db.execute(`
-            SELECT 
-                id,
-                nome,
-                fantasia,
-                cnpj,
-                fone,
-                cidade,
-                estado
-            FROM mak.clientes
-            WHERE nome LIKE ? 
-               OR fantasia LIKE ? 
-               OR cnpj LIKE ?
-               OR fone LIKE ?
-            ORDER BY nome
+            SELECT DISTINCT
+                c.id,
+                c.nome,
+                c.fantasia,
+                c.cnpj,
+                COALESCE(ct.fone1, ct.fone2, c.fone) as fone,
+                c.cidade,
+                c.estado,
+                ct.nome as contato_nome
+            FROM mak.clientes c
+            LEFT JOIN crm.contatos ct ON ct.cliente = c.id
+            WHERE c.nome LIKE ? 
+               OR c.fantasia LIKE ? 
+               OR c.cnpj LIKE ?
+               OR c.fone LIKE ?
+               OR ct.fone1 LIKE ?
+               OR ct.fone2 LIKE ?
+               OR ct.nome LIKE ?
+            ORDER BY c.nome
             LIMIT ?
-        `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, parseInt(limit)])
+        `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, parseInt(limit)])
 
         res.json({
             success: true,
