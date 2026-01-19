@@ -116,6 +116,7 @@ function LeadsPage() {
     const [dateTo, setDateTo] = useState(() => searchParams.get('dateTo') || getTodayDate())
     const [metrics, setMetrics] = useState({ totalCount: 0, totalValue: 0, convertedCount: 0 })
     const [statusFilter, setStatusFilter] = useState('')
+    const [typeFilter, setTypeFilter] = useState('') // '' = Todos, '1' = Ativo, '2' = Receptivo
     const [sellers, setSellers] = useState([])
     const [sellerFilter, setSellerFilter] = useState('')
     const [exporting, setExporting] = useState(false)
@@ -140,7 +141,7 @@ function LeadsPage() {
 
     useEffect(() => {
         loadLeads()
-    }, [page, rowsPerPage, sortConfig, selectedSegment, debouncedQuery, selectedSellerSegment, selectedSeller, dateFrom, dateTo, statusFilter, sellerFilter])
+    }, [page, rowsPerPage, sortConfig, selectedSegment, debouncedQuery, selectedSellerSegment, selectedSeller, dateFrom, dateTo, statusFilter, typeFilter, sellerFilter])
 
     const loadLeads = async () => {
         try {
@@ -158,6 +159,7 @@ function LeadsPage() {
             if (dateFrom) params.dateFrom = dateFrom
             if (dateTo) params.dateTo = dateTo
             if (statusFilter) params.status = statusFilter
+            if (typeFilter) params.cType = typeFilter
             if (sellerFilter) params.filterSellerId = sellerFilter
 
             const response = await leadsService.getAll(params)
@@ -357,6 +359,38 @@ function LeadsPage() {
                         color={statusFilter === 'convertido' ? 'success' : 'default'}
                         onClick={() => { setStatusFilter('convertido'); setPage(0); }}
                         sx={{ fontWeight: statusFilter === 'convertido' ? 700 : 400 }}
+                    />
+
+                    {/* Separador */}
+                    <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', height: 24, mx: 1 }} />
+
+                    {/* Filtro por Tipo de Atendimento */}
+                    <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
+                        Tipo:
+                    </Typography>
+                    <Chip
+                        label="Todos"
+                        size="small"
+                        variant={typeFilter === '' ? 'filled' : 'outlined'}
+                        color={typeFilter === '' ? 'primary' : 'default'}
+                        onClick={() => { setTypeFilter(''); setPage(0); }}
+                        sx={{ fontWeight: typeFilter === '' ? 700 : 400 }}
+                    />
+                    <Chip
+                        label="Ativo"
+                        size="small"
+                        variant={typeFilter === '1' ? 'filled' : 'outlined'}
+                        color={typeFilter === '1' ? 'primary' : 'default'}
+                        onClick={() => { setTypeFilter('1'); setPage(0); }}
+                        sx={{ fontWeight: typeFilter === '1' ? 700 : 400 }}
+                    />
+                    <Chip
+                        label="Receptivo"
+                        size="small"
+                        variant={typeFilter === '2' ? 'filled' : 'outlined'}
+                        color={typeFilter === '2' ? 'secondary' : 'default'}
+                        onClick={() => { setTypeFilter('2'); setPage(0); }}
+                        sx={{ fontWeight: typeFilter === '2' ? 700 : 400 }}
                     />
 
                     {/* Separador */}
