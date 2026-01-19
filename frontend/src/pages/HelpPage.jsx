@@ -49,7 +49,7 @@ import {
     WhatsApp as WhatsAppIcon,
     AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material'
-import { useAuth } from '../context/AuthContext'
+import { useSelector } from 'react-redux'
 
 // Quick reference cards
 const QuickReferenceCard = ({ title, items, icon, color = 'primary' }) => (
@@ -87,8 +87,8 @@ const QuickReferenceCard = ({ title, items, icon, color = 'primary' }) => (
 )
 
 const HelpPage = () => {
-    const { user } = useAuth()
-    const userLevel = user?.level || 1
+    const { user } = useSelector((state) => state.auth)
+    const userLevel = user?.level || user?.nivel || 1
     const isManager = userLevel >= 5
 
     const [tabValue, setTabValue] = useState(0)
