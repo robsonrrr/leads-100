@@ -416,6 +416,7 @@ export async function updateLead(req, res, next) {
       ...existingLead,
       cCustomer: value.customerId !== undefined ? value.customerId : existingLead.cCustomer,
       cSegment: value.cSegment !== undefined ? (value.cSegment || null) : existingLead.cSegment,
+      cType: value.cType !== undefined ? value.cType : existingLead.cType,
       cNatOp: value.cNatOp !== undefined ? value.cNatOp : existingLead.cNatOp,
       cEmitUnity: value.cEmitUnity !== undefined ? value.cEmitUnity : existingLead.cEmitUnity,
       cLogUnity: value.cLogUnity !== undefined ? value.cLogUnity : existingLead.cLogUnity,
