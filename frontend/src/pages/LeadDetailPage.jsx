@@ -426,16 +426,18 @@ function LeadDetailPage() {
     setLoadingCustomer(true)
 
     try {
-      const [customerRes, metricsRes, ordersRes] = await Promise.all([
+      const [customerRes, metricsRes, ordersRes, interactionsRes] = await Promise.all([
         customersService.getById(lead.customerId),
         customersService.getMetrics(lead.customerId).catch(() => null),
-        customersService.getOrders(lead.customerId, { limit: 5 }).catch(() => null)
+        customersService.getOrders(lead.customerId, { limit: 5 }).catch(() => null),
+        interactionsService.getByCustomer(lead.customerId, { limit: 5 }).catch(() => null)
       ])
 
       setCustomerDetails({
         ...customerRes.data.data,
         metrics: metricsRes?.data?.data || null,
-        recentOrders: ordersRes?.data?.data || []
+        recentOrders: ordersRes?.data?.data || [],
+        recentInteractions: interactionsRes?.data?.data || []
       })
     } catch (err) {
       toast.showError('Erro ao carregar detalhes do cliente')
@@ -1964,6 +1966,57 @@ function LeadDetailPage() {
                       </TableBody>
                     </Table>
                   </TableContainer>
+                </Grid>
+              )}
+
+              {/* Interações Recentes */}
+              {customerDetails.recentInteractions && customerDetails.recentInteractions.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
+                    💬 Interações Recentes
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {customerDetails.recentInteractions.map((interaction, idx) => {
+                      const typeIcons = {
+                        call: '📞',
+                        whatsapp: '💬',
+                        email: '📧',
+                        meeting: '🤝',
+                        visit: '🚗',
+                        note: '📝'
+                      }
+                      const typeLabels = {
+                        call: 'Ligação',
+                        whatsapp: 'WhatsApp',
+                        email: 'Email',
+                        meeting: 'Reunião',
+                        visit: 'Visita',
+                        note: 'Anotação'
+                      }
+                      return (
+                        <Card key={idx} variant="outlined" sx={{ p: 1.5 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                            <Chip
+                              label={`${typeIcons[interaction.type] || '📝'} ${typeLabels[interaction.type] || interaction.type}`}
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDate(interaction.createdAt || interaction.created_at)}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {interaction.notes || interaction.description}
+                          </Typography>
+                          {interaction.userName && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                              Por: {interaction.userName}
+                            </Typography>
+                          )}
+                        </Card>
+                      )
+                    })}
+                  </Box>
                 </Grid>
               )}
             </Grid>
