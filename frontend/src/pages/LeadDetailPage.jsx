@@ -464,7 +464,7 @@ function LeadDetailPage() {
         customerId: lead.customerId,
         leadId: lead.id,
         type: interactionData.type,
-        notes: interactionData.notes,
+        description: interactionData.notes,
         followUpDate: interactionData.followUpDate || null
       })
 
