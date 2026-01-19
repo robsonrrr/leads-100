@@ -46,9 +46,11 @@ import {
   TrendingUp as TrendingUpIcon,
   Print as PrintIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
+  Chat as ChatIcon,
+  Add as AddIcon
 } from '@mui/icons-material'
-import { leadsService, customersService } from '../services/api'
+import { leadsService, customersService, interactionsService } from '../services/api'
 import CartItems from '../components/CartItems'
 import CartRecommendations from '../components/CartRecommendations'
 import MakPrimeLogo from '../components/MakPrimeLogo'
@@ -87,6 +89,15 @@ function LeadDetailPage() {
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [customerDetails, setCustomerDetails] = useState(null)
   const [loadingCustomer, setLoadingCustomer] = useState(false)
+
+  // Modal de nova interação
+  const [interactionModalOpen, setInteractionModalOpen] = useState(false)
+  const [savingInteraction, setSavingInteraction] = useState(false)
+  const [interactionData, setInteractionData] = useState({
+    type: 'call',
+    notes: '',
+    followUpDate: ''
+  })
 
   const [conversionFormData, setConversionFormData] = useState({
     cTransporter: '',
@@ -433,6 +444,38 @@ function LeadDetailPage() {
     }
   }
 
+  // Salvar nova interação
+  const handleSaveInteraction = async () => {
+    if (!lead.customerId) {
+      toast.showError('Lead sem cliente associado')
+      return
+    }
+
+    if (!interactionData.notes.trim()) {
+      toast.showError('Adicione uma descrição para a interação')
+      return
+    }
+
+    setSavingInteraction(true)
+    try {
+      await interactionsService.create({
+        customerId: lead.customerId,
+        leadId: lead.id,
+        type: interactionData.type,
+        notes: interactionData.notes,
+        followUpDate: interactionData.followUpDate || null
+      })
+
+      toast.showSuccess('Interação registrada com sucesso!')
+      setInteractionModalOpen(false)
+      setInteractionData({ type: 'call', notes: '', followUpDate: '' })
+    } catch (err) {
+      toast.showError(err.response?.data?.error?.message || 'Erro ao registrar interação')
+    } finally {
+      setSavingInteraction(false)
+    }
+  }
+
   const formatPaymentTerms = () => {
     // Verificar se algum item é do segmento "machines"
     const hasMachinesSegment = items.some(item => {
@@ -600,6 +643,20 @@ function LeadDetailPage() {
               }}
             >
               Enviar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<ChatIcon />}
+              onClick={() => setInteractionModalOpen(true)}
+              disabled={!lead.customerId}
+              title={lead.customerId ? 'Registrar interação com cliente' : 'Lead sem cliente associado'}
+              sx={{
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' }
+              }}
+            >
+              Interação
             </Button>
             <Button
               variant="contained"
@@ -1929,6 +1986,78 @@ function LeadDetailPage() {
               Ver Página Completa
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Nova Interação */}
+      <Dialog
+        open={interactionModalOpen}
+        onClose={() => setInteractionModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ChatIcon color="primary" />
+          Nova Interação
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Interação</InputLabel>
+              <Select
+                value={interactionData.type}
+                label="Tipo de Interação"
+                onChange={(e) => setInteractionData(prev => ({ ...prev, type: e.target.value }))}
+              >
+                <MenuItem value="call">📞 Ligação</MenuItem>
+                <MenuItem value="whatsapp">💬 WhatsApp</MenuItem>
+                <MenuItem value="email">📧 Email</MenuItem>
+                <MenuItem value="meeting">🤝 Reunião</MenuItem>
+                <MenuItem value="visit">🚗 Visita</MenuItem>
+                <MenuItem value="note">📝 Anotação</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Descrição"
+              placeholder="Descreva a interação realizada com o cliente..."
+              value={interactionData.notes}
+              onChange={(e) => setInteractionData(prev => ({ ...prev, notes: e.target.value }))}
+              required
+            />
+
+            <TextField
+              fullWidth
+              type="datetime-local"
+              label="Agendar Follow-up (opcional)"
+              value={interactionData.followUpDate}
+              onChange={(e) => setInteractionData(prev => ({ ...prev, followUpDate: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+              helperText="Deixe em branco se não quiser agendar retorno"
+            />
+
+            {lead.customer?.nome && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Esta interação será registrada para o cliente: <strong>{lead.customer.nome}</strong>
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInteractionModalOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveInteraction}
+            disabled={savingInteraction || !interactionData.notes.trim()}
+            startIcon={savingInteraction ? <CircularProgress size={20} /> : <AddIcon />}
+          >
+            {savingInteraction ? 'Salvando...' : 'Registrar Interação'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Container >
