@@ -462,7 +462,6 @@ function LeadDetailPage() {
     try {
       await interactionsService.create({
         customerId: lead.customerId,
-        leadId: lead.id,
         type: interactionData.type,
         description: interactionData.notes,
         followUpDate: interactionData.followUpDate || null
