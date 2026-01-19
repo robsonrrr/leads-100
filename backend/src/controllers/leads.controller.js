@@ -883,37 +883,30 @@ export async function updateItem(req, res, next) {
     // Um acessório pode ser usado por múltiplas máquinas, então precisamos somar todas
     if (value.quantity !== undefined && value.quantity !== existingItem.qProduct) {
       try {
+        // Buscar TODOS os itens do lead (exceto acessórios puros) com seus motor/tampo
+        const [allLeadItems] = await db.execute(`
+          SELECT c.cProduct, c.qProduct, i.motor, i.tampo
+          FROM mak.cart c
+          INNER JOIN mak.inv i ON i.id = c.cProduct
+          WHERE c.cSCart = ?
+            AND c.cProduct != ?
+        `, [leadId, productId]);
+
+        // Para cada acessório do produto atual
         for (const accessoryId of accessoryIds) {
-          // Buscar TODOS os produtos no lead que usam este acessório
-          const [productsUsingAccessory] = await db.execute(`
-            SELECT c.cProduct, c.qProduct, i.motor, i.tampo
-            FROM mak.cart c
-            INNER JOIN mak.inv i ON i.id = c.cProduct
-            WHERE c.cSCart = ?
-              AND c.cProduct != ?
-              AND (
-                FIND_IN_SET(?, REPLACE(REPLACE(i.motor, ' ', ','), '|', ',')) > 0
-                OR FIND_IN_SET(?, REPLACE(REPLACE(i.tampo, ' ', ','), '|', ',')) > 0
-              )
-          `, [leadId, accessoryId, accessoryId, accessoryId]);
-
           // Calcular quantidade total necessária do acessório
-          // = soma das quantidades de todas as máquinas que usam este acessório
-          let totalQuantityNeeded = 0;
+          // = quantidade do produto atualizado + soma de outros produtos que usam este acessório
+          let totalQuantityNeeded = parseFloat(value.quantity) || 0;
 
-          // Adicionar a quantidade do item que acabamos de atualizar
-          const updatedProductAccessories = [
-            ...parseAccessoryIds((await db.execute('SELECT motor FROM inv WHERE id = ?', [productId]))[0]?.[0]?.motor),
-            ...parseAccessoryIds((await db.execute('SELECT tampo FROM inv WHERE id = ?', [productId]))[0]?.[0]?.tampo)
-          ];
+          // Verificar outros produtos no lead que também usam este acessório
+          for (const row of allLeadItems) {
+            const rowMotorIds = parseAccessoryIds(row.motor);
+            const rowTampoIds = parseAccessoryIds(row.tampo);
+            const rowAccessories = [...rowMotorIds, ...rowTampoIds];
 
-          if (updatedProductAccessories.includes(accessoryId)) {
-            totalQuantityNeeded += parseFloat(value.quantity) || 0;
-          }
-
-          // Adicionar quantidades de outras máquinas que usam este acessório
-          for (const row of productsUsingAccessory) {
-            totalQuantityNeeded += parseFloat(row.qProduct) || 0;
+            if (rowAccessories.includes(accessoryId)) {
+              totalQuantityNeeded += parseFloat(row.qProduct) || 0;
+            }
           }
 
           // Atualizar a quantidade do acessório
