@@ -223,5 +223,26 @@ router.delete('/customer-links/:id',
  */
 router.get('/customer-links/stats', AdminController.getCustomerLinksStats)
 
+/**
+ * GET /api/admin/customer-links/unlinked
+ * Listar contatos SuperBot não vinculados
+ */
+router.get('/customer-links/unlinked', AdminController.getUnlinkedSuperbotCustomers)
+
+/**
+ * GET /api/admin/customer-links/search-leads
+ * Buscar clientes leads-agent para vincular
+ */
+router.get('/customer-links/search-leads', AdminController.searchLeadsCustomers)
+
+/**
+ * POST /api/admin/customer-links/auto-link
+ * Vinculação automática em massa por telefone
+ */
+router.post('/customer-links/auto-link',
+    logAdminAction('AUTO_LINK_CUSTOMERS'),
+    AdminController.autoLinkCustomers
+)
+
 export default router
 

@@ -942,6 +942,228 @@ const getCustomerLinksStats = async (req, res) => {
     }
 }
 
+/**
+ * POST /api/admin/customer-links/auto-link
+ * Vinculação automática em massa por telefone
+ */
+const autoLinkCustomers = async (req, res) => {
+    try {
+        const linked_by = req.user?.userId
+        const { dryRun = false } = req.body // Se true, apenas simula sem criar
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        // Buscar contatos SuperBot não vinculados e encontrar matches por telefone
+        // A tabela cr.contatos contém os telefones dos clientes (campo fone1, fone2)
+        // Normaliza telefones para comparar apenas os últimos 9 dígitos
+        const [candidates] = await db.execute(`
+            SELECT DISTINCT
+                sc.id as superbot_customer_id,
+                sc.phone_number as superbot_phone,
+                sc.name as superbot_name,
+                sc.push_name,
+                c.id as leads_customer_id,
+                c.nome as leads_customer_name,
+                COALESCE(ct.fone1, ct.fone2, c.fone) as leads_phone,
+                c.cnpj
+            FROM superbot.superbot_customers sc
+            INNER JOIN cr.contatos ct ON (
+                -- Match por últimos 9 dígitos (ignora código de país e DDD)
+                RIGHT(REGEXP_REPLACE(sc.phone_number, '[^0-9]', ''), 9) = 
+                RIGHT(REGEXP_REPLACE(ct.fone1, '[^0-9]', ''), 9)
+                AND LENGTH(REGEXP_REPLACE(ct.fone1, '[^0-9]', '')) >= 9
+            ) OR (
+                RIGHT(REGEXP_REPLACE(sc.phone_number, '[^0-9]', ''), 9) = 
+                RIGHT(REGEXP_REPLACE(ct.fone2, '[^0-9]', ''), 9)
+                AND LENGTH(REGEXP_REPLACE(ct.fone2, '[^0-9]', '')) >= 9
+            )
+            INNER JOIN mak.clientes c ON c.id = ct.cliente
+            LEFT JOIN superbot.superbot_customer_links scl ON scl.superbot_customer_id = sc.id
+            WHERE sc.is_group = 0
+              AND scl.id IS NULL  -- Apenas não vinculados
+            ORDER BY sc.phone_number
+        `)
+
+        if (dryRun) {
+            // Modo simulação - apenas retorna os candidatos
+            return res.json({
+                success: true,
+                dryRun: true,
+                message: `${candidates.length} vinculações podem ser criadas automaticamente`,
+                data: candidates.slice(0, 100) // Limita a 100 para preview
+            })
+        }
+
+        // Criar vinculações em batch
+        let created = 0
+        let errors = []
+
+        for (const candidate of candidates) {
+            try {
+                await db.execute(`
+                    INSERT INTO superbot.superbot_customer_links 
+                    (superbot_customer_id, leads_customer_id, linked_by, confidence_score, verified, notes)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `, [
+                    candidate.superbot_customer_id,
+                    candidate.leads_customer_id,
+                    linked_by,
+                    80, // Score de 80% para vinculações automáticas
+                    0,  // Não verificado (auto-link)
+                    'Vinculação automática por telefone'
+                ])
+                created++
+            } catch (err) {
+                // Ignora duplicados e continua
+                if (!err.message.includes('Duplicate')) {
+                    errors.push({
+                        superbot_id: candidate.superbot_customer_id,
+                        leads_id: candidate.leads_customer_id,
+                        error: err.message
+                    })
+                }
+            }
+        }
+
+        logger.info('🔗 Auto-link concluído', {
+            total_candidates: candidates.length,
+            created,
+            errors: errors.length,
+            linked_by
+        })
+
+        res.json({
+            success: true,
+            message: `Vinculação automática concluída`,
+            data: {
+                candidates: candidates.length,
+                created,
+                errors: errors.length,
+                errorDetails: errors.slice(0, 10) // Mostra apenas 10 erros
+            }
+        })
+    } catch (error) {
+        logger.error('Erro no auto-link:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Erro na vinculação automática',
+            message: error.message
+        })
+    }
+}
+
+/**
+ * GET /api/admin/customer-links/unlinked
+ * Listar contatos SuperBot ainda não vinculados (para vinculação manual)
+ */
+const getUnlinkedSuperbotCustomers = async (req, res) => {
+    try {
+        const { page = 1, limit = 50, search } = req.query
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        let query = `
+            SELECT 
+                sc.id,
+                sc.phone_number,
+                sc.name,
+                sc.push_name,
+                sc.created_at,
+                (
+                    SELECT COUNT(*) 
+                    FROM superbot.messages m 
+                    WHERE m.sender_phone = sc.phone_number 
+                       OR m.recipient_phone = sc.phone_number
+                ) as message_count
+            FROM superbot.superbot_customers sc
+            LEFT JOIN superbot.superbot_customer_links scl ON scl.superbot_customer_id = sc.id
+            WHERE sc.is_group = 0
+              AND scl.id IS NULL
+        `
+        const params = []
+
+        if (search) {
+            query += ' AND (sc.phone_number LIKE ? OR sc.name LIKE ? OR sc.push_name LIKE ?)'
+            const term = `%${search}%`
+            params.push(term, term, term)
+        }
+
+        query += ' ORDER BY message_count DESC, sc.created_at DESC'
+        query += ` LIMIT ${parseInt(limit)} OFFSET ${(parseInt(page) - 1) * parseInt(limit)}`
+
+        const [customers] = await db.execute(query, params)
+
+        // Total não vinculados
+        const [countResult] = await db.execute(`
+            SELECT COUNT(*) as total
+            FROM superbot.superbot_customers sc
+            LEFT JOIN superbot.superbot_customer_links scl ON scl.superbot_customer_id = sc.id
+            WHERE sc.is_group = 0 AND scl.id IS NULL
+        `)
+
+        res.json({
+            success: true,
+            data: customers,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: countResult[0].total
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao listar não vinculados:', error)
+        res.status(500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * GET /api/admin/customer-links/search-leads
+ * Buscar clientes do leads-agent para vincular manualmente
+ */
+const searchLeadsCustomers = async (req, res) => {
+    try {
+        const { q, limit = 20 } = req.query
+
+        if (!q || q.length < 2) {
+            return res.json({ success: true, data: [] })
+        }
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        const [customers] = await db.execute(`
+            SELECT 
+                id,
+                nome,
+                fantasia,
+                cnpj,
+                fone,
+                cidade,
+                estado
+            FROM mak.clientes
+            WHERE nome LIKE ? 
+               OR fantasia LIKE ? 
+               OR cnpj LIKE ?
+               OR fone LIKE ?
+            ORDER BY nome
+            LIMIT ?
+        `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, parseInt(limit)])
+
+        res.json({
+            success: true,
+            data: customers
+        })
+    } catch (error) {
+        logger.error('Erro ao buscar clientes:', error)
+        res.status(500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
 export default {
     listUsers,
     getUserById,
@@ -966,6 +1188,9 @@ export default {
     createCustomerLink,
     updateCustomerLink,
     deleteCustomerLink,
-    getCustomerLinksStats
+    getCustomerLinksStats,
+    autoLinkCustomers,
+    getUnlinkedSuperbotCustomers,
+    searchLeadsCustomers
 }
 
