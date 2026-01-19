@@ -89,6 +89,8 @@ const WhatsAppPage = () => {
     const [viewMode, setViewMode] = useState('conversations') // 'conversations' | 'dashboard'
     const [isFilteredBySeller, setIsFilteredBySeller] = useState(false)
     const [currentUser, setCurrentUser] = useState(null)
+    const [sellers, setSellers] = useState([]) // Lista de vendedores para filtro
+    const [selectedSeller, setSelectedSeller] = useState(null) // Vendedor selecionado para filtro
 
     // Carregar usuário do localStorage
     useEffect(() => {
@@ -106,6 +108,10 @@ const WhatsAppPage = () => {
     useEffect(() => {
         if (currentUser !== null) {
             loadCustomers()
+            // Se for admin/gerente, carregar lista de vendedores
+            if (currentUser.level >= 4) {
+                loadSellers()
+            }
         }
         loadWebhookStatus()
     }, [currentUser])
@@ -119,19 +125,26 @@ const WhatsAppPage = () => {
 
     // Filtrar clientes
     useEffect(() => {
-        if (!searchTerm) {
-            setFilteredCustomers(customers)
-            return
+        let filtered = [...customers]
+
+        // Filtro por vendedor (para admins/gerentes)
+        if (selectedSeller) {
+            filtered = filtered.filter(c => c.seller_name === selectedSeller)
         }
 
-        const term = searchTerm.toLowerCase()
-        const filtered = customers.filter(c =>
-            c.name?.toLowerCase().includes(term) ||
-            c.push_name?.toLowerCase().includes(term) ||
-            c.phone_number?.includes(term)
-        )
+        // Filtro por termo de busca
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase()
+            filtered = filtered.filter(c =>
+                c.name?.toLowerCase().includes(term) ||
+                c.push_name?.toLowerCase().includes(term) ||
+                c.phone_number?.includes(term) ||
+                c.seller_name?.toLowerCase().includes(term)
+            )
+        }
+
         setFilteredCustomers(filtered)
-    }, [searchTerm, customers])
+    }, [searchTerm, customers, selectedSeller])
 
     const loadCustomers = async () => {
         setLoading(true)
@@ -177,6 +190,20 @@ const WhatsAppPage = () => {
             setWebhookStatus(response.data?.data)
         } catch (err) {
             console.error('Erro ao carregar status:', err)
+        }
+    }
+
+    // Carregar lista de vendedores (para filtro de admins)
+    const loadSellers = async () => {
+        try {
+            const response = await superbotService.getSellerPhones()
+            const phones = response.data?.data || []
+
+            // Agrupar por vendedor (nome único)
+            const uniqueSellers = [...new Set(phones.map(p => p.seller_name).filter(Boolean))]
+            setSellers(uniqueSellers.sort())
+        } catch (err) {
+            console.error('Erro ao carregar vendedores:', err)
         }
     }
 
@@ -315,6 +342,51 @@ const WhatsAppPage = () => {
 
                             <Divider />
 
+                            {/* Filtro por Vendedor (apenas para admins/gerentes) */}
+                            {currentUser?.level >= 4 && sellers.length > 0 && (
+                                <>
+                                    <Box sx={{ p: 1.5, bgcolor: 'grey.50' }}>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ display: 'block', mb: 1, fontWeight: 500 }}
+                                        >
+                                            Filtrar por vendedor:
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            <Chip
+                                                label="Todos"
+                                                size="small"
+                                                variant={selectedSeller === null ? 'filled' : 'outlined'}
+                                                color={selectedSeller === null ? 'primary' : 'default'}
+                                                onClick={() => setSelectedSeller(null)}
+                                                sx={{ fontSize: '0.7rem' }}
+                                            />
+                                            {sellers.map((seller) => (
+                                                <Chip
+                                                    key={seller}
+                                                    label={seller}
+                                                    size="small"
+                                                    variant={selectedSeller === seller ? 'filled' : 'outlined'}
+                                                    color={selectedSeller === seller ? 'primary' : 'default'}
+                                                    onClick={() => setSelectedSeller(seller === selectedSeller ? null : seller)}
+                                                    sx={{ fontSize: '0.7rem' }}
+                                                />
+                                            ))}
+                                        </Box>
+                                        {selectedSeller && (
+                                            <Typography
+                                                variant="caption"
+                                                color="primary.main"
+                                                sx={{ display: 'block', mt: 1 }}
+                                            >
+                                                Mostrando {filteredCustomers.length} contatos de {selectedSeller}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    <Divider />
+                                </>
+                            )}
                             {/* Customer List */}
                             <Box sx={{ flex: 1, overflowY: 'auto' }}>
                                 {loading ? (
