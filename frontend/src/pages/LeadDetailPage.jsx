@@ -48,7 +48,7 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon
 } from '@mui/icons-material'
-import { leadsService } from '../services/api'
+import { leadsService, customersService } from '../services/api'
 import CartItems from '../components/CartItems'
 import CartRecommendations from '../components/CartRecommendations'
 import MakPrimeLogo from '../components/MakPrimeLogo'
@@ -82,6 +82,11 @@ function LeadDetailPage() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const [emailAddress, setEmailAddress] = useState('')
   const [stockIssues, setStockIssues] = useState([]) // Lista de itens com estoque insuficiente na unidade
+
+  // Modal de detalhes do cliente
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
+  const [customerDetails, setCustomerDetails] = useState(null)
+  const [loadingCustomer, setLoadingCustomer] = useState(false)
 
   const [conversionFormData, setConversionFormData] = useState({
     cTransporter: '',
@@ -402,6 +407,32 @@ function LeadDetailPage() {
     }
   }
 
+  // Abrir modal de detalhes do cliente
+  const handleOpenCustomerModal = async () => {
+    if (!lead.customerId) return
+
+    setCustomerModalOpen(true)
+    setLoadingCustomer(true)
+
+    try {
+      const [customerRes, metricsRes, ordersRes] = await Promise.all([
+        customersService.getById(lead.customerId),
+        customersService.getMetrics(lead.customerId).catch(() => null),
+        customersService.getOrders(lead.customerId, { limit: 5 }).catch(() => null)
+      ])
+
+      setCustomerDetails({
+        ...customerRes.data.data,
+        metrics: metricsRes?.data?.data || null,
+        recentOrders: ordersRes?.data?.data || []
+      })
+    } catch (err) {
+      toast.showError('Erro ao carregar detalhes do cliente')
+    } finally {
+      setLoadingCustomer(false)
+    }
+  }
+
   const formatPaymentTerms = () => {
     // Verificar se algum item é do segmento "machines"
     const hasMachinesSegment = items.some(item => {
@@ -663,27 +694,57 @@ function LeadDetailPage() {
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 0.5,
+                    cursor: lead.customerId ? 'pointer' : 'default'
+                  }}
+                  onClick={handleOpenCustomerModal}
+                >
                   <PersonIcon fontSize="small" color="primary" />
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                     Cliente
                   </Typography>
                 </Box>
-                <Typography variant="body1" sx={{ fontWeight: 600, ml: 4 }}>
-                  {lead.customer?.nome || (lead.customerId ? `Cliente #${lead.customerId}` : '-')}
-                </Typography>
-                {lead.customer?.ender && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, ml: 4 }}>
-                    {lead.customer.ender}
+                <Box
+                  sx={{
+                    ml: 4,
+                    cursor: lead.customerId ? 'pointer' : 'default',
+                    '&:hover': lead.customerId ? {
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                      mx: -1,
+                      px: 1,
+                      ml: 3
+                    } : {},
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={handleOpenCustomerModal}
+                >
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: lead.customerId ? 'primary.main' : 'inherit' }}>
+                    {lead.customer?.nome || (lead.customerId ? `Cliente #${lead.customerId}` : '-')}
+                    {lead.customerId && (
+                      <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                        (clique para detalhes)
+                      </Typography>
+                    )}
                   </Typography>
-                )}
-                {(lead.customer?.cidade || lead.customer?.estado) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
-                    {lead.customer.cidade || ''}
-                    {lead.customer.cidade && lead.customer.estado ? ' - ' : ''}
-                    {lead.customer.estado || ''}
-                  </Typography>
-                )}
+                  {lead.customer?.ender && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {lead.customer.ender}
+                    </Typography>
+                  )}
+                  {(lead.customer?.cidade || lead.customer?.estado) && (
+                    <Typography variant="body2" color="text.secondary">
+                      {lead.customer.cidade || ''}
+                      {lead.customer.cidade && lead.customer.estado ? ' - ' : ''}
+                      {lead.customer.estado || ''}
+                    </Typography>
+                  )}
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -1675,6 +1736,201 @@ function LeadDetailPage() {
         lead={lead}
         defaultEmail={lead?.customer?.email || emailAddress}
       />
+
+      {/* Modal de Detalhes do Cliente */}
+      <Dialog
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PersonIcon color="primary" />
+          Detalhes do Cliente
+        </DialogTitle>
+        <DialogContent dividers>
+          {loadingCustomer ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : customerDetails ? (
+            <Grid container spacing={3}>
+              {/* Informações Básicas */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                  {customerDetails.nome}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {customerDetails.cnpj && (
+                    <Chip label={`CNPJ: ${customerDetails.cnpj}`} size="small" variant="outlined" />
+                  )}
+                  {customerDetails.ie && (
+                    <Chip label={`IE: ${customerDetails.ie}`} size="small" variant="outlined" />
+                  )}
+                  {customerDetails.segmento && (
+                    <Chip label={customerDetails.segmento} size="small" color="primary" />
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Contato */}
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
+                      📞 Contato
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {customerDetails.fone && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PhoneIcon fontSize="small" color="action" />
+                          <Typography variant="body2">{customerDetails.fone}</Typography>
+                        </Box>
+                      )}
+                      {customerDetails.email && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <EmailIcon fontSize="small" color="action" />
+                          <Typography variant="body2">{customerDetails.email}</Typography>
+                        </Box>
+                      )}
+                      {customerDetails.contato && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PersonIcon fontSize="small" color="action" />
+                          <Typography variant="body2">Contato: {customerDetails.contato}</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Endereço */}
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
+                      📍 Endereço
+                    </Typography>
+                    <Typography variant="body2">
+                      {customerDetails.ender && `${customerDetails.ender}, `}
+                      {customerDetails.numero && `nº ${customerDetails.numero}`}
+                    </Typography>
+                    {customerDetails.bairro && (
+                      <Typography variant="body2" color="text.secondary">
+                        {customerDetails.bairro}
+                      </Typography>
+                    )}
+                    <Typography variant="body2">
+                      {customerDetails.cidade && customerDetails.cidade}
+                      {customerDetails.estado && ` - ${customerDetails.estado}`}
+                    </Typography>
+                    {customerDetails.cep && (
+                      <Typography variant="body2" color="text.secondary">
+                        CEP: {customerDetails.cep}
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Métricas */}
+              {customerDetails.metrics && (
+                <Grid item xs={12}>
+                  <Card variant="outlined" sx={{ bgcolor: 'primary.lighter' }}>
+                    <CardContent>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
+                        📊 Métricas
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2" color="text.secondary">Total Pedidos</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {customerDetails.metrics.totalOrders || 0}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2" color="text.secondary">Total Faturado</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                            {formatCurrency(customerDetails.metrics.totalRevenue || 0)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2" color="text.secondary">Ticket Médio</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {formatCurrency(customerDetails.metrics.avgTicket || 0)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2" color="text.secondary">Último Pedido</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {customerDetails.metrics.lastOrderDate ? formatDate(customerDetails.metrics.lastOrderDate) : '-'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+
+              {/* Pedidos Recentes */}
+              {customerDetails.recentOrders && customerDetails.recentOrders.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
+                    📦 Pedidos Recentes
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Pedido</TableCell>
+                          <TableCell>Data</TableCell>
+                          <TableCell align="right">Valor</TableCell>
+                          <TableCell>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {customerDetails.recentOrders.map((order, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>#{order.id || order.cOrderWeb}</TableCell>
+                            <TableCell>{formatDate(order.date || order.dOrder)}</TableCell>
+                            <TableCell align="right">{formatCurrency(order.total || order.vTotal || 0)}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={order.status || 'Concluído'}
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              )}
+            </Grid>
+          ) : (
+            <Typography color="text.secondary" align="center">
+              Nenhum dado disponível
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCustomerModalOpen(false)}>Fechar</Button>
+          {customerDetails && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setCustomerModalOpen(false)
+                navigate(`/customers/${lead.customerId}`)
+              }}
+            >
+              Ver Página Completa
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Container >
   )
 }
