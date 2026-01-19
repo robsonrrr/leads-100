@@ -3,6 +3,7 @@ import pricingRoutes from './routes/pricing.v2.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import userPreferencesRoutes from './routes/user.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import tasksRoutes from './routes/tasks.routes.js';
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.use('/pricing', pricingRoutes);
 router.use('/ai', aiRoutes);
 router.use('/user', userPreferencesRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/tasks', tasksRoutes);
 
 // More V2 routes will be added here (e.g., /ia, /automation)
 

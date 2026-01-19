@@ -36,7 +36,8 @@ import {
   GpsFixed as TargetIcon,
   Inventory as ProductsIcon,
   WhatsApp as WhatsAppIcon,
-  AdminPanelSettings as AdminIcon
+  AdminPanelSettings as AdminIcon,
+  ChecklistRtl as TasksIcon
 } from '@mui/icons-material'
 import { logout } from '../store/slices/authSlice'
 import { interactionsService } from '../services/api'
@@ -154,11 +155,13 @@ function Layout({ children }) {
   const userLevel = user?.level ?? user?.nivel ?? getJwtLevel(token) ?? 0
   const isManager = userLevel > 4
   const isRestricted = userLevel < 4
+  const isLevelLessThan5 = userLevel < 5  // Para ocultar WhatsApp e Produtos
 
   const menuItems = [
     ...(!isRestricted ? [{ text: 'Dashboard', icon: <Badge badgeContent={followUpCount} color="error" max={9}><DashboardIcon /></Badge>, path: '/' }] : []),
+    { text: '📋 Seu Dia', icon: <TasksIcon sx={{ color: '#667eea' }} />, path: '/tasks' },
     { text: 'Leads', icon: <ListAltIcon />, path: '/leads' },
-    { text: 'Produtos', icon: <ProductsIcon />, path: '/products' },
+    ...(!isLevelLessThan5 ? [{ text: 'Produtos', icon: <ProductsIcon />, path: '/products' }] : []),
     { text: 'Minha Carteira', icon: <PeopleIcon />, path: '/customers' },
     ...(!isRestricted ? [{ text: 'Analytics', icon: <BarChartIcon />, path: '/analytics' }] : []),
     { text: 'Metas por Cliente', icon: <TargetIcon />, path: '/metas-por-cliente' },
@@ -167,7 +170,7 @@ function Layout({ children }) {
     { text: 'Lançamentos', icon: <PromotionsIcon />, path: '/pricing/launch-products' },
     ...(isManager ? [{ text: 'Metas', icon: <FlagIcon />, path: '/goals' }] : []),
     ...(!isRestricted ? [{ text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' }] : []),
-    { text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp' },
+    ...(!isLevelLessThan5 ? [{ text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp' }] : []),
     { text: 'Novo Lead', icon: <AddIcon />, path: '/leads/new' },
     { text: 'Segurança', icon: <SecurityIcon />, path: '/security' },
     ...(isManager ? [{ text: 'Admin', icon: <AdminIcon sx={{ color: '#1a237e' }} />, path: '/admin' }] : []),

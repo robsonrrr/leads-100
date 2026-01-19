@@ -98,37 +98,10 @@ export default defineConfig(({ mode }) => {
         output: {
           assetFileNames: 'assets/[name]-[hash][extname]',
           chunkFileNames: 'assets/[name]-[hash].js',
-          entryFileNames: 'assets/[name]-[hash].js',
-          // Code splitting: separar vendors grandes
-          manualChunks: (id) => {
-            // React e React-DOM em chunk separado (muda raramente)
-            if (id.includes('node_modules/react') ||
-              id.includes('node_modules/react-dom') ||
-              id.includes('node_modules/scheduler')) {
-              return 'react-vendor';
-            }
-            // MUI em chunk separado (grande, muda pouco)
-            if (id.includes('@mui/material') ||
-              id.includes('@mui/icons-material') ||
-              id.includes('@emotion')) {
-              return 'mui-vendor';
-            }
-            // Charts em chunk separado (grande, usado só em analytics)
-            if (id.includes('recharts') ||
-              id.includes('chart.js') ||
-              id.includes('d3')) {
-              return 'charts-vendor';
-            }
-            // Redux em chunk separado
-            if (id.includes('redux') ||
-              id.includes('@reduxjs')) {
-              return 'redux-vendor';
-            }
-            // Outras libs de terceiros
-            if (id.includes('node_modules')) {
-              return 'vendor';
-            }
-          }
+          entryFileNames: 'assets/[name]-[hash].js'
+          // Code splitting removido - deixar Vite decidir automaticamente
+          // Manual chunks causava problemas de ordem de inicialização 
+          // (ex: useSyncExternalStore sendo chamado antes do React definir)
         }
       }
     }

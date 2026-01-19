@@ -29,6 +29,7 @@ const LeadMailView = lazy(() => import('./pages/LeadMailView'))
 const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
+const DailyTasksPage = lazy(() => import('./pages/DailyTasksPage'))
 
 // Admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -70,6 +71,7 @@ function App() {
 
   const userLevel = user?.level ?? user?.nivel ?? getJwtLevel(token) ?? 0
   const isRestricted = userLevel < 4
+  const isLevelLessThan5 = userLevel < 5  // Para ocultar WhatsApp e Produtos
 
   return (
     <ThemeProvider theme={theme}>
@@ -85,7 +87,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Layout>
-                      {isRestricted ? <Navigate to="/metas-por-cliente" replace /> : <DashboardPage />}
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : (isRestricted ? <Navigate to="/metas-por-cliente" replace /> : <DashboardPage />)}
                     </Layout>
                   </ProtectedRoute>
                 }
@@ -110,7 +112,16 @@ function App() {
                 }
               />
               <Route path="/promotions" element={<ProtectedRoute><Layout><PromotionsPage /></Layout></ProtectedRoute>} />
-              <Route path="/products" element={<ProtectedRoute><Layout><ProductsPage /></Layout></ProtectedRoute>} />
+              <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <ProductsPage />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/pricing/quantity-discounts" element={<ProtectedRoute><Layout><QuantityDiscountsPage /></Layout></ProtectedRoute>} />
               <Route path="/pricing/launch-products" element={<ProtectedRoute><Layout><LaunchProductsPage /></Layout></ProtectedRoute>} />
               <Route path="/goals" element={<ProtectedRoute><Layout><GoalsPage /></Layout></ProtectedRoute>} />
@@ -127,8 +138,27 @@ function App() {
                 }
               />
               <Route path="/security" element={<ProtectedRoute><Layout><SecurityPage /></Layout></ProtectedRoute>} />
-              <Route path="/whatsapp" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
-              <Route path="/whatsapp/:phone" element={<ProtectedRoute><Layout><WhatsAppPage /></Layout></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute><Layout><DailyTasksPage /></Layout></ProtectedRoute>} />
+              <Route
+                path="/whatsapp"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <WhatsAppPage />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/whatsapp/:phone"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <WhatsAppPage />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Admin Routes (level >= 5) */}
               <Route
