@@ -954,7 +954,7 @@ const autoLinkCustomers = async (req, res) => {
         const db = (await import('../config/database.js')).getDatabase()
 
         // Buscar contatos SuperBot não vinculados e encontrar matches por telefone
-        // A tabela crm.contatos contém os telefones dos clientes (campo fone1, fone2)
+        // Usa crm.contatos.whatsapp_norm para match e crm.contatos.cliente_id para link
         // Normaliza telefones para comparar apenas os últimos 9 dígitos
         const [candidates] = await db.execute(`
             SELECT DISTINCT
@@ -964,20 +964,16 @@ const autoLinkCustomers = async (req, res) => {
                 sc.push_name,
                 c.id as leads_customer_id,
                 c.nome as leads_customer_name,
-                COALESCE(ct.fone1, ct.fone2, c.fone) as leads_phone,
+                ct.whatsapp_norm as leads_phone,
                 c.cnpj
             FROM superbot.superbot_customers sc
             INNER JOIN crm.contatos ct ON (
                 -- Match por últimos 9 dígitos (ignora código de país e DDD)
                 RIGHT(REGEXP_REPLACE(sc.phone_number, '[^0-9]', ''), 9) = 
-                RIGHT(REGEXP_REPLACE(ct.fone1, '[^0-9]', ''), 9)
-                AND LENGTH(REGEXP_REPLACE(ct.fone1, '[^0-9]', '')) >= 9
-            ) OR (
-                RIGHT(REGEXP_REPLACE(sc.phone_number, '[^0-9]', ''), 9) = 
-                RIGHT(REGEXP_REPLACE(ct.fone2, '[^0-9]', ''), 9)
-                AND LENGTH(REGEXP_REPLACE(ct.fone2, '[^0-9]', '')) >= 9
+                RIGHT(REGEXP_REPLACE(ct.whatsapp_norm, '[^0-9]', ''), 9)
+                AND LENGTH(REGEXP_REPLACE(ct.whatsapp_norm, '[^0-9]', '')) >= 9
             )
-            INNER JOIN mak.clientes c ON c.id = ct.cliente
+            INNER JOIN mak.clientes c ON c.id = ct.cliente_id
             LEFT JOIN superbot.superbot_customer_links scl ON scl.superbot_customer_id = sc.id
             WHERE sc.is_group = 0
               AND scl.id IS NULL  -- Apenas não vinculados
@@ -1141,22 +1137,21 @@ const searchLeadsCustomers = async (req, res) => {
                 c.nome,
                 c.fantasia,
                 c.cnpj,
-                COALESCE(ct.fone1, ct.fone2, c.fone) as fone,
+                COALESCE(ct.whatsapp_norm, c.fone) as fone,
                 c.cidade,
                 c.estado,
                 ct.nome as contato_nome
             FROM mak.clientes c
-            LEFT JOIN crm.contatos ct ON ct.cliente = c.id
+            LEFT JOIN crm.contatos ct ON ct.cliente_id = c.id
             WHERE c.nome LIKE ? 
                OR c.fantasia LIKE ? 
                OR c.cnpj LIKE ?
                OR c.fone LIKE ?
-               OR ct.fone1 LIKE ?
-               OR ct.fone2 LIKE ?
+               OR ct.whatsapp_norm LIKE ?
                OR ct.nome LIKE ?
             ORDER BY c.nome
             LIMIT ?
-        `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, parseInt(limit)])
+        `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, parseInt(limit)])
 
         res.json({
             success: true,
