@@ -30,6 +30,7 @@ const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 const DailyTasksPage = lazy(() => import('./pages/DailyTasksPage'))
+const HelpPage = lazy(() => import('./pages/HelpPage'))
 
 // Admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -140,6 +141,7 @@ function App() {
               />
               <Route path="/security" element={<ProtectedRoute><Layout><SecurityPage /></Layout></ProtectedRoute>} />
               <Route path="/tasks" element={<ProtectedRoute><Layout><DailyTasksPage /></Layout></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><Layout><HelpPage /></Layout></ProtectedRoute>} />
               <Route
                 path="/whatsapp"
                 element={

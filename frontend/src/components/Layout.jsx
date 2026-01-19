@@ -37,7 +37,8 @@ import {
   Inventory as ProductsIcon,
   WhatsApp as WhatsAppIcon,
   AdminPanelSettings as AdminIcon,
-  ChecklistRtl as TasksIcon
+  ChecklistRtl as TasksIcon,
+  Help as HelpIcon
 } from '@mui/icons-material'
 import { logout } from '../store/slices/authSlice'
 import { interactionsService } from '../services/api'
@@ -174,6 +175,7 @@ function Layout({ children }) {
     { text: 'Novo Lead', icon: <AddIcon />, path: '/leads/new' },
     { text: 'Segurança', icon: <SecurityIcon />, path: '/security' },
     ...(isManager ? [{ text: 'Admin', icon: <AdminIcon sx={{ color: '#1a237e' }} />, path: '/admin' }] : []),
+    { text: 'Ajuda', icon: <HelpIcon sx={{ color: '#0288d1' }} />, path: '/help' },
   ]
 
   // Versão do app (importada do package.json via Vite)
