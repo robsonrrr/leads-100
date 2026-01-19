@@ -117,6 +117,7 @@ export async function getLeads(req, res, next) {
       filters.search = String(req.query.q).trim();
     }
     if (req.query.type !== undefined) filters.type = parseInt(req.query.type);
+    if (req.query.cType !== undefined) filters.type = parseInt(req.query.cType); // Alias para compatibilidade
     if (req.query.cSegment !== undefined && req.query.cSegment !== '') {
       filters.cSegment = req.query.cSegment === 'null' ? null : req.query.cSegment;
     }
@@ -141,10 +142,9 @@ export async function getLeads(req, res, next) {
       }
     }
 
-    // Se não especificado, filtra apenas leads (tipo 1)
-    if (filters.type === undefined) {
-      filters.type = 1;
-    }
+    // Se não especificado, filtrar tipos 1 (Ativo) e 2 (Receptivo), excluindo 99 (deletados)
+    // Não definir filters.type permite que o repositório retorne todos (exceto 99)
+    // Quando filters.type está undefined, não aplica filtro de tipo
 
     // Ordenação
     const sortBy = req.query.sort || 'date'; // Padrão: data (mais novos primeiro)
@@ -1577,16 +1577,14 @@ export async function exportLeads(req, res, next) {
 
     // Filtros da query string
     if (req.query.type !== undefined) filters.type = parseInt(req.query.type);
+    if (req.query.cType !== undefined) filters.type = parseInt(req.query.cType); // Alias para compatibilidade
     if (req.query.dateFrom) filters.dateFrom = req.query.dateFrom;
     if (req.query.dateTo) filters.dateTo = req.query.dateTo;
     if (req.query.cSegment) filters.cSegment = req.query.cSegment;
     if (req.query.sellerId && userLevel > 4) filters.sellerId = parseInt(req.query.sellerId);
     if (req.query.sellerSegmento && userLevel > 4) filters.sellerSegmento = req.query.sellerSegmento;
 
-    // Status padrão: leads em aberto
-    if (filters.type === undefined) {
-      filters.type = 1;
-    }
+    // Se não especificado, o repositório já filtra para IN (1, 2) excluindo deletados
 
     // Limitar a 1000 registros para evitar problemas de memória
     const limit = Math.min(parseInt(req.query.limit) || 1000, 1000);

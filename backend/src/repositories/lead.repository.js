@@ -82,6 +82,9 @@ export class LeadRepository {
     if (filters.type !== undefined) {
       query += ' AND s.cType = ?';
       params.push(filters.type);
+    } else {
+      // Por padrão, mostrar apenas tipos 1 (Ativo) e 2 (Receptivo), excluindo 99 (deletados)
+      query += ' AND s.cType IN (1, 2)';
     }
 
     if (filters.cSegment !== undefined && filters.cSegment !== null && filters.cSegment !== '') {
@@ -181,6 +184,9 @@ export class LeadRepository {
     if (filters.type !== undefined) {
       countQuery += ' AND s.cType = ?';
       countParams.push(filters.type);
+    } else {
+      // Por padrão, mostrar apenas tipos 1 (Ativo) e 2 (Receptivo), excluindo 99 (deletados)
+      countQuery += ' AND s.cType IN (1, 2)';
     }
     if (filters.cSegment !== undefined && filters.cSegment !== null && filters.cSegment !== '') {
       // Se o filtro for "null" ou "sem-segmento", mostrar apenas leads sem segmento
