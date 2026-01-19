@@ -2,8 +2,8 @@
 
 ## Sistema de Gestão de Leads - Rolemak
 
-**Versão:** 1.0  
-**Última atualização:** Janeiro 2026
+**Versão:** 2.0  
+**Última atualização:** 19 de Janeiro 2026
 
 ---
 
@@ -19,9 +19,13 @@
 8. [Gestão de Leads da Equipe](#gestão-de-leads-da-equipe)
 9. [Carteira de Clientes](#carteira-de-clientes)
 10. [Relatórios Gerenciais](#relatórios-gerenciais)
-11. [Regras de Automação e Follow-up](#11-regras-de-automação-e-follow-up)
-12. [Monitoramento com Inteligência Artificial](#12-monitoramento-com-inteligência-artificial)
-13. [Dicas de Gestão](#13-dicas-de-gestão)
+11. [Painel Administrativo](#11-painel-administrativo) ⭐ NOVO
+12. [Integração WhatsApp (Superbot)](#12-integração-whatsapp-superbot) ⭐ NOVO
+13. [Daily Tasks (Lista do Dia)](#13-daily-tasks-lista-do-dia) ⭐ NOVO
+14. [Chatbot Decisório IA](#14-chatbot-decisório-ia) ⭐ NOVO
+15. [Regras de Automação e Follow-up](#15-regras-de-automação-e-follow-up)
+16. [Monitoramento com Inteligência Artificial](#16-monitoramento-com-inteligência-artificial)
+17. [Dicas de Gestão](#17-dicas-de-gestão)
 
 ---
 
@@ -44,9 +48,16 @@ Como gerente, você tem acesso a **todas as funcionalidades** do sistema:
 | Ver ranking de vendedores | ❌ | ✅ |
 | Acessar página de Metas | ❌ | ✅ |
 | Ver todos os clientes | ❌ | ✅ |
-| **Configurar Regras de Automação** | ❌ | ✅ |
-| **Monitorar Previsão (Forecast) da Equipe** | ❌ | ✅ |
-| **Receber Alertas de Risco de Churn** | ❌ | ✅ |
+| **Painel Administrativo** | ❌ | ✅ |
+| **Gestão de Usuários** | ❌ | ✅ |
+| **Vinculação de Telefones WhatsApp** | ❌ | ✅ |
+| **Vinculação de Clientes Superbot** | ❌ | ✅ |
+| **Configuração do Chatbot IA** | ❌ | ✅ |
+| **Logs de Auditoria** | ❌ | ✅ |
+| **Daily Tasks da Equipe** | ❌ | ✅ |
+| Configurar Regras de Automação | ❌ | ✅ |
+| Monitorar Previsão (Forecast) da Equipe | ❌ | ✅ |
+| Receber Alertas de Risco de Churn | ❌ | ✅ |
 
 ---
 
@@ -54,16 +65,22 @@ Como gerente, você tem acesso a **todas as funcionalidades** do sistema:
 
 ### URL de Acesso
 ```
-https://leads.internut.com.br/
+https://leads.vallery.com.br/
 ```
 
 ### Credenciais
 
 Use seu usuário e senha corporativos. Gerentes possuem **level 5 ou superior** no sistema.
 
-### Verificar seu Nível
+### Níveis de Acesso
 
-Após fazer login, seu nível é exibido no perfil. Se você não tem acesso às funcionalidades gerenciais, entre em contato com o administrador.
+| Level | Perfil | Permissões |
+|-------|--------|------------|
+| 1-2 | Vendedor | Acesso básico |
+| 3 | Vendedor Sênior | Acesso expandido |
+| 4 | Supervisor | Visão de equipe |
+| 5 | Gerente | Admin Panel + Equipe |
+| 6 | Administrador | Acesso total |
 
 ---
 
@@ -74,6 +91,8 @@ Após fazer login, seu nível é exibido no perfil. Se você não tem acesso às
 | Menu | Descrição |
 |------|-----------|
 | 🎯 **Metas** | Definir e acompanhar metas da equipe |
+| 📋 **Daily Tasks** | Lista de tarefas diárias da equipe |
+| 🛠️ **Admin** | Painel administrativo (Level 5+) |
 
 ### Filtros Adicionais no Header
 
@@ -100,17 +119,12 @@ Na parte superior, você verá um painel exclusivo com:
 
 Cada card mostra a **variação percentual** em relação ao mês anterior.
 
-### Filtros de Equipe
+### Widget WhatsApp (Novo!)
 
-No topo do Dashboard, você pode filtrar por:
-
-1. **Segmento do Vendedor**
-   - Selecione um segmento para ver apenas vendedores daquele grupo
-   - Ex: "Rolemak", "MakPrime"
-
-2. **Vendedor Específico**
-   - Use o autocomplete para selecionar um vendedor
-   - Todas as métricas e leads serão filtrados
+Novo widget que mostra métricas do WhatsApp:
+- **Mensagens Hoje:** Total de mensagens recebidas/enviadas
+- **Leads via WhatsApp:** Leads criados automaticamente
+- **Conversas Ativas:** Sessões ativas nas últimas 24h
 
 ### Ranking de Vendedores
 
@@ -118,17 +132,6 @@ Widget exclusivo que mostra:
 - Top vendedores do período
 - Valor total vendido
 - Comparativo entre vendedores
-
-### Lista de Leads da Equipe
-
-A tabela de leads mostra **todos os leads da equipe** (ou filtrados conforme seleção):
-
-| Coluna | Descrição |
-|--------|-----------|
-| **User** | Quem criou o lead |
-| **Seller** | Vendedor responsável |
-
-Você pode ver leads de qualquer vendedor e acompanhar o trabalho da equipe.
 
 ---
 
@@ -153,38 +156,7 @@ A página de metas exibe uma tabela com:
 | **Progresso** | Barra de progresso visual |
 | **Ações** | Botão para editar meta |
 
-### Filtros de Metas
-
-Use os filtros no topo:
-- **Ano:** Selecione o ano
-- **Mês:** Selecione o mês
-- **Segmento:** Filtre por segmento de vendedores
-
-### Criar Nova Meta
-
-1. Clique no botão **Nova Meta**
-2. Preencha o formulário:
-
-| Campo | Obrigatório | Descrição |
-|-------|-------------|-----------|
-| **Vendedor** | ✅ Sim | Selecione o vendedor |
-| **Ano** | ✅ Sim | Ano da meta |
-| **Período** | ✅ Sim | Mês específico ou "Anual" |
-| **Meta de Vendas (R$)** | ✅ Sim | Valor alvo |
-| **Meta de Pedidos** | Não | Quantidade de pedidos |
-| **Observações** | Não | Notas sobre a meta |
-
-3. Clique em **Salvar**
-
-### Editar Meta Existente
-
-1. Na tabela, clique no ícone ✏️ (lápis) na linha do vendedor
-2. Altere os valores desejados
-3. Clique em **Salvar**
-
 ### Interpretando o Progresso
-
-A barra de progresso usa cores para indicar o status:
 
 | Cor | Percentual | Significado |
 |-----|------------|-------------|
@@ -192,11 +164,6 @@ A barra de progresso usa cores para indicar o status:
 | 🟡 Amarelo | 40% - 69% | Alerta - acompanhar de perto |
 | 🔵 Azul | 70% - 99% | Bom - no caminho certo |
 | 🟢 Verde | ≥ 100% | Excelente - meta atingida |
-
-### Metas Anuais vs Mensais
-
-- **Meta Mensal:** Valor específico para aquele mês
-- **Meta Anual:** Valor total esperado no ano (selecione "Anual" no período)
 
 ---
 
@@ -209,26 +176,7 @@ Os filtros de equipe estão disponíveis em:
 - Analytics
 - Metas
 - Relatórios
-
-### Como Usar os Filtros
-
-#### Filtro por Segmento
-
-1. Localize o dropdown **"Seg. Vendedor"**
-2. Selecione o segmento desejado
-3. Todos os dados serão filtrados para vendedores daquele segmento
-
-#### Filtro por Vendedor
-
-1. Use o campo de autocomplete **"Vendedor"**
-2. Digite o nome ou selecione da lista
-3. Todos os dados serão filtrados para aquele vendedor específico
-
-#### Combinando Filtros
-
-- Selecione primeiro o **Segmento** para reduzir a lista de vendedores
-- Depois selecione o **Vendedor** específico
-- Ao limpar o vendedor, volta a mostrar todo o segmento
+- Daily Tasks
 
 ### Persistência dos Filtros
 
@@ -254,37 +202,12 @@ Como gerente, você vê métricas consolidadas:
 - **Ticket Médio:** Média da equipe
 - **Clientes Ativos:** Total de clientes atendidos
 
-#### Gráfico de Vendas por Mês
-- Visualize a evolução mensal
-- Compare com meses anteriores
-- Identifique tendências
-
-#### Top 5 Clientes
-- Maiores clientes da equipe
-- Clique para ver detalhes
-- Mostra o vendedor responsável
-
-#### Vendas por Dia da Semana
-- Identifique os melhores dias
-- Otimize a alocação da equipe
-
-#### Comparação Anual
-- Compare com o ano anterior
-- Veja a variação percentual
-
-### Inteligência Artificial Avançada
-Gerentes possuem acesso à visão consolidada da inteligência de dados:
-
-- **Previsão de Vendas da Equipe:** A IA projeta o fechamento do mês para toda a equipe ou por segmento.
-- **Análise de Desvio de Performance:** Identificação automática de vendedores ou segmentos que estão performando abaixo da tendência esperada.
-- **Painel de Churn Consolidado:** Lista de todos os clientes da empresa com alto risco de perda, permitindo redistribuição ou intervenção gerencial.
-
-### Filtrando Analytics
-
-Use os filtros no topo para:
-- Ver analytics de um segmento específico
-- Ver analytics de um vendedor específico
-- Comparar desempenhos
+#### Gráficos Disponíveis
+- Vendas por Mês (linha/área)
+- Top 5 Clientes (ranking)
+- Vendas por Dia da Semana
+- Comparação Anual
+- **Funil de Conversão WhatsApp** (Novo!)
 
 ---
 
@@ -299,19 +222,14 @@ No Dashboard, sem filtros aplicados, você vê **todos os leads da equipe**.
 Cada lead mostra:
 - **User:** Quem criou o lead
 - **Seller:** Vendedor responsável pela conta
+- **Origem:** WhatsApp, Manual ou Automático
 
-### Acompanhando Cotações
+### Leads Criados via WhatsApp (Novo!)
 
-1. Filtre por vendedor se necessário
-2. Ordene por data ou valor
-3. Clique para ver detalhes
-
-### Intervindo em Leads
-
-Como gerente, você pode:
-- Visualizar qualquer lead
-- Editar leads de qualquer vendedor
-- Acompanhar o progresso de conversão
+Leads criados automaticamente pelo Superbot aparecem com:
+- Badge "WhatsApp" na origem
+- Link para ver conversa original
+- Análise de intenção da IA
 
 ---
 
@@ -323,6 +241,7 @@ Em **Minha Carteira**, você pode ver:
 - Todos os clientes da empresa
 - Filtrar por vendedor responsável
 - Identificar clientes sem atendimento
+- **Ver histórico de conversas WhatsApp** (Novo!)
 
 ### Métricas por Cliente
 
@@ -331,21 +250,14 @@ Para cada cliente, você vê:
 - Vendedor responsável
 - Histórico de compras
 - Leads em aberto
-
-### Redistribuição de Clientes
-
-Se identificar clientes mal atendidos:
-1. Analise o histórico
-2. Converse com o vendedor
-3. Considere redistribuição se necessário
+- **Conversas via WhatsApp** (se vinculado)
+- **Sentimento das conversas** (análise IA)
 
 ---
 
 ## 10. Relatórios Gerenciais
 
 ### Tipos de Relatórios
-
-Como gerente, você tem acesso a relatórios expandidos:
 
 | Relatório | Descrição |
 |-----------|-----------|
@@ -354,57 +266,241 @@ Como gerente, você tem acesso a relatórios expandidos:
 | **Clientes por Status** | Ativos, em risco, inativos |
 | **Leads por Vendedor** | Cotações criadas e convertidas |
 | **Metas vs Realizado** | Comparativo de metas |
-
-### Gerando Relatórios
-
-1. Acesse **Relatórios** no menu
-2. Selecione o tipo de relatório
-3. Defina o período
-4. Aplique filtros (vendedor, segmento)
-5. Clique em **Gerar**
-6. Exporte em PDF ou Excel
-
-### Relatórios Periódicos
-
-Sugestão de relatórios para acompanhamento:
-
-| Frequência | Relatório |
-|------------|-----------|
-| **Diário** | Leads criados, vendas do dia |
-| **Semanal** | Progresso de metas, clientes em risco |
-| **Mensal** | Comparativo de vendedores, análise de segmentos |
-| **Trimestral** | Tendências, planejamento |
+| **WhatsApp Analytics** | Mensagens, conversões, intenções (Novo!) |
 
 ---
 
-## 11. Regras de Automação e Follow-up
+## 11. Painel Administrativo ⭐ NOVO
 
-O sistema agora conta com um **Motor de Automação** que garante a padronização do atendimento.
+### Acessando o Admin Panel
 
-### Regras Padrão Ativas:
-- **Novos Leads:** Todos os leads ganham um follow-up automático agendado para +3 dias.
-- **Inatividade:** Clientes sem pedidos há mais de 45 dias geram uma tarefa de reativação imediata.
-- **Risco:** Clientes com Score de Churn > 80 geram alertas prioritários.
+Clique em **Admin** no menu lateral ou acesse `/admin`.
 
-### Papel do Gerente:
-- Monitorar se os vendedores estão cumprindo os follow-ups gerados pelas automações.
-- Ajustar a carteira de clientes caso as automações de inatividade mostrem sobrecarga de algum vendedor.
+> **Nota:** Requer Level 5 ou superior.
+
+### Módulos Disponíveis
+
+| Módulo | Descrição | Rota |
+|--------|-----------|------|
+| 📊 **Dashboard** | Estatísticas gerais | `/admin` |
+| 👥 **Usuários** | Gerenciar usuários | `/admin/users` |
+| 📱 **Telefones Vendedores** | Vincular WhatsApp | `/admin/seller-phones` |
+| 🔗 **Vinculação de Clientes** | Links Superbot ↔ Leads | `/admin/customer-links` |
+| 🤖 **Chatbot** | Configurar IA | `/admin/chatbot` |
+| 📋 **Logs** | Auditoria de ações | `/admin/logs` |
+
+### Gestão de Usuários
+
+Em `/admin/users`, você pode:
+- **Criar novo usuário:** Definir login, senha, nível, departamento
+- **Editar usuário:** Alterar dados e permissões
+- **Desativar/Reativar:** Controlar acesso
+- **Resetar senha:** Definir nova senha
+- **Ver histórico de login:** Acompanhar acessos
+
+### Vinculação de Telefones
+
+Em `/admin/seller-phones`, configure quais telefones WhatsApp cada vendedor atende:
+- Vincule um ou mais telefones por vendedor
+- Defina telefone principal
+- Assim, conversas daquele telefone aparecem para o vendedor correto
+
+### Vinculação de Clientes (Novo!)
+
+Em `/admin/customer-links`, gerencie links entre clientes do Superbot e do Leads-Agent:
+- **Visualize** todas as vinculações existentes
+- **Crie** novas vinculações manualmente
+- **Edite** score de confiança
+- **Remova** vinculações incorretas
+- **Veja estatísticas** de vinculações
+
+### Logs de Auditoria
+
+Em `/admin/logs`, visualize:
+- Todas as ações realizadas no sistema
+- Quem fez, quando, o quê
+- Filtre por usuário, ação, período
 
 ---
 
-## 12. Monitoramento com Inteligência Artificial
+## 12. Integração WhatsApp (Superbot) ⭐ NOVO
 
-A IA atua como um assistente de gestão, poupando tempo na análise de relatórios extensos.
+### O que é o Superbot?
+
+O **Superbot** é nosso sistema de WhatsApp que:
+- Grava todas as conversas automaticamente
+- Transcreve áudios com IA
+- Detecta intenções dos clientes
+- Cria leads automaticamente
+
+### Dashboard WhatsApp
+
+Acesse em **WhatsApp** no menu ou via Dashboard:
+
+| Métrica | Descrição |
+|---------|-----------|
+| **Total Mensagens** | Mensagens no período |
+| **Contatos Únicos** | Clientes que conversaram |
+| **Leads Criados** | Leads via WhatsApp |
+| **Taxa de Conversão** | % de contatos → leads |
+
+### Gráficos Disponíveis
+
+- **Mensagens por Dia:** Volume diário
+- **Horários de Pico:** Melhores horários
+- **Intenções Detectadas:** O que clientes querem
+- **Funil de Conversão:** Contatos → Leads → Pedidos
+
+### Visualizando Conversas
+
+1. Acesse o perfil do cliente
+2. Clique na aba "WhatsApp"
+3. Veja o histórico completo:
+   - Mensagens de texto
+   - Imagens e documentos
+   - Áudios com transcrição
+   - Análise de sentimento
+
+### Análise de Intenção
+
+A IA analisa as conversas e detecta:
+- **QUOTE_REQUEST:** Pedido de cotação
+- **PURCHASE_INTENT:** Intenção de compra
+- **PRICE_CHECK:** Consulta de preço
+- **STOCK_CHECK:** Consulta de estoque
+- **COMPLAINT:** Reclamação
+- **ORDER_STATUS:** Status de pedido
+
+---
+
+## 13. Daily Tasks (Lista do Dia) ⭐ NOVO
+
+### O que são Daily Tasks?
+
+Sistema inteligente que gera **tarefas prioritárias** para cada vendedor baseadas em:
+- Sinais de compra detectados
+- Clientes inativos
+- Follow-ups pendentes
+- Oportunidades de cross-sell
+
+### Visualizando Tarefas da Equipe
+
+Como gerente, você pode:
+
+1. **Ver tarefas de todos os vendedores:**
+   - Acesse `/tasks`
+   - Use o filtro de vendedor
+
+2. **Identificar vendedores sobrecarregados:**
+   - Veja quantidade de tarefas por vendedor
+   - Redistribua se necessário
+
+3. **Monitorar execução:**
+   - Tarefas concluídas vs pendentes
+   - Tempo médio de conclusão
+
+### Status das Tarefas
+
+| Status | Significado |
+|--------|-------------|
+| 🔵 OPEN | Tarefa gerada, não iniciada |
+| 🟡 IN_PROGRESS | Vendedor está trabalhando |
+| ✅ DONE | Concluída com sucesso |
+| ⏭️ SKIPPED | Pulada (com motivo) |
+| ⏰ EXPIRED | Expirou sem ação |
+
+### Prioridades
+
+| Prioridade | Quando usar |
+|------------|-------------|
+| 🔴 CRITICAL | Cliente importante, alto valor |
+| 🟠 HIGH | Oportunidade quente |
+| 🟡 MEDIUM | Follow-up padrão |
+| 🟢 LOW | Manutenção de relacionamento |
+
+---
+
+## 14. Chatbot Decisório IA ⭐ NOVO
+
+### O que é o Chatbot Decisório?
+
+Assistente de IA integrado que ajuda vendedores:
+- Simulação de preços com políticas
+- Consulta de estoque
+- Busca de clientes e produtos
+- Análise de risco e aprovações
+
+### Configurando o Chatbot
+
+Em `/admin/chatbot`, você pode:
+- Ativar/desativar o chatbot
+- Configurar modelo de IA
+- Ajustar temperatura (criatividade)
+- Definir contexto máximo
+
+### Monitorando Uso
+
+Veja estatísticas de uso:
+- Comandos mais utilizados
+- Tempo médio de resposta
+- Taxa de sucesso
+- Erros e fallbacks
+
+### Políticas de Desconto
+
+O chatbot aplica automaticamente:
+- Limites de desconto por nível
+- Aprovações automáticas ou pendentes
+- Registro de todas as decisões
+
+---
+
+## 15. Regras de Automação e Follow-up
+
+O sistema conta com um **Motor de Automação** que garante padronização.
+
+### Regras Padrão Ativas
+
+| Regra | Gatilho | Ação |
+|-------|---------|------|
+| Novos Leads | Lead criado | Follow-up em +3 dias |
+| Inatividade | 45 dias sem pedido | Tarefa de reativação |
+| Risco | Score Churn > 80 | Alerta prioritário |
+| WhatsApp | Conversa com intenção | Gerar lead automático |
+
+### Papel do Gerente
+
+- Monitorar cumprimento de follow-ups
+- Ajustar carteira se houver sobrecarga
+- Revisar regras periodicamente
+
+---
+
+## 16. Monitoramento com Inteligência Artificial
+
+A IA atua como assistente de gestão.
 
 ### Forecast (Previsão)
-No dashboard e analytics, a linha de "Previsão" indica onde a equipe deve chegar no fim do mês. Use isso para cobrar resultados de forma proativa, antes do mês fechar.
+
+No dashboard, a linha de "Previsão" indica onde a equipe deve chegar no fim do mês.
 
 ### Prevenção de Churn
-Acesse o widget de **"Clientes em Risco"**. Clientes com status **Crítico** (vermelho) calculados pela IA possuem 75%+ de chance de não voltarem a comprar sem uma oferta agressiva ou contato direto.
+
+Acesse o widget de **"Clientes em Risco"**:
+- 🔴 **Crítico (75%+):** Intervenção urgente
+- 🟠 **Alto (50-74%):** Atenção necessária
+- 🟡 **Médio (25-49%):** Monitorar
+
+### Análise de Sentimento (Novo!)
+
+Baseada nas conversas WhatsApp:
+- 😊 **Positivo:** Cliente satisfeito
+- 😐 **Neutro:** Sem indicação clara
+- 😠 **Negativo:** Insatisfação detectada
 
 ---
 
-## 13. Dicas de Gestão
+## 17. Dicas de Gestão
 
 ### Acompanhamento Diário
 
@@ -412,71 +508,29 @@ Acesse o widget de **"Clientes em Risco"**. Clientes com status **Crítico** (ve
    - Métricas da equipe
    - Leads abertos
    - Clientes em risco
+   - **Conversas WhatsApp pendentes**
 
-2. **Monitore Follow-ups**
-   - Vendedores com follow-ups atrasados
-   - Clientes sem contato recente
+2. **Monitore Daily Tasks**
+   - Tarefas não executadas
+   - Vendedores com backlog
 
 3. **Analise Conversões**
    - Taxa de conversão de leads
-   - Tempo médio de fechamento
+   - **Conversão WhatsApp → Lead → Pedido**
 
-### Gestão de Metas
+### Usando o Admin Panel
 
-1. **Defina Metas Realistas**
-   - Baseie-se no histórico
-   - Considere sazonalidade
-   - Ajuste por vendedor
+1. **Semanalmente:**
+   - Revise logs de auditoria
+   - Verifique vinculações de clientes
 
-2. **Acompanhe Semanalmente**
-   - Identifique desvios cedo
-   - Ofereça suporte quando necessário
-
-3. **Reconheça Resultados**
-   - Celebre metas atingidas
-   - Use o ranking como motivação
-
-### Identificando Problemas
-
-| Sinal | Possível Problema | Ação |
-|-------|-------------------|------|
-| Muitos leads abertos | Falta de follow-up | Conversar com vendedor |
-| Baixa conversão | Qualidade das cotações | Revisar processo |
-| Clientes em risco | Falta de atenção | Redistribuir ou treinar |
-| Meta muito abaixo | Problemas diversos | Análise individual |
-
-### Usando Filtros Estrategicamente
-
-1. **Compare Segmentos**
-   - Filtre por segmento
-   - Identifique os mais rentáveis
-   - Aloque recursos adequadamente
-
-2. **Identifique Top Performers**
-   - Use o ranking
-   - Analise suas práticas
-   - Compartilhe com a equipe
-
-3. **Encontre Oportunidades**
-   - Clientes grandes com baixa atividade
-   - Segmentos com potencial
-   - Vendedores com capacidade ociosa
-
-### Comunicação com a Equipe
-
-1. **Reuniões de Acompanhamento**
-   - Use os dados do sistema
-   - Mostre métricas e metas
-   - Defina ações
-
-2. **Feedback Individual**
-   - Baseie-se em dados concretos
-   - Mostre evolução
-   - Defina próximos passos
+2. **Mensalmente:**
+   - Revise usuários ativos/inativos
+   - Ajuste configurações do chatbot
 
 ---
 
-## 📊 Resumo das Funcionalidades Exclusivas
+## 📊 Resumo das Funcionalidades
 
 | Funcionalidade | Localização | Descrição |
 |----------------|-------------|-----------|
@@ -485,8 +539,13 @@ Acesse o widget de **"Clientes em Risco"**. Clientes com status **Crítico** (ve
 | Filtro por Vendedor | Dashboard, Analytics | Autocomplete "Vendedor" |
 | Ranking de Vendedores | Dashboard | Widget de ranking |
 | Página de Metas | Menu lateral | Definir e acompanhar metas |
-| Ver todos os leads | Dashboard | Sem filtro de usuário |
-| Ver todos os clientes | Minha Carteira | Acesso completo |
+| **Admin Panel** | /admin | Gerenciamento do sistema |
+| **Gestão de Usuários** | /admin/users | Criar, editar usuários |
+| **Telefones WhatsApp** | /admin/seller-phones | Vincular telefones |
+| **Vinculação Clientes** | /admin/customer-links | Links Superbot ↔ Leads |
+| **Dashboard WhatsApp** | WhatsApp menu | Analytics de mensagens |
+| **Daily Tasks** | /tasks | Tarefas da equipe |
+| **Logs de Auditoria** | /admin/logs | Histórico de ações |
 
 ---
 
@@ -495,10 +554,11 @@ Acesse o widget de **"Clientes em Risco"**. Clientes com status **Crítico** (ve
 Em caso de dúvidas:
 
 1. Consulte este manual
-2. Entre em contato com o administrador do sistema
-3. Acesse o suporte técnico
+2. Use o chatbot digitando sua dúvida
+3. Entre em contato com o administrador do sistema
+4. Acesse o suporte técnico
 
 ---
 
 **© Rolemak - Sistema de Gestão de Leads**  
-*Manual do Usuário - Gerente (Level 5+)*
+*Manual do Usuário - Gerente (Level 5+) v2.0*
