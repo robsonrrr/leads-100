@@ -395,7 +395,7 @@ const WhatsAppPage = () => {
 
                                                 <ListItemSecondaryAction>
                                                     <Typography variant="caption" color="text.secondary">
-                                                        {formatLastContact(customer.stats?.last_message_at)}
+                                                        {formatLastContact(customer.last_message_at)}
                                                     </Typography>
                                                 </ListItemSecondaryAction>
                                             </ListItem>
