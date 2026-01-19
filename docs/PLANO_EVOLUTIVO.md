@@ -1,7 +1,7 @@
 # PLANO DO LEADS-AGENT (CSuite) - Atualizado
 
 **Última Atualização:** 2026-01-19
-**Versão Atual do App:** 1.7.6
+**Versão Atual do App:** 1.7.7
 **Progresso Geral:** ~35%
 
 ---
@@ -374,4 +374,4 @@ TOTAL: 35%
 
 ---
 
-*Atualizado automaticamente em 2026-01-19 - Versão 1.7.6*
+*Atualizado automaticamente em 2026-01-19 - Versão 1.7.7*

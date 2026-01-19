@@ -1,6 +1,6 @@
 {
   "name": "leads-agent-backend",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Backend API para sistema moderno de gestão de leads",
   "main": "src/index.js",
   "type": "module",

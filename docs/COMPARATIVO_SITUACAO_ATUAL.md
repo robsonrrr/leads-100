@@ -1,7 +1,7 @@
 # 📊 COMPARATIVO: Plano Evolutivo x Situação Atual
 
 **Data:** 2026-01-19
-**Versão Atual:** 1.7.6
+**Versão Atual:** 1.7.7
 
 ---
 
