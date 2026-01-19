@@ -460,12 +460,16 @@ function LeadDetailPage() {
 
     setSavingInteraction(true)
     try {
-      await interactionsService.create({
+      const payload = {
         customerId: lead.customerId,
         type: interactionData.type,
-        description: interactionData.notes,
-        followUpDate: interactionData.followUpDate || null
-      })
+        description: interactionData.notes
+      }
+      // Só enviar nextActionDate se tiver valor
+      if (interactionData.followUpDate) {
+        payload.nextActionDate = interactionData.followUpDate
+      }
+      await interactionsService.create(payload)
 
       toast.showSuccess('Interação registrada com sucesso!')
       setInteractionModalOpen(false)
