@@ -501,6 +501,7 @@ function LeadsPage() {
                                             <SortableHeader columnKey="customer">Cliente</SortableHeader>
                                             <SortableHeader columnKey="date">Data</SortableHeader>
                                             <TableCell>Status</TableCell>
+                                            <TableCell>Tipo</TableCell>
                                             <TableCell>Responsável</TableCell>
                                             <SortableHeader columnKey="orderWeb"># Pedido</SortableHeader>
                                             <SortableHeader columnKey="total" align="right">Total</SortableHeader>
@@ -556,6 +557,15 @@ function LeadsPage() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
+                                                    <Chip
+                                                        label={lead.type === 2 ? 'Receptivo' : 'Ativo'}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        color={lead.type === 2 ? 'secondary' : 'primary'}
+                                                        sx={{ fontWeight: 500, fontSize: '0.65rem' }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
                                                     <Typography variant="caption" sx={{ fontWeight: 500 }}>{lead.sellerNick || '-'}</Typography>
                                                 </TableCell>
                                                 <TableCell>{lead.orderWeb || '-'}</TableCell>
@@ -587,7 +597,7 @@ function LeadsPage() {
                                         ))}
                                         {leads.length === 0 && (
                                             <TableRow>
-                                                <TableCell colSpan={8}>
+                                                <TableCell colSpan={11}>
                                                     <EmptyState
                                                         title="Nenhum lead encontrado"
                                                         description="Tente ajustar seus filtros ou crie um novo lead."
