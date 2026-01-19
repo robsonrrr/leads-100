@@ -811,63 +811,132 @@ export async function updateItem(req, res, next) {
 
     const item = await cartItemRepository.update(itemId, itemData);
 
-    // Se o times foi alterado, atualizar também os acessórios vinculados (motor, tampo)
+    // Função auxiliar para parsear IDs de acessórios
+    const parseAccessoryIds = (raw) => {
+      if (raw === undefined || raw === null) return [];
+      const str = String(raw).trim();
+      if (str === '' || str.toLowerCase() === 'null') return [];
+
+      const tokens = str
+        .split(/[\s,;|]+/g)
+        .map(t => t.trim())
+        .filter(Boolean);
+
+      const ids = [];
+      for (const t of tokens) {
+        const n = Number(t);
+        if (!Number.isNaN(n) && Number.isFinite(n) && n > 0) {
+          ids.push(Math.trunc(n));
+        }
+      }
+      return ids;
+    };
+
     const updatedAccessories = [];
+    const db = getDatabase();
+    const productId = existingItem.cProduct;
+
+    // Buscar acessórios do produto atual
+    let accessoryIds = [];
+    try {
+      const [accRows] = await db.execute(
+        'SELECT motor, tampo FROM inv WHERE id = ? LIMIT 1',
+        [productId]
+      );
+
+      if (accRows.length > 0) {
+        const motorIds = parseAccessoryIds(accRows[0]?.motor);
+        const tampoIds = parseAccessoryIds(accRows[0]?.tampo);
+        accessoryIds = Array.from(new Set([
+          ...motorIds,
+          ...tampoIds
+        ].filter((id) => id && id !== productId)));
+      }
+    } catch (e) {
+      console.error('Erro ao buscar acessórios do produto:', e);
+    }
+
+    // Se o times foi alterado, atualizar também os acessórios vinculados
     if (value.times !== undefined && value.times !== existingItem.tProduct) {
-      const parseAccessoryIds = (raw) => {
-        if (raw === undefined || raw === null) return [];
-        const str = String(raw).trim();
-        if (str === '' || str.toLowerCase() === 'null') return [];
-
-        const tokens = str
-          .split(/[\s,;|]+/g)
-          .map(t => t.trim())
-          .filter(Boolean);
-
-        const ids = [];
-        for (const t of tokens) {
-          const n = Number(t);
-          if (!Number.isNaN(n) && Number.isFinite(n) && n > 0) {
-            ids.push(Math.trunc(n));
+      try {
+        for (const accessoryId of accessoryIds) {
+          const existingAccessory = await cartItemRepository.findByLeadIdAndProductId(leadId, accessoryId);
+          if (existingAccessory) {
+            await cartItemRepository.update(existingAccessory.cCart, {
+              ...existingAccessory,
+              tProduct: value.times
+            });
+            updatedAccessories.push({
+              id: existingAccessory.cCart,
+              productId: accessoryId,
+              field: 'times',
+              newValue: value.times
+            });
           }
         }
-        return ids;
-      };
+      } catch (e) {
+        console.error('Erro ao atualizar prazo dos acessórios (motor/tampo):', e);
+      }
+    }
 
+    // Se a quantidade foi alterada, recalcular quantidade dos acessórios
+    // Um acessório pode ser usado por múltiplas máquinas, então precisamos somar todas
+    if (value.quantity !== undefined && value.quantity !== existingItem.qProduct) {
       try {
-        const db = getDatabase();
-        const productId = existingItem.cProduct;
-        const [accRows] = await db.execute(
-          'SELECT motor, tampo FROM inv WHERE id = ? LIMIT 1',
-          [productId]
-        );
+        for (const accessoryId of accessoryIds) {
+          // Buscar TODOS os produtos no lead que usam este acessório
+          const [productsUsingAccessory] = await db.execute(`
+            SELECT c.cProduct, c.qProduct, i.motor, i.tampo
+            FROM mak.cart c
+            INNER JOIN mak.inv i ON i.id = c.cProduct
+            WHERE c.cSCart = ?
+              AND c.cProduct != ?
+              AND (
+                FIND_IN_SET(?, REPLACE(REPLACE(i.motor, ' ', ','), '|', ',')) > 0
+                OR FIND_IN_SET(?, REPLACE(REPLACE(i.tampo, ' ', ','), '|', ',')) > 0
+              )
+          `, [leadId, accessoryId, accessoryId, accessoryId]);
 
-        if (accRows.length > 0) {
-          const motorIds = parseAccessoryIds(accRows[0]?.motor);
-          const tampoIds = parseAccessoryIds(accRows[0]?.tampo);
-          const accessoryIds = Array.from(new Set([
-            ...motorIds,
-            ...tampoIds
-          ].filter((id) => id && id !== productId)));
+          // Calcular quantidade total necessária do acessório
+          // = soma das quantidades de todas as máquinas que usam este acessório
+          let totalQuantityNeeded = 0;
 
-          for (const accessoryId of accessoryIds) {
-            const existingAccessory = await cartItemRepository.findByLeadIdAndProductId(leadId, accessoryId);
-            if (existingAccessory) {
-              // Atualizar o tProduct do acessório para o mesmo valor
+          // Adicionar a quantidade do item que acabamos de atualizar
+          const updatedProductAccessories = [
+            ...parseAccessoryIds((await db.execute('SELECT motor FROM inv WHERE id = ?', [productId]))[0]?.[0]?.motor),
+            ...parseAccessoryIds((await db.execute('SELECT tampo FROM inv WHERE id = ?', [productId]))[0]?.[0]?.tampo)
+          ];
+
+          if (updatedProductAccessories.includes(accessoryId)) {
+            totalQuantityNeeded += parseFloat(value.quantity) || 0;
+          }
+
+          // Adicionar quantidades de outras máquinas que usam este acessório
+          for (const row of productsUsingAccessory) {
+            totalQuantityNeeded += parseFloat(row.qProduct) || 0;
+          }
+
+          // Atualizar a quantidade do acessório
+          const existingAccessory = await cartItemRepository.findByLeadIdAndProductId(leadId, accessoryId);
+          if (existingAccessory && totalQuantityNeeded > 0) {
+            const oldQuantity = parseFloat(existingAccessory.qProduct) || 0;
+            if (oldQuantity !== totalQuantityNeeded) {
               await cartItemRepository.update(existingAccessory.cCart, {
                 ...existingAccessory,
-                tProduct: value.times
+                qProduct: totalQuantityNeeded
               });
               updatedAccessories.push({
                 id: existingAccessory.cCart,
                 productId: accessoryId,
-                newTimes: value.times
+                field: 'quantity',
+                oldValue: oldQuantity,
+                newValue: totalQuantityNeeded
               });
             }
           }
         }
       } catch (e) {
-        console.error('Erro ao atualizar prazo dos acessórios (motor/tampo):', e);
+        console.error('Erro ao atualizar quantidade dos acessórios (motor/tampo):', e);
       }
     }
 
