@@ -38,6 +38,7 @@ const UserFormPage = lazy(() => import('./pages/admin/UserFormPage'))
 const SellerPhonesPage = lazy(() => import('./pages/admin/SellerPhonesPage'))
 const ChatbotConfigPage = lazy(() => import('./pages/admin/ChatbotConfigPage'))
 const LogsPage = lazy(() => import('./pages/admin/LogsPage'))
+const CustomerLinksPage = lazy(() => import('./pages/admin/CustomerLinksPage'))
 
 const theme = createTheme({
   palette: {
@@ -207,6 +208,16 @@ function App() {
                   <ProtectedRoute>
                     <Layout>
                       {userLevel >= 5 ? <SellerPhonesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customer-links"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <CustomerLinksPage /> : <Navigate to="/" replace />}
                     </Layout>
                   </ProtectedRoute>
                 }

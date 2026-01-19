@@ -667,6 +667,281 @@ const getLogStats = async (req, res) => {
     }
 }
 
+// ==========================================
+// CUSTOMER LINKS (Superbot)
+// ==========================================
+
+/**
+ * GET /api/admin/customer-links
+ * Listar vinculações cliente Superbot ↔ Leads
+ */
+const listCustomerLinks = async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 50,
+            verified,
+            search
+        } = req.query
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        let query = `
+            SELECT 
+                scl.id,
+                scl.superbot_customer_id,
+                scl.leads_customer_id,
+                scl.linked_by,
+                scl.linked_at,
+                scl.confidence_score,
+                scl.verified,
+                sc.phone_number,
+                sc.name as superbot_name,
+                sc.push_name,
+                c.nome as leads_customer_name,
+                c.cnpj,
+                u.nick as linked_by_name
+            FROM superbot.superbot_customer_links scl
+            LEFT JOIN superbot.superbot_customers sc ON sc.id = scl.superbot_customer_id
+            LEFT JOIN mak.clientes c ON c.id = scl.leads_customer_id
+            LEFT JOIN mak.rolemak_users u ON u.id = scl.linked_by
+            WHERE 1=1
+        `
+        const params = []
+
+        if (verified !== undefined && verified !== '') {
+            query += ' AND scl.verified = ?'
+            params.push(verified === 'true' ? 1 : 0)
+        }
+
+        if (search) {
+            query += ' AND (sc.phone_number LIKE ? OR sc.name LIKE ? OR c.nome LIKE ?)'
+            const searchTerm = `%${search}%`
+            params.push(searchTerm, searchTerm, searchTerm)
+        }
+
+        query += ' ORDER BY scl.linked_at DESC'
+        query += ` LIMIT ${parseInt(limit)} OFFSET ${(parseInt(page) - 1) * parseInt(limit)}`
+
+        const [links] = await db.execute(query, params)
+
+        // Count total
+        const [countResult] = await db.execute(`
+            SELECT COUNT(*) as total FROM superbot.superbot_customer_links
+        `)
+
+        res.json({
+            success: true,
+            data: links,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: countResult[0].total
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao listar customer links:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao listar vinculações',
+            message: error.message
+        })
+    }
+}
+
+/**
+ * POST /api/admin/customer-links
+ * Criar nova vinculação
+ */
+const createCustomerLink = async (req, res) => {
+    try {
+        const { superbot_customer_id, leads_customer_id, confidence_score = 100, verified = true } = req.body
+        const linked_by = req.user?.userId
+
+        if (!superbot_customer_id || !leads_customer_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'superbot_customer_id e leads_customer_id são obrigatórios'
+            })
+        }
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        const [result] = await db.execute(`
+            INSERT INTO superbot.superbot_customer_links 
+            (superbot_customer_id, leads_customer_id, linked_by, confidence_score, verified)
+            VALUES (?, ?, ?, ?, ?)
+        `, [superbot_customer_id, leads_customer_id, linked_by, confidence_score, verified ? 1 : 0])
+
+        logger.info('📎 Customer link criado', {
+            id: result.insertId,
+            superbot_customer_id,
+            leads_customer_id,
+            linked_by
+        })
+
+        res.status(201).json({
+            success: true,
+            data: { id: result.insertId },
+            message: 'Vinculação criada com sucesso'
+        })
+    } catch (error) {
+        logger.error('Erro ao criar customer link:', error)
+        res.status(400).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * PUT /api/admin/customer-links/:id
+ * Atualizar vinculação
+ */
+const updateCustomerLink = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { superbot_customer_id, leads_customer_id, confidence_score, verified } = req.body
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        const updates = []
+        const params = []
+
+        if (superbot_customer_id !== undefined) {
+            updates.push('superbot_customer_id = ?')
+            params.push(superbot_customer_id)
+        }
+        if (leads_customer_id !== undefined) {
+            updates.push('leads_customer_id = ?')
+            params.push(leads_customer_id)
+        }
+        if (confidence_score !== undefined) {
+            updates.push('confidence_score = ?')
+            params.push(confidence_score)
+        }
+        if (verified !== undefined) {
+            updates.push('verified = ?')
+            params.push(verified ? 1 : 0)
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Nenhum campo para atualizar'
+            })
+        }
+
+        params.push(id)
+
+        await db.execute(`
+            UPDATE superbot.superbot_customer_links 
+            SET ${updates.join(', ')}
+            WHERE id = ?
+        `, params)
+
+        logger.info('📎 Customer link atualizado', { id })
+
+        res.json({
+            success: true,
+            message: 'Vinculação atualizada com sucesso'
+        })
+    } catch (error) {
+        logger.error('Erro ao atualizar customer link:', error)
+        res.status(400).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * DELETE /api/admin/customer-links/:id
+ * Remover vinculação
+ */
+const deleteCustomerLink = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const db = (await import('../config/database.js')).getDatabase()
+
+        await db.execute(`
+            DELETE FROM superbot.superbot_customer_links WHERE id = ?
+        `, [id])
+
+        logger.info('📎 Customer link removido', { id })
+
+        res.json({
+            success: true,
+            message: 'Vinculação removida com sucesso'
+        })
+    } catch (error) {
+        logger.error('Erro ao remover customer link:', error)
+        res.status(400).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+/**
+ * GET /api/admin/customer-links/stats
+ * Estatísticas de vinculações
+ */
+const getCustomerLinksStats = async (req, res) => {
+    try {
+        const db = (await import('../config/database.js')).getDatabase()
+
+        const [stats] = await db.execute(`
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified,
+                SUM(CASE WHEN verified = 0 THEN 1 ELSE 0 END) as pending,
+                AVG(confidence_score) as avg_confidence,
+                MIN(linked_at) as first_link,
+                MAX(linked_at) as last_link
+            FROM superbot.superbot_customer_links
+        `)
+
+        const [byUser] = await db.execute(`
+            SELECT 
+                u.nick as user_name,
+                COUNT(*) as count
+            FROM superbot.superbot_customer_links scl
+            LEFT JOIN mak.rolemak_users u ON u.id = scl.linked_by
+            WHERE scl.linked_by IS NOT NULL
+            GROUP BY scl.linked_by, u.nick
+            ORDER BY count DESC
+            LIMIT 10
+        `)
+
+        const [recent] = await db.execute(`
+            SELECT 
+                DATE(linked_at) as date,
+                COUNT(*) as count
+            FROM superbot.superbot_customer_links
+            WHERE linked_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            GROUP BY DATE(linked_at)
+            ORDER BY date
+        `)
+
+        res.json({
+            success: true,
+            data: {
+                summary: stats[0],
+                byUser,
+                recentActivity: recent
+            }
+        })
+    } catch (error) {
+        logger.error('Erro ao buscar estatísticas de links:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao buscar estatísticas'
+        })
+    }
+}
+
 export default {
     listUsers,
     getUserById,
@@ -686,5 +961,11 @@ export default {
     testChatbotResponse,
     listAuditLogs,
     getLogActions,
-    getLogStats
+    getLogStats,
+    listCustomerLinks,
+    createCustomerLink,
+    updateCustomerLink,
+    deleteCustomerLink,
+    getCustomerLinksStats
 }
+

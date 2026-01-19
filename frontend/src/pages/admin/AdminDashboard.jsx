@@ -163,6 +163,13 @@ const AdminDashboard = () => {
             color: '#25D366',
         },
         {
+            title: 'Vinculação de Clientes',
+            description: 'Gerenciar links Superbot ↔ Leads-Agent',
+            icon: <PhoneAndroidIcon />,
+            path: '/admin/customer-links',
+            color: '#128C7E',
+        },
+        {
             title: 'Configuração do Chatbot',
             description: 'Configurar respostas automáticas e IA',
             icon: <ChatbotIcon />,

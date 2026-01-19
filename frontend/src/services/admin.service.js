@@ -130,6 +130,36 @@ export const adminService = {
      * Estatísticas de logs
      */
     getLogStats: () => api.get('/admin/logs/stats'),
+
+    // ============================================
+    // CUSTOMER LINKS (Superbot)
+    // ============================================
+
+    /**
+     * Listar vinculações cliente Superbot ↔ Leads
+     */
+    getCustomerLinks: (params = {}) => api.get('/admin/customer-links', { params }),
+
+    /**
+     * Criar nova vinculação
+     */
+    createCustomerLink: (data) => api.post('/admin/customer-links', data),
+
+    /**
+     * Atualizar vinculação
+     */
+    updateCustomerLink: (id, data) => api.put(`/admin/customer-links/${id}`, data),
+
+    /**
+     * Remover vinculação
+     */
+    deleteCustomerLink: (id) => api.delete(`/admin/customer-links/${id}`),
+
+    /**
+     * Estatísticas de vinculações
+     */
+    getCustomerLinksStats: () => api.get('/admin/customer-links/stats'),
 }
 
 export default adminService
+

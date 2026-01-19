@@ -180,5 +180,48 @@ router.get('/logs/actions', AdminController.getLogActions)
  */
 router.get('/logs/stats', AdminController.getLogStats)
 
+// ============================================
+// CUSTOMER LINKS (Superbot)
+// ============================================
+
+/**
+ * GET /api/admin/customer-links
+ * Listar vinculações cliente Superbot ↔ Leads
+ */
+router.get('/customer-links', AdminController.listCustomerLinks)
+
+/**
+ * POST /api/admin/customer-links
+ * Criar nova vinculação
+ */
+router.post('/customer-links',
+    logAdminAction('CREATE_CUSTOMER_LINK'),
+    AdminController.createCustomerLink
+)
+
+/**
+ * PUT /api/admin/customer-links/:id
+ * Atualizar vinculação
+ */
+router.put('/customer-links/:id',
+    logAdminAction('UPDATE_CUSTOMER_LINK'),
+    AdminController.updateCustomerLink
+)
+
+/**
+ * DELETE /api/admin/customer-links/:id
+ * Remover vinculação
+ */
+router.delete('/customer-links/:id',
+    logAdminAction('DELETE_CUSTOMER_LINK'),
+    AdminController.deleteCustomerLink
+)
+
+/**
+ * GET /api/admin/customer-links/stats
+ * Estatísticas de vinculações
+ */
+router.get('/customer-links/stats', AdminController.getCustomerLinksStats)
+
 export default router
 
