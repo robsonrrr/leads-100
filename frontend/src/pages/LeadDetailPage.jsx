@@ -45,7 +45,8 @@ import {
   Receipt as ReceiptIcon,
   TrendingUp as TrendingUpIcon,
   Print as PrintIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  Phone as PhoneIcon
 } from '@mui/icons-material'
 import { leadsService } from '../services/api'
 import CartItems from '../components/CartItems'
@@ -734,6 +735,30 @@ function LeadDetailPage() {
                 )}
               </Grid>
 
+              {/* Tipo de Atendimento */}
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <PhoneIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Tipo de Atendimento
+                  </Typography>
+                </Box>
+                {lead.orderWeb ? (
+                  <Typography variant="body1" sx={{ ml: 4 }}>
+                    {lead.type === 1 ? 'Ativo' : lead.type === 2 ? 'Receptivo' : '-'}
+                  </Typography>
+                ) : (
+                  <FormControl fullWidth size="small" variant="standard" sx={{ ml: 4, maxWidth: 300 }}>
+                    <Select
+                      value={lead.type || 1}
+                      onChange={(e) => handleFieldUpdate('cType', parseInt(e.target.value))}
+                    >
+                      <MenuItem value={1}>Ativo</MenuItem>
+                      <MenuItem value={2}>Receptivo</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                   <BusinessIcon fontSize="small" color="action" />

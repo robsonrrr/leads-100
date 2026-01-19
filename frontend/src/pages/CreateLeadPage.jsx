@@ -35,6 +35,7 @@ function CreateLeadPage() {
   const [formData, setFormData] = useState({
     customerId: null,
     cSegment: 1,
+    cType: 1, // 1 = Ativo, 2 = Receptivo
     cNatOp: 27, // Natureza de operação padrão
     cEmitUnity: 8,
     cLogUnity: 8,
@@ -188,6 +189,7 @@ function CreateLeadPage() {
         userId: user.id,
         sellerId: user.id,
         cSegment: formData.cSegment || null,
+        cType: formData.cType || 1,
         cNatOp: formData.cNatOp,
         cEmitUnity: formData.cEmitUnity,
         cLogUnity: formData.cLogUnity || formData.cEmitUnity,
@@ -362,7 +364,7 @@ function CreateLeadPage() {
             )}
 
             {/* Segmento */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 select
@@ -382,6 +384,21 @@ function CreateLeadPage() {
                     {formData.cSegment}
                   </MenuItem>
                 )}
+              </TextField>
+            </Grid>
+
+            {/* Tipo de Atendimento */}
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Tipo de Atendimento"
+                value={formData.cType}
+                onChange={(e) => handleChange('cType', parseInt(e.target.value))}
+                helperText="Ativo = ligamos para o cliente | Receptivo = cliente nos procurou"
+              >
+                <MenuItem value={1}>Ativo</MenuItem>
+                <MenuItem value={2}>Receptivo</MenuItem>
               </TextField>
             </Grid>
 
