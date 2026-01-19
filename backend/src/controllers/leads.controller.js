@@ -23,6 +23,7 @@ const createLeadSchema = Joi.object({
   userId: Joi.number().integer().required(),
   sellerId: Joi.number().integer().optional(),
   cSegment: Joi.alternatives().try(Joi.string(), Joi.number()).allow(null, '').optional(),
+  cType: Joi.number().integer().valid(1, 2).default(1), // 1 = Ativo, 2 = Receptivo
   cNatOp: Joi.number().integer().default(27),
   cEmitUnity: Joi.number().integer().default(1),
   cLogUnity: Joi.number().integer().default(1),
@@ -48,6 +49,7 @@ const createLeadSchema = Joi.object({
 const updateLeadSchema = Joi.object({
   customerId: Joi.number().integer().optional(),
   cSegment: Joi.alternatives().try(Joi.string(), Joi.number()).allow(null, '').optional(),
+  cType: Joi.number().integer().valid(1, 2).optional(), // 1 = Ativo, 2 = Receptivo
   cNatOp: Joi.number().integer().optional(),
   cEmitUnity: Joi.number().integer().optional(),
   cLogUnity: Joi.number().integer().optional(),
@@ -321,7 +323,7 @@ export async function createLead(req, res, next) {
       xRemarksManager: value.remarks?.manager || '',
       xBuyer: value.buyer || null,
       cPurchaseOrder: value.purchaseOrder || null,
-      cType: 1 // Lead/Consulta
+      cType: value.cType || 1 // 1 = Ativo, 2 = Receptivo
     };
 
     const lead = await leadRepository.create(leadData);
