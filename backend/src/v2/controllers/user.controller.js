@@ -30,16 +30,12 @@ export class UserController {
             const userId = req.user?.id ?? req.user?.userId;
             const cacheKey = `daily-lead-progress:${userId}`;
 
-            // Tentar buscar do cache (TTL 30s)
-            const cached = await CacheService.get(cacheKey);
-            if (cached) {
-                return res.json({ success: true, data: cached });
-            }
-
-            const progress = await userPreferenceService.getDailyLeadProgress(userId);
-
-            // Cachear por 30 segundos
-            await CacheService.set(cacheKey, progress, 30);
+            // Usar getOrSet para cache de 30 segundos
+            const progress = await CacheService.getOrSet(
+                cacheKey,
+                () => userPreferenceService.getDailyLeadProgress(userId),
+                30 // TTL 30 segundos
+            );
 
             res.json({ success: true, data: progress });
         } catch (error) {
