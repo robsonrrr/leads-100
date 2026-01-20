@@ -153,29 +153,17 @@ export class UserPreferenceService {
             let params;
 
             if (isManager) {
-                // Gerente: total de TODAS as metas de máquinas (todos os vendedores)
+                // Gerente: total de TODAS as vendas de máquinas + total de metas
                 query = `
                     SELECT 
-                        COALESCE(SUM(g.goal_units), 0) as total_goal,
-                        COALESCE(SUM(v.sold_year), 0) as sold_year,
-                        COALESCE(SUM(vm.sold_month), 0) as sold_month,
-                        ROUND(COALESCE(SUM(g.goal_units), 0) / 11) as goal_month
-                    FROM mak.customer_goals g
-                    LEFT JOIN (
-                        SELECT ClienteID, SUM(Quantidade) as sold_year
-                        FROM mak.Vendas_Historia
-                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) AND ProdutoSegmento = 'machines'
-                        GROUP BY ClienteID
-                    ) v ON v.ClienteID = g.customer_id
-                    LEFT JOIN (
-                        SELECT ClienteID, SUM(Quantidade) as sold_month
-                        FROM mak.Vendas_Historia
-                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) 
-                          AND MONTH(DataVenda) = MONTH(CURDATE()) 
-                          AND ProdutoSegmento = 'machines'
-                        GROUP BY ClienteID
-                    ) vm ON vm.ClienteID = g.customer_id
-                    WHERE g.year = YEAR(CURDATE())
+                        (SELECT COALESCE(SUM(goal_units), 0) FROM mak.customer_goals WHERE year = YEAR(CURDATE())) as total_goal,
+                        (SELECT COALESCE(SUM(Quantidade), 0) FROM mak.Vendas_Historia 
+                         WHERE YEAR(DataVenda) = YEAR(CURDATE()) AND ProdutoSegmento = 'machines') as sold_year,
+                        (SELECT COALESCE(SUM(Quantidade), 0) FROM mak.Vendas_Historia 
+                         WHERE YEAR(DataVenda) = YEAR(CURDATE()) 
+                           AND MONTH(DataVenda) = MONTH(CURDATE()) 
+                           AND ProdutoSegmento = 'machines') as sold_month,
+                        ROUND((SELECT COALESCE(SUM(goal_units), 0) FROM mak.customer_goals WHERE year = YEAR(CURDATE())) / 11) as goal_month
                 `;
                 params = [];
             } else {
