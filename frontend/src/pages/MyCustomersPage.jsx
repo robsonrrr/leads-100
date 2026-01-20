@@ -248,6 +248,13 @@ function MyCustomersPage() {
     toast.info('Carteira atualizada')
   }
 
+  // Atualizar nome fantasia no estado local quando editado
+  const handleTradeNameUpdate = (customerId, newTradeName) => {
+    setCustomers(prev => prev.map(c =>
+      c.id === customerId ? { ...c, tradeName: newTradeName } : c
+    ))
+  }
+
   const handleExport = async () => {
     try {
       toast.info('Gerando arquivo...')
@@ -562,7 +569,7 @@ function MyCustomersPage() {
                 md={viewMode === 'grid' ? 4 : 12}
                 key={customer.id}
               >
-                <CustomerCard customer={customer} onNewLead={handleNewLead} />
+                <CustomerCard customer={customer} onNewLead={handleNewLead} onTradeNameUpdate={handleTradeNameUpdate} />
               </Grid>
             ))}
           </Grid>
