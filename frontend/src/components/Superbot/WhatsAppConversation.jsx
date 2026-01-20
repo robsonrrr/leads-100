@@ -238,8 +238,6 @@ const WhatsAppConversation = ({
     const [customer, setCustomer] = useState(null)
     const [conversations, setConversations] = useState([])
     const [selectedSession, setSelectedSession] = useState(null)
-    const [messages, setMessages] = useState([])
-    const [messagesLoading, setMessagesLoading] = useState(false)
     const [stats, setStats] = useState(null)
     const [showStats, setShowStats] = useState(false)
 
@@ -252,18 +250,12 @@ const WhatsAppConversation = ({
         }
     }, [phone])
 
-    // Scroll para última mensagem
-    useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-        }
-    }, [messages])
+
 
     const loadData = async () => {
         setLoading(true)
         setError(null)
         // Limpar estados anteriores para evitar dados residuais
-        setMessages([])
         setSelectedSession(null)
         setConversations([])
 
@@ -284,10 +276,6 @@ const WhatsAppConversation = ({
             if (newConversations.length > 0) {
                 const firstSession = newConversations[0]
                 setSelectedSession(firstSession)
-                loadMessages(firstSession.session_id)
-            } else {
-                // Sem sessões = sem mensagens
-                setMessages([])
             }
         } catch (err) {
             console.error('Erro ao carregar dados do WhatsApp:', err)
@@ -297,23 +285,10 @@ const WhatsAppConversation = ({
         }
     }
 
-    const loadMessages = async (sessionId) => {
-        setMessagesLoading(true)
 
-        try {
-            const response = await superbotService.getMessages(sessionId, { limit: 100 })
-            setMessages(response.data?.data || [])
-        } catch (err) {
-            console.error('Erro ao carregar mensagens:', err)
-        } finally {
-            setMessagesLoading(false)
-        }
-    }
 
     const handleSessionSelect = (session) => {
-        setMessages([]) // Limpar mensagens anteriores imediatamente
         setSelectedSession(session)
-        loadMessages(session.session_id)
     }
 
     const getSentimentIcon = () => {
@@ -495,28 +470,11 @@ const WhatsAppConversation = ({
                         key={`timeline-${selectedSession?.session_id || 'none'}`}
                         phone={phone}
                         sessionId={selectedSession?.session_id}
-                        initialMessages={messages}
-                        maxHeight={typeof maxHeight === 'string' ? `calc(${maxHeight} - 100px)` : maxHeight - 100}
+                        maxHeight={typeof maxHeight === 'string' ? `calc(${maxHeight})` : maxHeight}
                         showAIBadges={showAnalysis}
                         enableLazyLoading={true}
                         pageSize={50}
                     />
-
-                    {/* Footer Info */}
-                    <Box
-                        sx={{
-                            p: 1,
-                            bgcolor: '#fff',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            borderTop: '1px solid #e0e0e0',
-                        }}
-                    >
-                        <Typography variant="caption" color="text.secondary">
-                            Apenas visualização • Dados do Superbot •
-                            {messages.length > 0 ? ` ${messages.length} mensagens carregadas` : ''}
-                        </Typography>
-                    </Box>
                 </Box>
             </Box>
         </Paper>

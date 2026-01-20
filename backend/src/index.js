@@ -40,6 +40,7 @@ import metricsRoutes from './routes/metrics.routes.js';
 import syncRoutes from './routes/sync.routes.js';
 import superbotRoutes from './routes/superbot.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import pricingAdminRoutes from './routes/pricing-admin.routes.js';
 import v2Routes from './v2/index.js';
 
 // Load environment variables
@@ -217,6 +218,7 @@ app.use('/api/metrics', metricsRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/superbot', superbotRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/pricing-admin', pricingAdminRoutes);
 
 // API V2 Routes (Plan 2026)
 app.use('/api/v2', v2Routes);

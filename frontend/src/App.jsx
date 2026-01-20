@@ -42,6 +42,24 @@ const LogsPage = lazy(() => import('./pages/admin/LogsPage'))
 const CustomerLinksPage = lazy(() => import('./pages/admin/CustomerLinksPage'))
 const WhatsAppContactsPage = lazy(() => import('./pages/admin/WhatsAppContactsPage'))
 
+// Pricing Admin pages
+const PricingDashboard = lazy(() => import('./pages/admin/pricing/PricingDashboard'))
+const BrandsPage = lazy(() => import('./pages/admin/pricing/BrandsPage'))
+const CustomerProfilesPage = lazy(() => import('./pages/admin/pricing/CustomerProfilesPage'))
+const VolumeTiersPage = lazy(() => import('./pages/admin/pricing/VolumeTiersPage'))
+const FactorsPage = lazy(() => import('./pages/admin/pricing/FactorsPage'))
+const PricingQuantityDiscountsPage = lazy(() => import('./pages/admin/pricing/QuantityDiscountsPage'))
+const PricingBundlesPage = lazy(() => import('./pages/admin/pricing/BundlesPage'))
+const PricingPromotionsPage = lazy(() => import('./pages/admin/pricing/PromotionsPage'))
+const FixedPricesPage = lazy(() => import('./pages/admin/pricing/FixedPricesPage'))
+const PricingTestPage = lazy(() => import('./pages/admin/pricing/PricingTestPage'))
+const ValueDiscountsPage = lazy(() => import('./pages/admin/pricing/ValueDiscountsPage'))
+const LaunchProductsPage = lazy(() => import('./pages/admin/pricing/LaunchProductsPage'))
+const RegionalProtectionPage = lazy(() => import('./pages/admin/pricing/RegionalProtectionPage'))
+const LastPriceRulesPage = lazy(() => import('./pages/admin/pricing/LastPriceRulesPage'))
+const FixedPricesBatchPage = lazy(() => import('./pages/admin/pricing/FixedPricesBatchPage'))
+const BatchTestPage = lazy(() => import('./pages/admin/pricing/BatchTestPage'))
+
 const theme = createTheme({
   palette: {
     primary: { main: '#1976d2' },
@@ -251,6 +269,168 @@ function App() {
                   <ProtectedRoute>
                     <Layout>
                       {userLevel >= 5 ? <WhatsAppContactsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Pricing Admin Routes (level >= 5) */}
+              <Route
+                path="/admin/pricing"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <PricingDashboard /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/brands"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <BrandsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/profiles"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <CustomerProfilesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/tiers"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <VolumeTiersPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/factors"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <FactorsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/quantity-discounts"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <PricingQuantityDiscountsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/bundles"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <PricingBundlesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/promotions"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <PricingPromotionsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/fixed-prices"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <FixedPricesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/test"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <PricingTestPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/value-discounts"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <ValueDiscountsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/launch-products"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <LaunchProductsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/regional-protection"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <RegionalProtectionPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/last-price-rules"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <LastPriceRulesPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/fixed-prices/batch"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <FixedPricesBatchPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing/test/batch"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <BatchTestPage /> : <Navigate to="/" replace />}
                     </Layout>
                   </ProtectedRoute>
                 }

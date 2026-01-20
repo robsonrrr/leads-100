@@ -564,16 +564,13 @@ const MessageBubble = ({ message, showAIBadge = true }) => {
 const ConversationTimeline = ({
     phone,
     sessionId = null,
-    initialMessages = [],
     maxHeight = 700,
     showAIBadges = true,
     enableLazyLoading = true,
     pageSize = 50,
     onMessageClick = null,
 }) => {
-    // Garantir que initialMessages seja sempre um array
-    const safeInitialMessages = Array.isArray(initialMessages) ? initialMessages : []
-    const [messages, setMessages] = useState(safeInitialMessages)
+    const [messages, setMessages] = useState([])
     const [loading, setLoading] = useState(false)
     const [loadingMore, setLoadingMore] = useState(false)
     const [hasMore, setHasMore] = useState(true)
@@ -585,6 +582,7 @@ const ConversationTimeline = ({
     const previousScrollHeight = useRef(0)
 
     // Carregar mensagens iniciais - SEMPRE recarregar quando sessionId ou phone mudar
+    // Carregar mensagens iniciais - SEMPRE recarregar quando sessionId ou phone mudar
     useEffect(() => {
         // Limpar mensagens ao mudar de conversa
         setMessages([])
@@ -592,12 +590,11 @@ const ConversationTimeline = ({
         setHasMore(true)
         setError(null)
 
-        // SEMPRE carregar mensagens frescas quando há um sessionId ou phone
-        // Não confiar em initialMessages pois podem estar desatualizados
-        if (sessionId || phone) {
+        // Carregar apenas se houver sessão válida
+        if (sessionId) {
             loadMessages(true)
         }
-    }, [phone, sessionId])
+    }, [sessionId])
 
     // Scroll para o final em novas mensagens
     useEffect(() => {
@@ -635,7 +632,8 @@ const ConversationTimeline = ({
             if (sessionId) {
                 response = await superbotService.getMessages(sessionId, params)
             } else {
-                response = await superbotService.getConversations(phone, params)
+                // Se não há sessionId, não carregar nada (evita carregar conversations como mensagens)
+                return
             }
 
             const newMessages = response.data?.data || []

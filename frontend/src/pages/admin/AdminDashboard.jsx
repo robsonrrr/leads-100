@@ -42,6 +42,7 @@ import {
     TrendingUp as TrendingUpIcon,
     Warning as WarningIcon,
     CheckCircle as CheckCircleIcon,
+    AttachMoney as PricingIcon,
 } from '@mui/icons-material'
 import adminService from '../../services/admin.service'
 
@@ -148,6 +149,13 @@ const AdminDashboard = () => {
     }
 
     const menuItems = [
+        {
+            title: 'Pricing Admin',
+            description: 'Gerenciar regras de precificação, marcas e promoções',
+            icon: <PricingIcon />,
+            path: '/admin/pricing',
+            color: '#10b981',
+        },
         {
             title: 'Gestão de Usuários',
             description: 'Criar, editar e gerenciar usuários do sistema',
