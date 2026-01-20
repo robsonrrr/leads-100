@@ -7,6 +7,13 @@ function CustomerAutocomplete({ value, onChange, error, helperText }) {
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
+  // Incluir valor pré-selecionado nas opções
+  useEffect(() => {
+    if (value && !options.find(o => o.id === value.id)) {
+      setOptions(prev => [value, ...prev.filter(o => o.id !== value.id)])
+    }
+  }, [value])
+
   useEffect(() => {
     if (inputValue.length >= 2) {
       const timeoutId = setTimeout(() => {
@@ -15,7 +22,7 @@ function CustomerAutocomplete({ value, onChange, error, helperText }) {
 
       return () => clearTimeout(timeoutId)
     } else {
-      setOptions([])
+      setOptions(value ? [value] : [])
     }
   }, [inputValue])
 

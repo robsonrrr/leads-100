@@ -9,7 +9,8 @@ import {
   Tooltip,
   Divider,
   TextField,
-  CircularProgress
+  CircularProgress,
+  LinearProgress
 } from '@mui/material'
 import {
   Business as BusinessIcon,
@@ -19,7 +20,10 @@ import {
   LocationOn as LocationIcon,
   Edit as EditIcon,
   Check as CheckIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingUp as TrendingUpIcon,
+  HelpOutline as HelpIcon
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -265,7 +269,7 @@ function CustomerCard({ customer, onNewLead, onGoalUpdate, onTradeNameUpdate }) 
         </Box>
 
         {/* Alerta de dias sem compra */}
-        {customer.daysSinceOrder !== null && customer.daysSinceOrder > 30 && (
+        {customer.daysSinceOrder !== null && customer.daysSinceOrder > 30 && !customer.churnRisk && (
           <Box
             sx={{
               bgcolor: customer.status === 'inactive' ? 'error.lighter' : 'warning.lighter',
@@ -281,6 +285,84 @@ function CustomerCard({ customer, onNewLead, onGoalUpdate, onTradeNameUpdate }) 
             >
               ⚠️ Sem compra há {customer.daysSinceOrder} dias
             </Typography>
+          </Box>
+        )}
+
+        {/* Risco de Churn (IA) - Compacto */}
+        {customer.churnRisk && customer.churnRisk.score >= 40 && (
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: customer.churnRisk.riskLevel === 'CRITICAL' ? 'error.main' :
+                customer.churnRisk.riskLevel === 'HIGH' ? 'warning.dark' :
+                  customer.churnRisk.riskLevel === 'MEDIUM' ? 'warning.main' : 'grey.300',
+              borderRadius: 1,
+              p: 1,
+              mb: 2,
+              bgcolor: 'background.paper'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                  RISCO DE CHURN
+                </Typography>
+                <Tooltip title="Score calculado com base em recência, variação de faturamento e engajamento.">
+                  <HelpIcon sx={{ fontSize: 12, color: 'text.disabled', cursor: 'pointer' }} />
+                </Tooltip>
+              </Box>
+              <Chip
+                label={customer.churnRisk.riskLevel === 'CRITICAL' ? 'CRÍTICO' :
+                  customer.churnRisk.riskLevel === 'HIGH' ? 'ALTO' :
+                    customer.churnRisk.riskLevel === 'MEDIUM' ? 'MÉDIO' : 'BAIXO'}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: '0.6rem',
+                  bgcolor: customer.churnRisk.riskLevel === 'CRITICAL' ? 'error.light' :
+                    customer.churnRisk.riskLevel === 'HIGH' ? 'warning.light' :
+                      customer.churnRisk.riskLevel === 'MEDIUM' ? 'warning.lighter' : 'success.lighter',
+                  color: customer.churnRisk.riskLevel === 'CRITICAL' ? 'error.dark' :
+                    customer.churnRisk.riskLevel === 'HIGH' ? 'warning.dark' :
+                      customer.churnRisk.riskLevel === 'MEDIUM' ? 'warning.main' : 'success.main',
+                  fontWeight: 'bold'
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Typography variant="subtitle2" fontWeight="bold">
+                {customer.churnRisk.score}%
+              </Typography>
+              <Box sx={{ flex: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={customer.churnRisk.score}
+                  sx={{
+                    height: 4,
+                    borderRadius: 2,
+                    bgcolor: 'grey.200',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: customer.churnRisk.riskLevel === 'CRITICAL' ? 'error.main' :
+                        customer.churnRisk.riskLevel === 'HIGH' ? 'warning.dark' :
+                          customer.churnRisk.riskLevel === 'MEDIUM' ? 'warning.main' : 'success.main'
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="caption" color="text.secondary">
+                Última compra: <strong>{customer.churnRisk.daysInactive}d</strong>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                Tendência:
+                {customer.churnRisk.ticketVariation < 0 ?
+                  <TrendingDownIcon sx={{ fontSize: 12, color: 'error.main' }} /> :
+                  <TrendingUpIcon sx={{ fontSize: 12, color: 'success.main' }} />
+                }
+                <strong>{customer.churnRisk.ticketVariation < 0 ? '' : '+'}{Math.round(customer.churnRisk.ticketVariation * 100)}%</strong>
+              </Typography>
+            </Box>
           </Box>
         )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   Container,
@@ -27,6 +27,7 @@ import { formatCurrency } from '../utils'
 
 function CreateLeadPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
 
@@ -66,6 +67,38 @@ function CreateLeadPage() {
   })
 
   const [validationErrors, setValidationErrors] = useState({})
+
+  // Pré-selecionar cliente quando vier do CustomerCard
+  useEffect(() => {
+    if (location.state?.customer) {
+      const customer = location.state.customer
+      setFormData(prev => ({
+        ...prev,
+        customerId: {
+          id: customer.id,
+          name: customer.name,
+          tradeName: customer.tradeName,
+          cnpj: customer.cnpj,
+          city: customer.city,
+          state: customer.state,
+          limite: customer.creditLimit || customer.limite || 0
+        }
+      }))
+
+      // Buscar transportadora preferida do cliente
+      const fetchTransporter = async () => {
+        try {
+          const response = await leadsService.getCustomerTransporter(customer.id)
+          if (response.data.success && response.data.data) {
+            setFormData(prev => ({ ...prev, cTransporter: response.data.data.id }))
+          }
+        } catch (err) {
+          console.error('Erro ao buscar transportadora do cliente:', err)
+        }
+      }
+      fetchTransporter()
+    }
+  }, [location.state])
 
   useEffect(() => {
     loadMetadata()

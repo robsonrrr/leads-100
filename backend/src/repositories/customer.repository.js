@@ -94,10 +94,16 @@ export class CustomerRepository {
           g.classification,
           COALESCE(vunits.sold_units_2026, 0) as sold_units_2026,
           COALESCE(vunits_month.sold_units_month, 0) as sold_units_month,
-          ROUND(g.goal_units / 11) as goal_month
+          ROUND(g.goal_units / 11) as goal_month,
+          -- Dados de Churn Score
+          cs.score as churn_score,
+          cs.risk_level as churn_risk_level,
+          cs.days_since_last_order as churn_days_inactive,
+          cs.avg_ticket_variation as churn_ticket_variation
         FROM clientes c
         LEFT JOIN rolemak_users u ON c.vendedor = u.id
         LEFT JOIN mak.customer_goals g ON g.customer_id = c.id AND g.year = YEAR(CURDATE())
+        LEFT JOIN staging.customer_churn_scores cs ON cs.customer_id = c.id
         LEFT JOIN (
           SELECT ClienteID, SUM(Quantidade) as sold_units_2026
           FROM mak.Vendas_Historia
@@ -253,6 +259,13 @@ export class CustomerRepository {
             progressMonth: row.goal_month > 0 ? Math.round((row.sold_units_month / row.goal_month) * 100) : 0,
             gapYear: Math.max(0, (parseInt(row.goal_2026) || 0) - (parseInt(row.sold_units_2026) || 0)),
             gapMonth: Math.max(0, (parseInt(row.goal_month) || 0) - (parseInt(row.sold_units_month) || 0))
+          } : null,
+          // Dados de Churn/Risco (IA)
+          churnRisk: row.churn_score !== null && row.churn_score !== undefined ? {
+            score: Math.round(parseFloat(row.churn_score)) || 0,
+            riskLevel: row.churn_risk_level || 'LOW',
+            daysInactive: parseInt(row.churn_days_inactive) || 0,
+            ticketVariation: parseFloat(row.churn_ticket_variation) || 0
           } : null
         };
       });

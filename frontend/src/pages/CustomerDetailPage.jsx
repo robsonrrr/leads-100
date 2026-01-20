@@ -34,7 +34,8 @@ import {
   LocalShipping as ShippingIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  ShoppingCart as CartIcon
+  ShoppingCart as CartIcon,
+  OpenInNew as OpenInNewIcon
 } from '@mui/icons-material'
 import { customersService } from '../services/api'
 import { useToast } from '../contexts/ToastContext'
@@ -342,10 +343,24 @@ function CustomerDetailPage() {
 
       {/* Dados do Cliente */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          <BusinessIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          Dados do Cliente
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">
+            <BusinessIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Dados do Cliente
+          </Typography>
+          <Tooltip title="Abrir no CRM Vallery">
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<OpenInNewIcon />}
+              href={`https://office.vallery.com.br/crm/v504/vendedores/show/${id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ver no CRM
+            </Button>
+          </Tooltip>
+        </Box>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Typography variant="body2" color="text.secondary">Endereço</Typography>
