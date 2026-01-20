@@ -153,7 +153,7 @@ export class UserPreferenceService {
             let params;
 
             if (isManager) {
-                // Gerente: total do segmento máquinas
+                // Gerente: total de TODAS as metas de máquinas (todos os vendedores)
                 query = `
                     SELECT 
                         COALESCE(SUM(g.goal_units), 0) as total_goal,
@@ -161,8 +161,6 @@ export class UserPreferenceService {
                         COALESCE(SUM(vm.sold_month), 0) as sold_month,
                         ROUND(COALESCE(SUM(g.goal_units), 0) / 11) as goal_month
                     FROM mak.customer_goals g
-                    INNER JOIN clientes c ON c.id = g.customer_id
-                    INNER JOIN rolemak_users u ON u.id = c.vendedor
                     LEFT JOIN (
                         SELECT ClienteID, SUM(Quantidade) as sold_year
                         FROM mak.Vendas_Historia
@@ -178,8 +176,6 @@ export class UserPreferenceService {
                         GROUP BY ClienteID
                     ) vm ON vm.ClienteID = g.customer_id
                     WHERE g.year = YEAR(CURDATE())
-                      AND u.segmento = 'MAQUINAS'
-                      AND u.depto = 'VENDAS'
                 `;
                 params = [];
             } else {
