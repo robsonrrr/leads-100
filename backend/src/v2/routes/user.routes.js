@@ -14,6 +14,9 @@ router.put('/preferences', (req, res) => userController.updatePreferences(req, r
 router.get('/daily-lead-progress', (req, res) => userController.getDailyLeadProgress(req, res));
 router.put('/daily-lead-goal', (req, res) => userController.updateDailyLeadGoal(req, res));
 
+// Meta diária de máquinas (próprio usuário ou segmento para gerentes)
+router.get('/daily-machines-progress', (req, res) => userController.getDailyMachinesProgress(req, res));
+
 // Rotas admin (gerenciar outros usuários) - requerem level >= 5
 router.get('/admin/user/:userId/preferences', (req, res) => userController.getAdminUserPreferences(req, res));
 router.put('/admin/user/:userId/daily-goal', (req, res) => userController.updateAdminUserDailyGoal(req, res));

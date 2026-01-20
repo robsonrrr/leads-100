@@ -44,6 +44,26 @@ export class UserController {
         }
     }
 
+    async getDailyMachinesProgress(req, res) {
+        try {
+            const userId = req.user?.id ?? req.user?.userId;
+            const userLevel = req.user?.level ?? 0;
+            const cacheKey = `daily-machines-progress:${userId}:${userLevel >= 4 ? 'manager' : 'seller'}`;
+
+            // Usar getOrSet para cache de 60 segundos
+            const progress = await CacheService.getOrSet(
+                cacheKey,
+                () => userPreferenceService.getDailyMachinesProgress(userId, userLevel),
+                60 // TTL 60 segundos
+            );
+
+            res.json({ success: true, data: progress });
+        } catch (error) {
+            logger.error('Controller Error - getDailyMachinesProgress:', error);
+            res.status(500).json({ success: false, error: { message: 'Erro ao buscar progresso de máquinas' } });
+        }
+    }
+
     async updateDailyLeadGoal(req, res) {
         try {
             const userId = req.user?.id ?? req.user?.userId;

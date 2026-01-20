@@ -50,6 +50,7 @@ import NotificationBell from './common/NotificationBell'
 import SyncErrorNotifications from './SyncErrorNotifications'
 import useServiceWorker from '../hooks/useServiceWorker'
 import DailyLeadGoalBadge from './DailyLeadGoalBadge'
+import DailyMachinesGoalBadge from './DailyMachinesGoalBadge'
 
 const drawerWidth = 240
 
@@ -246,6 +247,7 @@ function Layout({ children }) {
             Gestão de Leads
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DailyMachinesGoalBadge />
             <DailyLeadGoalBadge />
             <NotificationBell />
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>

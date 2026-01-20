@@ -134,6 +134,108 @@ export class UserPreferenceService {
             throw error;
         }
     }
+
+    /**
+     * Busca progresso diário de vendas de máquinas (meta mensal / dias úteis restantes)
+     * - level < 4: mostra progresso do próprio vendedor
+     * - level >= 4: mostra total do segmento máquinas
+     */
+    async getDailyMachinesProgress(userId, userLevel) {
+        try {
+            const isManager = (userLevel || 0) >= 4;
+
+            // Calcular dias úteis restantes no mês (aproximado: dias totais - dia atual)
+            const today = new Date();
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const daysRemainingInMonth = Math.max(1, lastDayOfMonth.getDate() - today.getDate() + 1);
+
+            let query;
+            let params;
+
+            if (isManager) {
+                // Gerente: total do segmento máquinas
+                query = `
+                    SELECT 
+                        COALESCE(SUM(g.goal_units), 0) as total_goal,
+                        COALESCE(SUM(v.sold_year), 0) as sold_year,
+                        COALESCE(SUM(vm.sold_month), 0) as sold_month,
+                        ROUND(COALESCE(SUM(g.goal_units), 0) / 11) as goal_month
+                    FROM mak.customer_goals g
+                    INNER JOIN clientes c ON c.id = g.customer_id
+                    INNER JOIN rolemak_users u ON u.id = c.vendedor
+                    LEFT JOIN (
+                        SELECT ClienteID, SUM(Quantidade) as sold_year
+                        FROM mak.Vendas_Historia
+                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) AND ProdutoSegmento = 'machines'
+                        GROUP BY ClienteID
+                    ) v ON v.ClienteID = g.customer_id
+                    LEFT JOIN (
+                        SELECT ClienteID, SUM(Quantidade) as sold_month
+                        FROM mak.Vendas_Historia
+                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) 
+                          AND MONTH(DataVenda) = MONTH(CURDATE()) 
+                          AND ProdutoSegmento = 'machines'
+                        GROUP BY ClienteID
+                    ) vm ON vm.ClienteID = g.customer_id
+                    WHERE g.year = YEAR(CURDATE())
+                      AND u.segmento = 'MAQUINAS'
+                      AND u.depto = 'VENDAS'
+                `;
+                params = [];
+            } else {
+                // Vendedor: próprios clientes
+                query = `
+                    SELECT 
+                        COALESCE(SUM(g.goal_units), 0) as total_goal,
+                        COALESCE(SUM(v.sold_year), 0) as sold_year,
+                        COALESCE(SUM(vm.sold_month), 0) as sold_month,
+                        ROUND(COALESCE(SUM(g.goal_units), 0) / 11) as goal_month
+                    FROM mak.customer_goals g
+                    INNER JOIN clientes c ON c.id = g.customer_id
+                    LEFT JOIN (
+                        SELECT ClienteID, SUM(Quantidade) as sold_year
+                        FROM mak.Vendas_Historia
+                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) AND ProdutoSegmento = 'machines'
+                        GROUP BY ClienteID
+                    ) v ON v.ClienteID = g.customer_id
+                    LEFT JOIN (
+                        SELECT ClienteID, SUM(Quantidade) as sold_month
+                        FROM mak.Vendas_Historia
+                        WHERE YEAR(DataVenda) = YEAR(CURDATE()) 
+                          AND MONTH(DataVenda) = MONTH(CURDATE()) 
+                          AND ProdutoSegmento = 'machines'
+                        GROUP BY ClienteID
+                    ) vm ON vm.ClienteID = g.customer_id
+                    WHERE g.year = YEAR(CURDATE())
+                      AND c.vendedor = ?
+                `;
+                params = [userId];
+            }
+
+            const [rows] = await db().execute(query, params);
+            const row = rows[0] || {};
+
+            const goalMonth = parseInt(row.goal_month) || 0;
+            const soldMonth = parseInt(row.sold_month) || 0;
+            const remaining = Math.max(0, goalMonth - soldMonth);
+            const dailyGoal = Math.ceil(remaining / daysRemainingInMonth);
+            const percentage = goalMonth > 0 ? Math.round((soldMonth / goalMonth) * 100) : 0;
+
+            return {
+                goalMonth,
+                soldMonth,
+                remaining,
+                dailyGoal, // Meta diária sugerida
+                percentage,
+                completed: soldMonth >= goalMonth,
+                isManager,
+                daysRemaining: daysRemainingInMonth
+            };
+        } catch (error) {
+            logger.error('Error getting daily machines progress:', error);
+            throw error;
+        }
+    }
 }
 
 export const userPreferenceService = new UserPreferenceService();

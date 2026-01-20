@@ -151,6 +151,8 @@ export const userService = {
   // Meta diária de leads
   getDailyLeadProgress: () => api.get('/v2/user/daily-lead-progress'),
   updateDailyLeadGoal: (goal) => api.put('/v2/user/daily-lead-goal', { goal }),
+  // Meta diária de máquinas
+  getDailyMachinesProgress: () => api.get('/v2/user/daily-machines-progress'),
 }
 
 export const leadsService = {
