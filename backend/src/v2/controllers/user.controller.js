@@ -1,4 +1,5 @@
 import { userPreferenceService } from '../services/UserPreferenceService.js';
+import { CacheService } from '../../services/cache.service.js';
 import logger from '../../config/logger.js';
 
 export class UserController {
@@ -27,7 +28,19 @@ export class UserController {
     async getDailyLeadProgress(req, res) {
         try {
             const userId = req.user?.id ?? req.user?.userId;
+            const cacheKey = `daily-lead-progress:${userId}`;
+
+            // Tentar buscar do cache (TTL 30s)
+            const cached = await CacheService.get(cacheKey);
+            if (cached) {
+                return res.json({ success: true, data: cached });
+            }
+
             const progress = await userPreferenceService.getDailyLeadProgress(userId);
+
+            // Cachear por 30 segundos
+            await CacheService.set(cacheKey, progress, 30);
+
             res.json({ success: true, data: progress });
         } catch (error) {
             logger.error('Controller Error - getDailyLeadProgress:', error);

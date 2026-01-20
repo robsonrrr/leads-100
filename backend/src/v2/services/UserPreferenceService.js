@@ -98,34 +98,28 @@ export class UserPreferenceService {
 
     async getDailyLeadProgress(userId) {
         try {
-            // Meta padrão
-            let goal = 50;
+            // Cache key para evitar consultas repetidas
+            const cacheKey = `daily-lead-progress:${userId}`;
 
-            // Tentar buscar meta personalizada do usuário
-            try {
-                const [rows] = await db().execute(
-                    'SELECT daily_lead_goal FROM crm.user_preferences WHERE user_id = ?',
-                    [userId]
-                );
-                if (rows.length > 0 && rows[0].daily_lead_goal) {
-                    goal = rows[0].daily_lead_goal;
-                }
-            } catch (err) {
-                // Coluna pode não existir ainda - usar padrão
-                logger.warn('daily_lead_goal column may not exist, using default:', err.message);
-            }
-
-            // Contar leads criados hoje pelo usuário
-            // Tabela: staging.staging_queries, coluna vendedor: cSeller, data: dCart
-            const [countRows] = await db().execute(
-                `SELECT COUNT(*) as count 
-                 FROM staging.staging_queries 
-                 WHERE cSeller = ? 
-                 AND DATE(dCart) = CURDATE()`,
-                [userId]
+            // Query otimizada: combina busca de meta e contagem em uma única consulta
+            // Usa range de datas (CURDATE() to CURDATE() + 1) para aproveitar índice em dCart
+            const [rows] = await db().execute(
+                `SELECT 
+                    COALESCE(up.daily_lead_goal, 50) as goal,
+                    (
+                        SELECT COUNT(*) 
+                        FROM staging.staging_queries sq
+                        WHERE sq.cSeller = ? 
+                        AND sq.dCart >= CURDATE() 
+                        AND sq.dCart < CURDATE() + INTERVAL 1 DAY
+                    ) as created
+                FROM (SELECT 1) dummy
+                LEFT JOIN crm.user_preferences up ON up.user_id = ?`,
+                [userId, userId]
             );
 
-            const created = countRows[0]?.count || 0;
+            const goal = rows[0]?.goal || 50;
+            const created = rows[0]?.created || 0;
             const percentage = goal > 0 ? Math.round((created / goal) * 100) : 0;
 
             return {
