@@ -29,6 +29,7 @@ const LeadMailView = lazy(() => import('./pages/LeadMailView'))
 const CustomerGoalsPage = lazy(() => import('./pages/CustomerGoalsPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
+const WhatsAppPageV2 = lazy(() => import('./pages/WhatsAppPageV2'))
 const DailyTasksPage = lazy(() => import('./pages/DailyTasksPage'))
 const HelpPage = lazy(() => import('./pages/HelpPage'))
 
@@ -54,7 +55,7 @@ const PricingPromotionsPage = lazy(() => import('./pages/admin/pricing/Promotion
 const FixedPricesPage = lazy(() => import('./pages/admin/pricing/FixedPricesPage'))
 const PricingTestPage = lazy(() => import('./pages/admin/pricing/PricingTestPage'))
 const ValueDiscountsPage = lazy(() => import('./pages/admin/pricing/ValueDiscountsPage'))
-const LaunchProductsPage = lazy(() => import('./pages/admin/pricing/LaunchProductsPage'))
+const PricingLaunchProductsPage = lazy(() => import('./pages/admin/pricing/LaunchProductsPage'))
 const RegionalProtectionPage = lazy(() => import('./pages/admin/pricing/RegionalProtectionPage'))
 const LastPriceRulesPage = lazy(() => import('./pages/admin/pricing/LastPriceRulesPage'))
 const FixedPricesBatchPage = lazy(() => import('./pages/admin/pricing/FixedPricesBatchPage'))
@@ -177,6 +178,28 @@ function App() {
                   <ProtectedRoute>
                     <Layout>
                       {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <WhatsAppPage />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* WhatsApp v2 Routes (testing) */}
+              <Route
+                path="/whatsapp-v2"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <WhatsAppPageV2 />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/whatsapp-v2/:phone"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <WhatsAppPageV2 />}
                     </Layout>
                   </ProtectedRoute>
                 }
@@ -390,7 +413,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Layout>
-                      {userLevel >= 5 ? <LaunchProductsPage /> : <Navigate to="/" replace />}
+                      {userLevel >= 5 ? <PricingLaunchProductsPage /> : <Navigate to="/" replace />}
                     </Layout>
                   </ProtectedRoute>
                 }

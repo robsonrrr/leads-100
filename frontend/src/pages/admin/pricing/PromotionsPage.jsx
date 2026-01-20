@@ -148,13 +148,34 @@ function PromotionsPage() {
 
     // Search products
     const searchProducts = async (query) => {
-        if (!query || query.length < 2) return;
+        if (!query || query.length < 2) {
+            setProductOptions([]);
+            return;
+        }
         setLoadingProducts(true);
         try {
             const response = await pricingAdminService.searchProducts(query);
-            setProductOptions(response.data || []);
+            // The API returns: { success: true, data: { status: 'success', count: N, products: [...] } }
+            // After apiRequest processing, we get: { status: 'success', count: N, products: [...] }
+            let products = [];
+            if (response?.products) {
+                // Direct response with products array
+                products = response.products;
+            } else if (response?.data?.products) {
+                // Nested in data
+                products = response.data.products;
+            } else if (response?.data?.items) {
+                products = response.data.items;
+            } else if (Array.isArray(response?.data)) {
+                products = response.data;
+            } else if (Array.isArray(response)) {
+                products = response;
+            }
+            console.log('searchProducts response:', response, 'parsed products:', products);
+            setProductOptions(Array.isArray(products) ? products : []);
         } catch (err) {
             console.error('Erro ao buscar produtos:', err);
+            setProductOptions([]);
         } finally {
             setLoadingProducts(false);
         }
@@ -565,21 +586,68 @@ function PromotionsPage() {
                                 freeSolo
                                 options={productOptions}
                                 getOptionLabel={(option) =>
-                                    typeof option === 'string' ? option : `${option.sku} - ${option.name || option.model}`
+                                    typeof option === 'string' ? option : option.sku || ''
+                                }
+                                isOptionEqualToValue={(option, value) =>
+                                    option.sku === value || option.sku === value?.sku
                                 }
                                 loading={loadingProducts}
-                                onInputChange={(event, newInputValue) => {
-                                    setFormData({ ...formData, sku: newInputValue });
-                                    searchProducts(newInputValue);
+                                onInputChange={(event, newInputValue, reason) => {
+                                    if (reason === 'input') {
+                                        setFormData({ ...formData, sku: newInputValue });
+                                        searchProducts(newInputValue);
+                                    }
+                                }}
+                                onChange={(event, newValue) => {
+                                    if (newValue && typeof newValue === 'object') {
+                                        setFormData({ ...formData, sku: newValue.sku });
+                                    } else if (newValue === null) {
+                                        setFormData({ ...formData, sku: '' });
+                                    }
                                 }}
                                 inputValue={formData.sku}
+                                slotProps={{
+                                    popper: {
+                                        sx: { zIndex: 1500 }
+                                    },
+                                    paper: {
+                                        sx: { maxHeight: 300 }
+                                    }
+                                }}
+                                renderOption={(props, option) => {
+                                    const { key, ...restProps } = props;
+                                    return (
+                                        <Box component="li" key={option?.sku || key} {...restProps}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                <Typography variant="body2" fontWeight="medium">
+                                                    {option?.model || option?.name || 'Sem modelo'}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    SKU: {option?.sku || 'N/A'} {(option?.brand || option?.brand_name) ? `• ${option.brand || option.brand_name}` : ''}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    );
+                                }}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="SKU do Produto (opcional)"
+                                        label="Buscar Produto (SKU ou Modelo)"
+                                        placeholder="Digite SKU ou modelo do produto..."
                                         helperText="Deixe em branco para todos os produtos"
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            endAdornment: (
+                                                <>
+                                                    {loadingProducts ? <CircularProgress color="inherit" size={20} /> : null}
+                                                    {params.InputProps.endAdornment}
+                                                </>
+                                            ),
+                                        }}
                                     />
                                 )}
+                                noOptionsText="Nenhum produto encontrado"
+                                loadingText="Buscando produtos..."
                             />
                         </Grid>
                         <Grid item xs={6} md={3}>

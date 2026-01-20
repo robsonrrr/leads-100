@@ -4,29 +4,31 @@
  * Serviço para comunicação com as APIs administrativas do Pricing Agent
  */
 
-const API_BASE = '/api/pricing-admin';
+import api from './api';
+
+const API_BASE = '/pricing-admin';
 
 // Helper para fazer requisições com tratamento de erro
 async function apiRequest(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+    try {
+        const method = (options.method || 'GET').toLowerCase();
+        const url = `${API_BASE}${endpoint}`;
 
-    const config = {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-            ...options.headers,
-        },
-    };
+        let response;
+        if (method === 'get' || method === 'delete') {
+            response = await api[method](url);
+        } else {
+            response = await api[method](url, options.body ? JSON.parse(options.body) : undefined);
+        }
 
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error?.message || 'Erro na requisição');
+        return response.data;
+    } catch (error) {
+        const message = error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            error.message ||
+            'Erro na requisição';
+        throw new Error(message);
     }
-
-    return data;
 }
 
 // ============================================================================
@@ -253,6 +255,39 @@ export async function deleteQuantityDiscount(id) {
 }
 
 // ============================================================================
+// VALUE DISCOUNTS (D4P - Order Value Discounts)
+// ============================================================================
+
+export async function listValueDiscounts(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/order-value-discounts${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function getValueDiscount(id) {
+    return apiRequest(`/order-value-discounts/${id}`);
+}
+
+export async function createValueDiscount(discountData) {
+    return apiRequest('/order-value-discounts', {
+        method: 'POST',
+        body: JSON.stringify(discountData),
+    });
+}
+
+export async function updateValueDiscount(id, discountData) {
+    return apiRequest(`/order-value-discounts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(discountData),
+    });
+}
+
+export async function deleteValueDiscount(id) {
+    return apiRequest(`/order-value-discounts/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============================================================================
 // BUNDLES
 // ============================================================================
 
@@ -336,6 +371,11 @@ export async function batchCreateFixedPrices(batchData) {
 // PROMOTIONS
 // ============================================================================
 
+export async function listPromotions(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/promotions${queryString ? `?${queryString}` : ''}`);
+}
+
 export async function listPromotionsBySegment(segmentId, params = {}) {
     const queryString = new URLSearchParams(params).toString();
     return apiRequest(`/promotions/segment/${segmentId}${queryString ? `?${queryString}` : ''}`);
@@ -397,6 +437,105 @@ export async function searchCustomers(query, params = {}) {
     return apiRequest(`/search/customers?${searchParams.toString()}`);
 }
 
+// ============================================================================
+// LAUNCH PRODUCTS (Lançamentos)
+// ============================================================================
+
+export async function listLaunchProducts(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/launch-products${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function getLaunchProduct(id) {
+    return apiRequest(`/launch-products/${id}`);
+}
+
+export async function createLaunchProduct(launchData) {
+    return apiRequest('/launch-products', {
+        method: 'POST',
+        body: JSON.stringify(launchData),
+    });
+}
+
+export async function updateLaunchProduct(id, launchData) {
+    return apiRequest(`/launch-products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(launchData),
+    });
+}
+
+export async function deleteLaunchProduct(id) {
+    return apiRequest(`/launch-products/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============================================================================
+// REGIONAL PROTECTION (Proteção Regional)
+// ============================================================================
+
+export async function listRegionalProtections(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/regional-protections${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function getRegionalProtection(id) {
+    return apiRequest(`/regional-protections/${id}`);
+}
+
+export async function createRegionalProtection(protectionData) {
+    return apiRequest('/regional-protections', {
+        method: 'POST',
+        body: JSON.stringify(protectionData),
+    });
+}
+
+export async function updateRegionalProtection(id, protectionData) {
+    return apiRequest(`/regional-protections/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(protectionData),
+    });
+}
+
+export async function deleteRegionalProtection(id) {
+    return apiRequest(`/regional-protections/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============================================================================
+// LAST PRICE RULES (Regras de Último Preço)
+// ============================================================================
+
+export async function listLastPriceRules(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/last-price-rules${queryString ? `?${queryString}` : ''}`);
+}
+
+export async function getLastPriceRule(id) {
+    return apiRequest(`/last-price-rules/${id}`);
+}
+
+export async function createLastPriceRule(ruleData) {
+    return apiRequest('/last-price-rules', {
+        method: 'POST',
+        body: JSON.stringify(ruleData),
+    });
+}
+
+export async function updateLastPriceRule(id, ruleData) {
+    return apiRequest(`/last-price-rules/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(ruleData),
+    });
+}
+
+export async function deleteLastPriceRule(id) {
+    return apiRequest(`/last-price-rules/${id}`, {
+        method: 'DELETE',
+    });
+}
+
 // Export all functions as default object
 export default {
     checkHealth,
@@ -438,6 +577,12 @@ export default {
     createQuantityDiscount,
     updateQuantityDiscount,
     deleteQuantityDiscount,
+    // Value Discounts (D4P)
+    listValueDiscounts,
+    getValueDiscount,
+    createValueDiscount,
+    updateValueDiscount,
+    deleteValueDiscount,
     // Bundles
     listBundles,
     getBundle,
@@ -453,6 +598,7 @@ export default {
     deleteFixedPrice,
     batchCreateFixedPrices,
     // Promotions
+    listPromotions,
     listPromotionsBySegment,
     getPromotion,
     createPromotion,
@@ -464,4 +610,22 @@ export default {
     // Search
     searchProducts,
     searchCustomers,
+    // Launch Products
+    listLaunchProducts,
+    getLaunchProduct,
+    createLaunchProduct,
+    updateLaunchProduct,
+    deleteLaunchProduct,
+    // Regional Protections
+    listRegionalProtections,
+    getRegionalProtection,
+    createRegionalProtection,
+    updateRegionalProtection,
+    deleteRegionalProtection,
+    // Last Price Rules
+    listLastPriceRules,
+    getLastPriceRule,
+    createLastPriceRule,
+    updateLastPriceRule,
+    deleteLastPriceRule,
 };

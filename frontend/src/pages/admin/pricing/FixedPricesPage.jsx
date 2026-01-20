@@ -99,8 +99,11 @@ function FixedPricesPage() {
                 ...(search && { search }),
             };
             const response = await pricingAdminService.listFixedPrices(params);
-            setFixedPrices(response.data?.items || response.data || []);
-            setTotal(response.data?.total || response.data?.length || 0);
+            // A API retorna customers-summary com {customers: [...]} ou customer-specific com {prices: [...]}
+            const data = response.data || response;
+            const items = data.prices || data.customers || data.items || [];
+            setFixedPrices(Array.isArray(items) ? items : []);
+            setTotal(data.total || data.count || items.length || 0);
         } catch (err) {
             setError(err.message || 'Erro ao carregar preços fixos');
             setFixedPrices([]);

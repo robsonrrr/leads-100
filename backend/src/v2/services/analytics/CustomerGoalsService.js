@@ -334,6 +334,15 @@ class CustomerGoalsService {
             const annual = annualSales[customer.customer_id] || {};
             const monthly = monthlyData[customer.customer_id] || {};
 
+            // Meta mensal = Meta anual / 11 (arredondado)
+            // 11 meses porque janeiro já passou parcialmente ou dezembro tem menos trabalho
+            const goalMonth = Math.round((customer.goal_2026 || 0) / 11);
+            const soldMonth = monthly.sold_month || 0;
+            const achievementMonthPct = goalMonth > 0
+                ? Math.round((soldMonth / goalMonth) * 100)
+                : 0;
+            const gapMonth = goalMonth - soldMonth;
+
             return {
                 ...customer,
                 // Dados anuais (cache curto)
@@ -342,8 +351,12 @@ class CustomerGoalsService {
                 gap: annual.gap || customer.goal_2026,
                 achievement_pct: annual.achievement_pct || 0,
                 // Dados mensais (realtime)
-                sold_month: monthly.sold_month || 0,
-                is_active_month: monthly.is_active_month || 0
+                sold_month: soldMonth,
+                is_active_month: monthly.is_active_month || 0,
+                // Meta mensal calculada (meta anual / 11)
+                goal_month: goalMonth,
+                achievement_month_pct: achievementMonthPct,
+                gap_month: gapMonth
             };
         });
     }
@@ -404,6 +417,7 @@ class CustomerGoalsService {
      */
     async getByCustomer(customerId, year = null) {
         const targetYear = year || new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
         const database = db();
 
         const [results] = await database.query(`
@@ -416,12 +430,19 @@ class CustomerGoalsService {
                 g.classification,
                 g.sales_2025,
                 g.goal_units as goal_2026,
+                ROUND(g.goal_units / 11) as goal_month,
                 COALESCE(v.sold_2026, 0) as sold_2026,
+                COALESCE(vm.sold_month, 0) as sold_month,
                 g.goal_units - COALESCE(v.sold_2026, 0) as gap,
+                ROUND(g.goal_units / 11) - COALESCE(vm.sold_month, 0) as gap_month,
                 CASE WHEN g.goal_units > 0 
                     THEN ROUND(COALESCE(v.sold_2026, 0) / g.goal_units * 100, 0) 
                     ELSE 0 
-                END as achievement_pct
+                END as achievement_pct,
+                CASE WHEN ROUND(g.goal_units / 11) > 0 
+                    THEN ROUND(COALESCE(vm.sold_month, 0) / ROUND(g.goal_units / 11) * 100, 0) 
+                    ELSE 0 
+                END as achievement_month_pct
             FROM mak.customer_goals g
             INNER JOIN mak.clientes c ON c.id = g.customer_id
             INNER JOIN rolemak_users u ON u.id = g.seller_id
@@ -431,8 +452,14 @@ class CustomerGoalsService {
                 WHERE YEAR(DataVenda) = ? AND ProdutoSegmento = 'machines'
                 GROUP BY ClienteID
             ) v ON v.ClienteID = g.customer_id
+            LEFT JOIN (
+                SELECT ClienteID, SUM(Quantidade) as sold_month
+                FROM mak.Vendas_Historia
+                WHERE YEAR(DataVenda) = ? AND MONTH(DataVenda) = ? AND ProdutoSegmento = 'machines'
+                GROUP BY ClienteID
+            ) vm ON vm.ClienteID = g.customer_id
             WHERE g.customer_id = ? AND g.year = ?
-        `, [targetYear, customerId, targetYear]);
+        `, [targetYear, targetYear, currentMonth, customerId, targetYear]);
 
         return results[0] || null;
     }

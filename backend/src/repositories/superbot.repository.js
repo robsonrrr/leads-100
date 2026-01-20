@@ -336,11 +336,15 @@ export const SuperbotRepository = {
     const cached = await cacheGet(cacheKey);
     if (cached) return cached;
 
-    // Contagem total
+    // Contagem total (excluindo mensagens de Status)
     const [countResult] = await db().query(`
       SELECT COUNT(*) as total
       FROM ${SUPERBOT_SCHEMA}.messages
       WHERE session_id = ?
+        AND sender_phone NOT LIKE '%status@broadcast%'
+        AND recipient_phone NOT LIKE '%status@broadcast%'
+        AND COALESCE(sender_phone, '') NOT LIKE 'status%'
+        AND COALESCE(recipient_phone, '') NOT LIKE 'status%'
     `, [sessionId]);
 
     const total = countResult[0]?.total || 0;
@@ -386,6 +390,11 @@ export const SuperbotRepository = {
         LEFT JOIN ${SUPERBOT_SCHEMA}.message_transcriptions mt ON mt.media_id = mm.id
         LEFT JOIN ${SUPERBOT_SCHEMA}.message_responses mr ON mr.message_id = m.id
         WHERE m.session_id = ?
+          -- Excluir mensagens de Status do WhatsApp (stories)
+          AND m.sender_phone NOT LIKE '%status@broadcast%'
+          AND m.recipient_phone NOT LIKE '%status@broadcast%'
+          AND COALESCE(m.sender_phone, '') NOT LIKE 'status%'
+          AND COALESCE(m.recipient_phone, '') NOT LIKE 'status%'
         ORDER BY m.received_at DESC
         LIMIT ? OFFSET ?
       ) recent_messages

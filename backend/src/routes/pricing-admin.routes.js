@@ -246,6 +246,16 @@ router.put('/quantity-discounts/:id', pricingAdminController.updateQuantityDisco
 router.delete('/quantity-discounts/:id', pricingAdminController.deleteQuantityDiscount);
 
 // ============================================================================
+// ORDER VALUE DISCOUNTS (D4P)
+// ============================================================================
+
+router.get('/order-value-discounts', pricingAdminController.listOrderValueDiscounts);
+router.get('/order-value-discounts/:id', pricingAdminController.getOrderValueDiscount);
+router.post('/order-value-discounts', pricingAdminController.createOrderValueDiscount);
+router.put('/order-value-discounts/:id', pricingAdminController.updateOrderValueDiscount);
+router.delete('/order-value-discounts/:id', pricingAdminController.deleteOrderValueDiscount);
+
+// ============================================================================
 // BUNDLES
 // ============================================================================
 
@@ -271,6 +281,7 @@ router.post('/fixed-prices/batch', pricingAdminController.batchCreateFixedPrices
 // PROMOTIONS
 // ============================================================================
 
+router.get('/promotions', pricingAdminController.listPromotions);
 router.get('/promotions/segment/:segmentId', pricingAdminController.listPromotionsBySegment);
 router.get('/promotions/:id', pricingAdminController.getPromotion);
 router.post('/promotions', pricingAdminController.createPromotion);

@@ -363,6 +363,58 @@ export async function deleteQuantityDiscount(req, res) {
 }
 
 // ============================================================================
+// ORDER VALUE DISCOUNTS (D4P)
+// ============================================================================
+
+export async function listOrderValueDiscounts(req, res) {
+    try {
+        const result = await pricingApiService.listOrderValueDiscounts(req.query);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'listOrderValueDiscounts');
+    }
+}
+
+export async function getOrderValueDiscount(req, res) {
+    try {
+        const result = await pricingApiService.getOrderValueDiscountById(req.params.id);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'getOrderValueDiscount');
+    }
+}
+
+export async function createOrderValueDiscount(req, res) {
+    try {
+        const result = await pricingApiService.createOrderValueDiscount(req.body);
+        await auditLog('pricing_admin', 'create_order_value_discount', { data: req.body }, req.user?.id);
+        res.status(201).json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'createOrderValueDiscount');
+    }
+}
+
+export async function updateOrderValueDiscount(req, res) {
+    try {
+        const result = await pricingApiService.updateOrderValueDiscount(req.params.id, req.body);
+        await auditLog('pricing_admin', 'update_order_value_discount', { id: req.params.id, data: req.body }, req.user?.id);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'updateOrderValueDiscount');
+    }
+}
+
+export async function deleteOrderValueDiscount(req, res) {
+    try {
+        const result = await pricingApiService.deleteOrderValueDiscount(req.params.id);
+        await auditLog('pricing_admin', 'delete_order_value_discount', { id: req.params.id }, req.user?.id);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'deleteOrderValueDiscount');
+    }
+}
+
+// ============================================================================
 // BUNDLES
 // ============================================================================
 
@@ -439,7 +491,7 @@ export async function listFixedPrices(req, res) {
 
 export async function getFixedPrice(req, res) {
     try {
-        const result = await pricingApiService.getFixedPriceById(req.params.id);
+        const result = await pricingApiService.getFixedPricesByCustomer(req.params.id);
         res.json({ success: true, data: result });
     } catch (error) {
         handleError(res, error, 'getFixedPrice');
@@ -489,6 +541,15 @@ export async function batchCreateFixedPrices(req, res) {
 // ============================================================================
 // PROMOTIONS
 // ============================================================================
+
+export async function listPromotions(req, res) {
+    try {
+        const result = await pricingApiService.listPromotions(req.query);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        handleError(res, error, 'listPromotions');
+    }
+}
 
 export async function listPromotionsBySegment(req, res) {
     try {

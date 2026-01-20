@@ -49,6 +49,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - necessário para obter o IP real do cliente quando atrás de reverse proxy (Traefik, Nginx, etc)
+// Isso faz o Express usar o header X-Forwarded-For para determinar o IP do cliente
+// 1 = confiar no primeiro proxy na cadeia
+app.set('trust proxy', 1);
+
 // Middleware
 const isProduction = process.env.NODE_ENV === 'production';
 

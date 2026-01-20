@@ -581,20 +581,42 @@ const ConversationTimeline = ({
     const messagesEndRef = useRef(null)
     const previousScrollHeight = useRef(0)
 
-    // Carregar mensagens iniciais - SEMPRE recarregar quando sessionId ou phone mudar
+    // Refs para evitar race conditions e stale closures
+    const currentSessionRef = useRef(sessionId)
+    const currentPhoneRef = useRef(phone)
+    const abortControllerRef = useRef(null)
+
     // Carregar mensagens iniciais - SEMPRE recarregar quando sessionId ou phone mudar
     useEffect(() => {
-        // Limpar mensagens ao mudar de conversa
+        // Atualizar refs com valores atuais
+        currentSessionRef.current = sessionId
+        currentPhoneRef.current = phone
+
+        // Cancelar qualquer requisição pendente anterior
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        // Limpar mensagens IMEDIATAMENTE ao mudar de conversa
         setMessages([])
         setOffset(0)
         setHasMore(true)
         setError(null)
+        setLoading(false)
+        setLoadingMore(false)
 
         // Carregar apenas se houver sessão válida
         if (sessionId) {
-            loadMessages(true)
+            loadMessages(true, sessionId)
         }
-    }, [sessionId])
+
+        // Cleanup: cancelar requisições ao desmontar ou mudar
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+        }
+    }, [sessionId, phone])
 
     // Scroll para o final em novas mensagens
     useEffect(() => {
@@ -611,7 +633,14 @@ const ConversationTimeline = ({
         }
     }, [loadingMore])
 
-    const loadMessages = async (reset = false) => {
+    const loadMessages = async (reset = false, targetSessionId = null) => {
+        // Usar sessionId passado ou o atual
+        const activeSessionId = targetSessionId || currentSessionRef.current
+
+        // Criar novo AbortController para esta requisição
+        abortControllerRef.current = new AbortController()
+        const currentAbortController = abortControllerRef.current
+
         if (reset) {
             setLoading(true)
             setOffset(0)
@@ -629,10 +658,23 @@ const ConversationTimeline = ({
             }
 
             let response
-            if (sessionId) {
-                response = await superbotService.getMessages(sessionId, params)
+            if (activeSessionId) {
+                response = await superbotService.getMessages(activeSessionId, params)
             } else {
-                // Se não há sessionId, não carregar nada (evita carregar conversations como mensagens)
+                // Se não há sessionId, não carregar nada
+                setLoading(false)
+                return
+            }
+
+            // Verificar se a requisição foi abortada ou se a sessão mudou
+            if (currentAbortController.signal.aborted) {
+                console.log('Requisição abortada - sessão mudou')
+                return
+            }
+
+            // Verificar se ainda estamos na mesma sessão
+            if (activeSessionId !== currentSessionRef.current) {
+                console.log('Sessão mudou durante carregamento, descartando resultado')
                 return
             }
 
@@ -651,19 +693,27 @@ const ConversationTimeline = ({
                 setOffset(prev => prev + newMessages.length)
             }
         } catch (err) {
+            // Ignorar erros de abort
+            if (err.name === 'AbortError' || currentAbortController.signal.aborted) {
+                console.log('Requisição cancelada')
+                return
+            }
             console.error('Erro ao carregar mensagens:', err)
             setError('Erro ao carregar mensagens')
         } finally {
-            setLoading(false)
-            setLoadingMore(false)
+            // Só atualizar loading se ainda estivermos na mesma sessão
+            if (activeSessionId === currentSessionRef.current) {
+                setLoading(false)
+                setLoadingMore(false)
+            }
         }
     }
 
     const loadMore = useCallback(() => {
-        if (!loadingMore && hasMore && enableLazyLoading) {
-            loadMessages(false)
+        if (!loadingMore && hasMore && enableLazyLoading && currentSessionRef.current) {
+            loadMessages(false, currentSessionRef.current)
         }
-    }, [loadingMore, hasMore, enableLazyLoading])
+    }, [loadingMore, hasMore, enableLazyLoading, offset, pageSize])
 
     // Agrupar mensagens por data (com verificação de array)
     const safeMessages = Array.isArray(messages) ? messages : []

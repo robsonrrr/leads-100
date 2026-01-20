@@ -63,27 +63,27 @@ pricingClient.interceptors.response.use(
 // ============================================================================
 
 export async function listBrands(params = {}) {
-    const response = await pricingClient.get('/api/v1/brands', { params });
+    const response = await pricingClient.get('/brands', { params });
     return response.data;
 }
 
 export async function getBrandById(brandId) {
-    const response = await pricingClient.get(`/api/v1/brands/${brandId}`);
+    const response = await pricingClient.get(`/brands/${brandId}`);
     return response.data;
 }
 
 export async function createBrand(brandData) {
-    const response = await pricingClient.post('/api/v1/brands', brandData);
+    const response = await pricingClient.post('/brands', brandData);
     return response.data;
 }
 
 export async function updateBrand(brandId, brandData) {
-    const response = await pricingClient.put(`/api/v1/brands/${brandId}`, brandData);
+    const response = await pricingClient.put(`/brands/${brandId}`, brandData);
     return response.data;
 }
 
 export async function deleteBrand(brandId, hardDelete = false) {
-    const response = await pricingClient.delete(`/api/v1/brands/${brandId}`, {
+    const response = await pricingClient.delete(`/brands/${brandId}`, {
         params: { hard_delete: hardDelete }
     });
     return response.data;
@@ -94,25 +94,25 @@ export async function deleteBrand(brandId, hardDelete = false) {
 // ============================================================================
 
 export async function listCustomerBrandProfiles(params = {}) {
-    const response = await pricingClient.get('/api/v1/customer-brand-profiles', { params });
+    const response = await pricingClient.get('/customer-brand-profiles', { params });
     return response.data;
 }
 
 export async function getCustomerBrandProfile(orgId, customerId, brandId) {
     const response = await pricingClient.get(
-        `/api/v1/customer-brand-profiles/${orgId}/${customerId}/${brandId}`
+        `/customer-brand-profiles/${orgId}/${customerId}/${brandId}`
     );
     return response.data;
 }
 
 export async function createCustomerBrandProfile(profileData) {
-    const response = await pricingClient.post('/api/v1/customer-brand-profiles', profileData);
+    const response = await pricingClient.post('/customer-brand-profiles', profileData);
     return response.data;
 }
 
 export async function updateCustomerBrandProfile(orgId, customerId, brandId, profileData) {
     const response = await pricingClient.put(
-        `/api/v1/customer-brand-profiles/${orgId}/${customerId}/${brandId}`,
+        `/customer-brand-profiles/${orgId}/${customerId}/${brandId}`,
         profileData
     );
     return response.data;
@@ -120,7 +120,7 @@ export async function updateCustomerBrandProfile(orgId, customerId, brandId, pro
 
 export async function deleteCustomerBrandProfile(orgId, customerId, brandId, hardDelete = false) {
     const response = await pricingClient.delete(
-        `/api/v1/customer-brand-profiles/${orgId}/${customerId}/${brandId}`,
+        `/customer-brand-profiles/${orgId}/${customerId}/${brandId}`,
         { params: { hard_delete: hardDelete } }
     );
     return response.data;
@@ -131,22 +131,22 @@ export async function deleteCustomerBrandProfile(orgId, customerId, brandId, har
 // ============================================================================
 
 export async function listVolumeTiers(params = {}) {
-    const response = await pricingClient.get('/api/v1/volume-tiers', { params });
+    const response = await pricingClient.get('/pricing-volume-tiers', { params });
     return response.data;
 }
 
 export async function createVolumeTier(tierData) {
-    const response = await pricingClient.post('/api/v1/volume-tiers', tierData);
+    const response = await pricingClient.post('/pricing-volume-tiers', tierData);
     return response.data;
 }
 
 export async function updateVolumeTier(tierId, tierData) {
-    const response = await pricingClient.put(`/api/v1/volume-tiers/${tierId}`, tierData);
+    const response = await pricingClient.put(`/pricing-volume-tiers/${tierId}`, tierData);
     return response.data;
 }
 
 export async function deleteVolumeTier(tierId) {
-    const response = await pricingClient.delete(`/api/v1/volume-tiers/${tierId}`);
+    const response = await pricingClient.delete(`/pricing-volume-tiers/${tierId}`);
     return response.data;
 }
 
@@ -155,22 +155,22 @@ export async function deleteVolumeTier(tierId) {
 // ============================================================================
 
 export async function listBrandRoleTiers(params = {}) {
-    const response = await pricingClient.get('/api/v1/brand-role-tiers', { params });
+    const response = await pricingClient.get('/pricing-volume-tiers-by-brand-role', { params });
     return response.data;
 }
 
 export async function createBrandRoleTier(tierData) {
-    const response = await pricingClient.post('/api/v1/brand-role-tiers', tierData);
+    const response = await pricingClient.post('/pricing-volume-tiers-by-brand-role', tierData);
     return response.data;
 }
 
 export async function updateBrandRoleTier(tierId, tierData) {
-    const response = await pricingClient.put(`/api/v1/brand-role-tiers/${tierId}`, tierData);
+    const response = await pricingClient.put(`/pricing-volume-tiers-by-brand-role/${tierId}`, tierData);
     return response.data;
 }
 
 export async function deleteBrandRoleTier(tierId) {
-    const response = await pricingClient.delete(`/api/v1/brand-role-tiers/${tierId}`);
+    const response = await pricingClient.delete(`/pricing-volume-tiers-by-brand-role/${tierId}`);
     return response.data;
 }
 
@@ -179,22 +179,22 @@ export async function deleteBrandRoleTier(tierId) {
 // ============================================================================
 
 export async function listCurveFactors(params = {}) {
-    const response = await pricingClient.get('/api/v1/curve-factors', { params });
+    const response = await pricingClient.get('/pricing-curve-factors', { params });
     return response.data;
 }
 
 export async function createCurveFactor(factorData) {
-    const response = await pricingClient.post('/api/v1/curve-factors', factorData);
+    const response = await pricingClient.post('/pricing-curve-factors', factorData);
     return response.data;
 }
 
 export async function updateCurveFactor(curve, factorData) {
-    const response = await pricingClient.put(`/api/v1/curve-factors/${curve}`, factorData);
+    const response = await pricingClient.put(`/pricing-curve-factors/${curve}`, factorData);
     return response.data;
 }
 
 export async function deleteCurveFactor(curve) {
-    const response = await pricingClient.delete(`/api/v1/curve-factors/${curve}`);
+    const response = await pricingClient.delete(`/pricing-curve-factors/${curve}`);
     return response.data;
 }
 
@@ -203,22 +203,22 @@ export async function deleteCurveFactor(curve) {
 // ============================================================================
 
 export async function listStockLevelFactors(params = {}) {
-    const response = await pricingClient.get('/api/v1/stock-level-factors', { params });
+    const response = await pricingClient.get('/pricing-stock-level-factors', { params });
     return response.data;
 }
 
 export async function createStockLevelFactor(factorData) {
-    const response = await pricingClient.post('/api/v1/stock-level-factors', factorData);
+    const response = await pricingClient.post('/pricing-stock-level-factors', factorData);
     return response.data;
 }
 
 export async function updateStockLevelFactor(level, factorData) {
-    const response = await pricingClient.put(`/api/v1/stock-level-factors/${level}`, factorData);
+    const response = await pricingClient.put(`/pricing-stock-level-factors/${level}`, factorData);
     return response.data;
 }
 
 export async function deleteStockLevelFactor(level) {
-    const response = await pricingClient.delete(`/api/v1/stock-level-factors/${level}`);
+    const response = await pricingClient.delete(`/pricing-stock-level-factors/${level}`);
     return response.data;
 }
 
@@ -227,27 +227,56 @@ export async function deleteStockLevelFactor(level) {
 // ============================================================================
 
 export async function listQuantityDiscounts(params = {}) {
-    const response = await pricingClient.get('/api/v1/quantity-discounts', { params });
+    const response = await pricingClient.get('/pricing-quantity-discounts', { params });
     return response.data;
 }
 
 export async function getQuantityDiscountById(discountId) {
-    const response = await pricingClient.get(`/api/v1/quantity-discounts/${discountId}`);
+    const response = await pricingClient.get(`/pricing-quantity-discounts/${discountId}`);
     return response.data;
 }
 
 export async function createQuantityDiscount(discountData) {
-    const response = await pricingClient.post('/api/v1/quantity-discounts', discountData);
+    const response = await pricingClient.post('/pricing-quantity-discounts', discountData);
     return response.data;
 }
 
 export async function updateQuantityDiscount(discountId, discountData) {
-    const response = await pricingClient.put(`/api/v1/quantity-discounts/${discountId}`, discountData);
+    const response = await pricingClient.put(`/pricing-quantity-discounts/${discountId}`, discountData);
     return response.data;
 }
 
 export async function deleteQuantityDiscount(discountId) {
-    const response = await pricingClient.delete(`/api/v1/quantity-discounts/${discountId}`);
+    const response = await pricingClient.delete(`/pricing-quantity-discounts/${discountId}`);
+    return response.data;
+}
+
+// ============================================================================
+// ORDER VALUE DISCOUNTS (D4P)
+// ============================================================================
+
+export async function listOrderValueDiscounts(params = {}) {
+    const response = await pricingClient.get('/pricing-order-value-discounts', { params });
+    return response.data;
+}
+
+export async function getOrderValueDiscountById(discountId) {
+    const response = await pricingClient.get(`/pricing-order-value-discounts/${discountId}`);
+    return response.data;
+}
+
+export async function createOrderValueDiscount(discountData) {
+    const response = await pricingClient.post('/pricing-order-value-discounts', discountData);
+    return response.data;
+}
+
+export async function updateOrderValueDiscount(discountId, discountData) {
+    const response = await pricingClient.put(`/pricing-order-value-discounts/${discountId}`, discountData);
+    return response.data;
+}
+
+export async function deleteOrderValueDiscount(discountId) {
+    const response = await pricingClient.delete(`/pricing-order-value-discounts/${discountId}`);
     return response.data;
 }
 
@@ -256,32 +285,32 @@ export async function deleteQuantityDiscount(discountId) {
 // ============================================================================
 
 export async function listBundles(params = {}) {
-    const response = await pricingClient.get('/api/v1/bundles', { params });
+    const response = await pricingClient.get('/pricing-bundles', { params });
     return response.data;
 }
 
 export async function getBundleById(bundleId) {
-    const response = await pricingClient.get(`/api/v1/bundles/${bundleId}`);
+    const response = await pricingClient.get(`/pricing-bundles/${bundleId}`);
     return response.data;
 }
 
 export async function createBundle(bundleData) {
-    const response = await pricingClient.post('/api/v1/bundles', bundleData);
+    const response = await pricingClient.post('/pricing-bundles', bundleData);
     return response.data;
 }
 
 export async function updateBundle(bundleId, bundleData) {
-    const response = await pricingClient.put(`/api/v1/bundles/${bundleId}`, bundleData);
+    const response = await pricingClient.put(`/pricing-bundles/${bundleId}`, bundleData);
     return response.data;
 }
 
 export async function deleteBundle(bundleId) {
-    const response = await pricingClient.delete(`/api/v1/bundles/${bundleId}`);
+    const response = await pricingClient.delete(`/pricing-bundles/${bundleId}`);
     return response.data;
 }
 
 export async function manageBundleItems(bundleId, itemsData) {
-    const response = await pricingClient.put(`/api/v1/bundles/${bundleId}/items`, itemsData);
+    const response = await pricingClient.put(`/pricing-bundles/${bundleId}/items`, itemsData);
     return response.data;
 }
 
@@ -290,32 +319,38 @@ export async function manageBundleItems(bundleId, itemsData) {
 // ============================================================================
 
 export async function listFixedPrices(params = {}) {
-    const response = await pricingClient.get('/api/v1/fixed-prices', { params });
+    // Se tiver customer_id, buscar preços desse cliente
+    if (params.customer_id) {
+        const response = await pricingClient.get(`/fixed-prices/customer/${params.customer_id}`, { params });
+        return response.data;
+    }
+    // Senão, retornar sumário de clientes com preços fixos
+    const response = await pricingClient.get('/fixed-prices/customers-summary', { params });
     return response.data;
 }
 
-export async function getFixedPriceById(fixedPriceId) {
-    const response = await pricingClient.get(`/api/v1/fixed-prices/${fixedPriceId}`);
+export async function getFixedPricesByCustomer(customerId) {
+    const response = await pricingClient.get(`/fixed-prices/customer/${customerId}`);
     return response.data;
 }
 
 export async function createFixedPrice(fixedPriceData) {
-    const response = await pricingClient.post('/api/v1/fixed-prices', fixedPriceData);
+    const response = await pricingClient.post('/fixed-prices/', fixedPriceData);
     return response.data;
 }
 
 export async function updateFixedPrice(fixedPriceId, fixedPriceData) {
-    const response = await pricingClient.put(`/api/v1/fixed-prices/${fixedPriceId}`, fixedPriceData);
+    const response = await pricingClient.put(`/fixed-prices/${fixedPriceId}`, fixedPriceData);
     return response.data;
 }
 
 export async function deleteFixedPrice(fixedPriceId) {
-    const response = await pricingClient.delete(`/api/v1/fixed-prices/${fixedPriceId}`);
+    const response = await pricingClient.delete(`/fixed-prices/${fixedPriceId}`);
     return response.data;
 }
 
 export async function batchCreateFixedPrices(batchData) {
-    const response = await pricingClient.post('/api/v1/fixed-prices/batch', batchData);
+    const response = await pricingClient.post('/fixed-prices/batch', batchData);
     return response.data;
 }
 
@@ -323,28 +358,84 @@ export async function batchCreateFixedPrices(batchData) {
 // PROMOTIONS (Promoções por Segmento)
 // ============================================================================
 
+// Segment IDs: 1=Máquinas, 2=Rolamentos, 3=Peças Têxteis, 5=Autopeças, 6=Motopeças
+const ALL_SEGMENT_IDS = [1, 2, 3, 5, 6];
+
+export async function listPromotions(params = {}) {
+    // The Pricing Agent doesn't have a /promotions endpoint for all promotions
+    // So we aggregate results from all segments
+    try {
+        const promises = ALL_SEGMENT_IDS.map(segmentId =>
+            listPromotionsBySegment(segmentId, { ...params, limit: 500 })
+                .catch(() => ({ items: [], total: 0 })) // Handle individual segment errors gracefully
+        );
+
+        const results = await Promise.all(promises);
+
+        // Combine all items from all segments
+        let allItems = [];
+        results.forEach(result => {
+            const items = result?.items || result || [];
+            if (Array.isArray(items)) {
+                allItems = allItems.concat(items);
+            }
+        });
+
+        // Apply search filter if provided
+        if (params.search) {
+            const searchLower = params.search.toLowerCase();
+            allItems = allItems.filter(item =>
+                (item.name && item.name.toLowerCase().includes(searchLower)) ||
+                (item.sku && item.sku.toLowerCase().includes(searchLower))
+            );
+        }
+
+        // Apply is_active filter if provided
+        if (params.is_active !== undefined) {
+            const isActive = params.is_active === 'true' || params.is_active === true;
+            allItems = allItems.filter(item => item.is_active === isActive);
+        }
+
+        // Sort by ID descending (newest first)
+        allItems.sort((a, b) => (b.id || 0) - (a.id || 0));
+
+        // Apply pagination
+        const skip = parseInt(params.skip) || 0;
+        const limit = parseInt(params.limit) || 25;
+        const paginatedItems = allItems.slice(skip, skip + limit);
+
+        return {
+            items: paginatedItems,
+            total: allItems.length
+        };
+    } catch (error) {
+        logger.error('Error listing all promotions:', error);
+        throw error;
+    }
+}
+
 export async function listPromotionsBySegment(segmentId, params = {}) {
-    const response = await pricingClient.get(`/api/v1/promotions/segment/${segmentId}`, { params });
+    const response = await pricingClient.get(`/promotions/segment/${segmentId}`, { params });
     return response.data;
 }
 
 export async function getPromotionById(promotionId) {
-    const response = await pricingClient.get(`/api/v1/promotions/${promotionId}`);
+    const response = await pricingClient.get(`/promotions/${promotionId}`);
     return response.data;
 }
 
 export async function createPromotion(promotionData) {
-    const response = await pricingClient.post('/api/v1/promotions', promotionData);
+    const response = await pricingClient.post('/promotions', promotionData);
     return response.data;
 }
 
 export async function updatePromotion(promotionId, promotionData) {
-    const response = await pricingClient.put(`/api/v1/promotions/${promotionId}`, promotionData);
+    const response = await pricingClient.put(`/promotions/${promotionId}`, promotionData);
     return response.data;
 }
 
 export async function deletePromotion(promotionId) {
-    const response = await pricingClient.delete(`/api/v1/promotions/${promotionId}`);
+    const response = await pricingClient.delete(`/promotions/${promotionId}`);
     return response.data;
 }
 
@@ -353,12 +444,12 @@ export async function deletePromotion(promotionId) {
 // ============================================================================
 
 export async function testPricing(testData) {
-    const response = await pricingClient.post('/api/v1/engine/test', testData);
+    const response = await pricingClient.post('/test', testData);
     return response.data;
 }
 
 export async function batchTestPricing(batchData) {
-    const response = await pricingClient.post('/api/v1/engine/batch-test', batchData);
+    const response = await pricingClient.post('/batch-test', batchData);
     return response.data;
 }
 
@@ -367,14 +458,14 @@ export async function batchTestPricing(batchData) {
 // ============================================================================
 
 export async function searchProducts(query, params = {}) {
-    const response = await pricingClient.get('/api/v1/search/products', {
+    const response = await pricingClient.get('/search/products', {
         params: { q: query, ...params }
     });
     return response.data;
 }
 
 export async function searchCustomers(query, params = {}) {
-    const response = await pricingClient.get('/api/v1/search/customers', {
+    const response = await pricingClient.get('/search/customers', {
         params: { q: query, ...params }
     });
     return response.data;
@@ -441,12 +532,13 @@ export default {
     manageBundleItems,
     // Fixed Prices
     listFixedPrices,
-    getFixedPriceById,
+    getFixedPricesByCustomer,
     createFixedPrice,
     updateFixedPrice,
     deleteFixedPrice,
     batchCreateFixedPrices,
     // Promotions
+    listPromotions,
     listPromotionsBySegment,
     getPromotionById,
     createPromotion,
