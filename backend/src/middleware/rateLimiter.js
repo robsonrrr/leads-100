@@ -1,46 +1,69 @@
-import rateLimit from 'express-rate-limit';
 import logger from '../config/logger.js';
 
 /**
- * Configurações de rate limiting
+ * Rate Limiting DESATIVADO
+ * 
+ * Os rate limiters foram desativados porque estavam causando problemas
+ * com múltiplos usuários atrás do mesmo IP (proxy/container).
+ * 
+ * Se precisar reativar, descomente o código original abaixo.
  */
+
+// Middleware passthrough - não bloqueia nada
+const passthrough = (req, res, next) => next();
+
+// Rate limiters desativados - apenas passthrough
+export const generalLimiter = passthrough;
+export const authLimiter = passthrough;
+export const writeLimiter = passthrough;
+export const searchLimiter = passthrough;
+export const pollingLimiter = passthrough;
+export const createRateLimiter = () => passthrough;
+
+export default {
+  generalLimiter,
+  authLimiter,
+  writeLimiter,
+  searchLimiter,
+  pollingLimiter,
+  createRateLimiter
+};
+
+/*
+// ==========================================
+// CÓDIGO ORIGINAL (DESATIVADO)
+// ==========================================
+
+import rateLimit from 'express-rate-limit';
+
 const RATE_LIMIT_CONFIG = {
-  // Limite geral da API (aumentado para ambiente com proxy/container compartilhando IP)
   general: {
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5000, // 5000 requisições por janela (considerando múltiplos usuários no mesmo IP)
+    windowMs: 15 * 60 * 1000,
+    max: 5000,
     message: 'Muitas requisições. Tente novamente em alguns minutos.'
   },
-  // Limite para autenticação (mais restritivo para prevenir brute force)
   auth: {
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 50, // 50 tentativas por janela (múltiplos usuários)
+    windowMs: 15 * 60 * 1000,
+    max: 50,
     message: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
   },
-  // Limite para operações de escrita (POST, PUT, DELETE)
   write: {
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 200, // 200 operações por minuto
+    windowMs: 1 * 60 * 1000,
+    max: 200,
     message: 'Muitas operações de escrita. Aguarde um momento.'
   },
-  // Limite para busca/autocomplete
   search: {
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 300, // 300 buscas por minuto
+    windowMs: 1 * 60 * 1000,
+    max: 300,
     message: 'Muitas buscas. Aguarde um momento.'
   },
-  // Limite para polling (notificações, status, etc) - muito mais permissivo
   polling: {
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 600, // 600 requisições por minuto (10 por segundo)
+    windowMs: 1 * 60 * 1000,
+    max: 600,
     message: 'Polling muito frequente. Reduza a frequência.'
   }
 };
 
-/**
- * Função para extrair chave do rate limit
- * Usa userId se autenticado, senão usa IP
- */
 const keyGenerator = (req) => {
   if (req.user?.userId) {
     return `user:${req.user.userId}`;
@@ -48,9 +71,6 @@ const keyGenerator = (req) => {
   return `ip:${req.ip}`;
 };
 
-/**
- * Handler para quando limite é excedido
- */
 const createLimitHandler = (type) => (req, res, options) => {
   logger.warn('Rate limit exceeded', {
     type,
@@ -71,41 +91,29 @@ const createLimitHandler = (type) => (req, res, options) => {
   });
 };
 
-/**
- * Rate limiter geral para toda a API
- */
 export const generalLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.general.windowMs,
   max: RATE_LIMIT_CONFIG.general.max,
   keyGenerator,
   handler: createLimitHandler('general'),
-  standardHeaders: true, // Retorna headers RateLimit-*
-  legacyHeaders: false, // Desabilita headers X-RateLimit-*
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (req) => {
-    // Não aplicar rate limit em preflight requests (CORS)
     if (req.method === 'OPTIONS') return true;
-    // Não aplicar rate limit em health checks
     return req.path === '/health' || req.path === '/api/health';
   }
 });
 
-/**
- * Rate limiter para autenticação (login)
- * Mais restritivo para prevenir brute force
- */
 export const authLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.auth.windowMs,
   max: RATE_LIMIT_CONFIG.auth.max,
-  keyGenerator: (req) => req.ip, // Usar apenas IP para auth
+  keyGenerator: (req) => req.ip,
   handler: createLimitHandler('auth'),
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false // Contar todas as tentativas
+  skipSuccessfulRequests: false
 });
 
-/**
- * Rate limiter para operações de escrita
- */
 export const writeLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.write.windowMs,
   max: RATE_LIMIT_CONFIG.write.max,
@@ -115,9 +123,6 @@ export const writeLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Rate limiter para buscas/autocomplete
- */
 export const searchLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.search.windowMs,
   max: RATE_LIMIT_CONFIG.search.max,
@@ -127,10 +132,6 @@ export const searchLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Rate limiter para polling (notificações, status, etc)
- * Muito mais permissivo pois polling é frequente
- */
 export const pollingLimiter = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.polling.windowMs,
   max: RATE_LIMIT_CONFIG.polling.max,
@@ -140,10 +141,6 @@ export const pollingLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Factory para criar rate limiter customizado
- * @param {Object} options - Opções do rate limit
- */
 export const createRateLimiter = (options) => {
   return rateLimit({
     windowMs: options.windowMs || 60 * 1000,
@@ -155,12 +152,4 @@ export const createRateLimiter = (options) => {
     skip: options.skip
   });
 };
-
-export default {
-  generalLimiter,
-  authLimiter,
-  writeLimiter,
-  searchLimiter,
-  pollingLimiter,
-  createRateLimiter
-};
+*/
