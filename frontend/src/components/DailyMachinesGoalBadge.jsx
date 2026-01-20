@@ -16,15 +16,7 @@ function DailyMachinesGoalBadge() {
     const [loading, setLoading] = useState(true)
     const { user } = useSelector((state) => state.auth)
 
-    // Só exibir para vendedores de máquinas ou gerentes (segmento maquinas)
-    const shouldShow = user?.segmento === 'MAQUINAS' || (user?.level >= 4)
-
     const fetchProgress = useCallback(async () => {
-        if (!shouldShow) {
-            setLoading(false)
-            return
-        }
-
         try {
             const response = await userService.getDailyMachinesProgress()
             setProgress(response.data.data)
@@ -33,7 +25,7 @@ function DailyMachinesGoalBadge() {
         } finally {
             setLoading(false)
         }
-    }, [shouldShow])
+    }, [])
 
     useEffect(() => {
         fetchProgress()
@@ -43,7 +35,6 @@ function DailyMachinesGoalBadge() {
         return () => clearInterval(interval)
     }, [fetchProgress])
 
-    if (!shouldShow) return null
 
     if (loading) {
         return (
