@@ -629,3 +629,169 @@ export async function getLostOpportunities(req, res, next) {
     next(error);
   }
 }
+
+// Schema de validação para atualização de meta
+const updateGoalSchema = Joi.object({
+  goal_units: Joi.number().integer().min(0).required()
+});
+
+/**
+ * Atualiza ou cria a meta anual de máquinas do cliente
+ * PUT /api/customers/:id/goal
+ * 
+ * Permissão: 
+ * - Gerentes (level > 4) podem editar/criar qualquer meta
+ * - Vendedores podem editar/criar metas de clientes da sua carteira
+ */
+export async function updateCustomerGoal(req, res, next) {
+  try {
+    const customerId = parseInt(req.params.id);
+
+    if (isNaN(customerId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid customer ID' }
+      });
+    }
+
+    // Validar body
+    const { error, value } = updateGoalSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation error',
+          details: error.details.map(d => d.message)
+        }
+      });
+    }
+
+    const userId = req.user.userId;
+    const userLevel = req.user.level || 0;
+    const newGoal = value.goal_units;
+    const year = new Date().getFullYear();
+
+    // Buscar a meta atual (pode não existir)
+    const currentGoal = await customerRepository.getCustomerGoal(customerId, year);
+
+    // Buscar o cliente para verificar o vendedor responsável
+    const customer = await customerRepository.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Cliente não encontrado' }
+      });
+    }
+
+    // Verificar permissão: level > 4 OU dono do cliente (vendedor)
+    const sellerId = currentGoal?.seller_id || customer.vendedor;
+    const isOwner = sellerId === userId;
+    const canEdit = userLevel > 4 || isOwner;
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Permissão negada: apenas gerentes ou o vendedor responsável podem editar a meta' }
+      });
+    }
+
+    let result;
+    let action;
+
+    if (currentGoal) {
+      // Atualizar meta existente
+      result = await customerRepository.updateCustomerGoal(customerId, year, newGoal, userId);
+      action = 'updated';
+      console.log(`[updateCustomerGoal] User ${userId} (level ${userLevel}) updated goal for customer ${customerId}: ${currentGoal.goal_units} -> ${newGoal}`);
+    } else {
+      // Criar nova meta
+      result = await customerRepository.createCustomerGoal(customerId, sellerId, year, newGoal, userId);
+      action = 'created';
+      console.log(`[updateCustomerGoal] User ${userId} (level ${userLevel}) created goal for customer ${customerId}: ${newGoal}`);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        customerId,
+        year,
+        oldGoal: currentGoal?.goal_units || null,
+        newGoal: newGoal,
+        action,
+        updatedBy: userId
+      },
+      message: action === 'created' ? 'Meta criada com sucesso' : 'Meta atualizada com sucesso'
+    });
+  } catch (error) {
+    console.error('[updateCustomerGoal] Error:', error.message, error.stack);
+    next(error);
+  }
+}
+
+// Schema de validação para atualização de nome fantasia
+const updateTradeNameSchema = Joi.object({
+  tradeName: Joi.string().max(255).required()
+});
+
+/**
+ * Atualiza o nome fantasia do cliente
+ * PUT /api/customers/:id/trade-name
+ * 
+ * Permissão: 
+ * - Gerentes (level > 4) podem editar qualquer cliente
+ * - Vendedores podem editar clientes da sua carteira
+ */
+export async function updateCustomerTradeName(req, res, next) {
+  try {
+    const customerId = parseInt(req.params.id);
+
+    if (isNaN(customerId)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid customer ID' }
+      });
+    }
+
+    // Validar body
+    const { error, value } = updateTradeNameSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation error',
+          details: error.details.map(d => d.message)
+        }
+      });
+    }
+
+    // Verificar permissão de acesso
+    const hasAccess = await checkCustomerAccess(req, res, customerId);
+    if (!hasAccess) return;
+
+    const userId = req.user.userId;
+    const newTradeName = value.tradeName.trim();
+
+    // Buscar cliente atual
+    const customer = await customerRepository.findById(customerId);
+    const oldTradeName = customer.fantasia;
+
+    // Atualizar o nome fantasia
+    await customerRepository.updateTradeName(customerId, newTradeName);
+
+    console.log(`[updateCustomerTradeName] User ${userId} updated tradeName for customer ${customerId}: "${oldTradeName}" -> "${newTradeName}"`);
+
+    res.json({
+      success: true,
+      data: {
+        customerId,
+        oldTradeName,
+        newTradeName,
+        updatedBy: userId
+      },
+      message: 'Nome fantasia atualizado com sucesso'
+    });
+  } catch (error) {
+    console.error('[updateCustomerTradeName] Error:', error.message, error.stack);
+    next(error);
+  }
+}

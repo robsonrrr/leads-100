@@ -42,6 +42,7 @@ const ChatbotConfigPage = lazy(() => import('./pages/admin/ChatbotConfigPage'))
 const LogsPage = lazy(() => import('./pages/admin/LogsPage'))
 const CustomerLinksPage = lazy(() => import('./pages/admin/CustomerLinksPage'))
 const WhatsAppContactsPage = lazy(() => import('./pages/admin/WhatsAppContactsPage'))
+const DailyGoalsPage = lazy(() => import('./pages/admin/DailyGoalsPage'))
 
 // Pricing Admin pages
 const PricingDashboard = lazy(() => import('./pages/admin/pricing/PricingDashboard'))
@@ -292,6 +293,16 @@ function App() {
                   <ProtectedRoute>
                     <Layout>
                       {userLevel >= 5 ? <WhatsAppContactsPage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/daily-goals"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <DailyGoalsPage /> : <Navigate to="/" replace />}
                     </Layout>
                   </ProtectedRoute>
                 }

@@ -88,9 +88,30 @@ export class CustomerRepository {
               AND MONTH(h.data) = MONTH(CURDATE())
               AND h.valor > 0
               ${restrictSalesToSeller ? 'AND h.vendedor = ?' : ''}
-          ) as month_total
+          ) as month_total,
+          -- Dados de Meta (maquinas vendidas)
+          g.goal_units as goal_2026,
+          g.classification,
+          COALESCE(vunits.sold_units_2026, 0) as sold_units_2026,
+          COALESCE(vunits_month.sold_units_month, 0) as sold_units_month,
+          ROUND(g.goal_units / 11) as goal_month
         FROM clientes c
         LEFT JOIN rolemak_users u ON c.vendedor = u.id
+        LEFT JOIN mak.customer_goals g ON g.customer_id = c.id AND g.year = YEAR(CURDATE())
+        LEFT JOIN (
+          SELECT ClienteID, SUM(Quantidade) as sold_units_2026
+          FROM mak.Vendas_Historia
+          WHERE YEAR(DataVenda) = YEAR(CURDATE()) AND ProdutoSegmento = 'machines'
+          GROUP BY ClienteID
+        ) vunits ON vunits.ClienteID = c.id
+        LEFT JOIN (
+          SELECT ClienteID, SUM(Quantidade) as sold_units_month
+          FROM mak.Vendas_Historia
+          WHERE YEAR(DataVenda) = YEAR(CURDATE()) 
+            AND MONTH(DataVenda) = MONTH(CURDATE()) 
+            AND ProdutoSegmento = 'machines'
+          GROUP BY ClienteID
+        ) vunits_month ON vunits_month.ClienteID = c.id
         WHERE 1=1
       `;
       const params = [];
@@ -174,7 +195,7 @@ export class CustomerRepository {
         countQuery += ` AND (c.nome LIKE ? OR c.fantasia LIKE ? OR c.cnpj LIKE ? OR c.cidade LIKE ?)`;
         countParams.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
       }
-      
+
       const [countResult] = await db().execute(countQuery, countParams);
       const total = countResult[0]?.total || 0;
 
@@ -185,7 +206,7 @@ export class CustomerRepository {
 
       // Processar resultados e calcular status
       const customers = rows.map(row => {
-        const daysSinceOrder = row.last_order_date 
+        const daysSinceOrder = row.last_order_date
           ? Math.floor((Date.now() - new Date(row.last_order_date).getTime()) / (1000 * 60 * 60 * 24))
           : null;
 
@@ -220,7 +241,19 @@ export class CustomerRepository {
           } : null,
           yearTotal: parseFloat(row.year_total) || 0,
           yearOrdersCount: parseInt(row.year_orders_count) || 0,
-          monthTotal: parseFloat(row.month_total) || 0
+          monthTotal: parseFloat(row.month_total) || 0,
+          // Dados de Metas (máquinas)
+          goal: row.goal_2026 ? {
+            year: parseInt(row.goal_2026) || 0,
+            month: parseInt(row.goal_month) || 0,
+            soldYear: parseInt(row.sold_units_2026) || 0,
+            soldMonth: parseInt(row.sold_units_month) || 0,
+            classification: row.classification || null,
+            progressYear: row.goal_2026 > 0 ? Math.round((row.sold_units_2026 / row.goal_2026) * 100) : 0,
+            progressMonth: row.goal_month > 0 ? Math.round((row.sold_units_month / row.goal_month) * 100) : 0,
+            gapYear: Math.max(0, (parseInt(row.goal_2026) || 0) - (parseInt(row.sold_units_2026) || 0)),
+            gapMonth: Math.max(0, (parseInt(row.goal_month) || 0) - (parseInt(row.sold_units_month) || 0))
+          } : null
         };
       });
 
@@ -242,7 +275,7 @@ export class CustomerRepository {
   /**
    * Obtém resumo da carteira do vendedor
    */
-async getPortfolioSummary(sellerId, filters = {}) {
+  async getPortfolioSummary(sellerId, filters = {}) {
     try {
       let query = `
         SELECT
@@ -756,7 +789,7 @@ async getPortfolioSummary(sellerId, filters = {}) {
       const lastOrderDate = row.last_order_date;
 
       // Calcular dias desde último pedido
-      const daysSinceOrder = lastOrderDate 
+      const daysSinceOrder = lastOrderDate
         ? Math.floor((Date.now() - new Date(lastOrderDate).getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
@@ -852,6 +885,135 @@ async getPortfolioSummary(sellerId, filters = {}) {
       }));
     } catch (error) {
       console.error('[getCustomerTopProducts] SQL Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca meta de um cliente para um ano específico
+   */
+  async getCustomerGoal(customerId, year) {
+    try {
+      const query = `
+        SELECT 
+          customer_id,
+          seller_id,
+          year,
+          goal_units,
+          classification,
+          sales_2025
+        FROM mak.customer_goals
+        WHERE customer_id = ? AND year = ?
+      `;
+
+      const [rows] = await db().execute(query, [customerId, year]);
+
+      if (rows.length === 0) {
+        return null;
+      }
+
+      return {
+        customer_id: rows[0].customer_id,
+        seller_id: rows[0].seller_id,
+        year: rows[0].year,
+        goal_units: parseInt(rows[0].goal_units) || 0,
+        classification: rows[0].classification,
+        sales_2025: parseInt(rows[0].sales_2025) || 0
+      };
+    } catch (error) {
+      console.error('[getCustomerGoal] SQL Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Atualiza a meta anual de um cliente
+   */
+  async updateCustomerGoal(customerId, year, newGoal, updatedBy) {
+    try {
+      const query = `
+        UPDATE mak.customer_goals
+        SET goal_units = ?, updated_at = NOW()
+        WHERE customer_id = ? AND year = ?
+      `;
+
+      const [result] = await db().execute(query, [newGoal, customerId, year]);
+
+      if (result.affectedRows === 0) {
+        throw new Error('Meta não encontrada ou não foi possível atualizar');
+      }
+
+      return {
+        success: true,
+        affectedRows: result.affectedRows
+      };
+    } catch (error) {
+      console.error('[updateCustomerGoal] SQL Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Cria uma nova meta anual para um cliente
+   */
+  async createCustomerGoal(customerId, sellerId, year, goalUnits, createdBy) {
+    try {
+      // Calcular classificação baseada na meta
+      let classification = 'I'; // Inativo por padrão
+      if (goalUnits >= 100) {
+        classification = 'A';
+      } else if (goalUnits >= 50) {
+        classification = 'B';
+      } else if (goalUnits > 0) {
+        classification = 'C';
+      }
+
+      const query = `
+        INSERT INTO mak.customer_goals 
+        (customer_id, seller_id, year, goal_units, classification, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+      `;
+
+      const [result] = await db().execute(query, [customerId, sellerId, year, goalUnits, classification]);
+
+      if (result.affectedRows === 0) {
+        throw new Error('Não foi possível criar a meta');
+      }
+
+      return {
+        success: true,
+        insertId: result.insertId,
+        affectedRows: result.affectedRows
+      };
+    } catch (error) {
+      console.error('[createCustomerGoal] SQL Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Atualiza o nome fantasia do cliente
+   */
+  async updateTradeName(customerId, newTradeName) {
+    try {
+      const query = `
+        UPDATE clientes
+        SET fantasia = ?
+        WHERE id = ?
+      `;
+
+      const [result] = await db().execute(query, [newTradeName, customerId]);
+
+      if (result.affectedRows === 0) {
+        throw new Error('Cliente não encontrado ou não foi possível atualizar');
+      }
+
+      return {
+        success: true,
+        affectedRows: result.affectedRows
+      };
+    } catch (error) {
+      console.error('[updateTradeName] SQL Error:', error.message);
       throw error;
     }
   }

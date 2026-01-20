@@ -43,6 +43,7 @@ import {
     Warning as WarningIcon,
     CheckCircle as CheckCircleIcon,
     AttachMoney as PricingIcon,
+    Flag as GoalIcon,
 } from '@mui/icons-material'
 import adminService from '../../services/admin.service'
 
@@ -162,6 +163,13 @@ const AdminDashboard = () => {
             icon: <PeopleIcon />,
             path: '/admin/users',
             color: '#1976d2',
+        },
+        {
+            title: 'Metas Diárias de Leads',
+            description: 'Configurar metas diárias de criação de leads por vendedor',
+            icon: <GoalIcon />,
+            path: '/admin/daily-goals',
+            color: '#ff9800',
         },
         {
             title: 'Vinculação de Telefones',

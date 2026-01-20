@@ -148,6 +148,9 @@ export const authService = {
 export const userService = {
   getPreferences: () => api.get('/v2/user/preferences'),
   updatePreferences: (data) => api.put('/v2/user/preferences', data),
+  // Meta diária de leads
+  getDailyLeadProgress: () => api.get('/v2/user/daily-lead-progress'),
+  updateDailyLeadGoal: (goal) => api.put('/v2/user/daily-lead-goal', { goal }),
 }
 
 export const leadsService = {
@@ -214,6 +217,10 @@ export const customersService = {
   getMetrics: (id) => api.get(`/customers/${id}/metrics`),
   getTopProducts: (id, limit = 10) => api.get(`/customers/${id}/products`, { params: { limit } }),
   getOpportunities: (id, limit = 5) => api.get(`/customers/${id}/opportunities`, { params: { limit } }),
+  // Metas
+  updateGoal: (id, data) => api.put(`/customers/${id}/goal`, data),
+  // Edição inline
+  updateTradeName: (id, tradeName) => api.put(`/customers/${id}/trade-name`, { tradeName }),
 }
 
 export const analyticsService = {

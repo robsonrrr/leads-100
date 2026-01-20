@@ -174,6 +174,20 @@ export const adminService = {
      * Buscar clientes leads-agent para vincular
      */
     searchLeadsCustomers: (q, limit = 20) => api.get('/admin/customer-links/search-leads', { params: { q, limit } }),
+
+    // ============================================
+    // USER PREFERENCES (Metas Diárias)
+    // ============================================
+
+    /**
+     * Buscar preferências de um usuário específico
+     */
+    getUserPreferences: (userId) => api.get(`/v2/admin/user/${userId}/preferences`),
+
+    /**
+     * Atualizar meta diária de leads de um usuário
+     */
+    updateUserDailyGoal: (userId, goal) => api.put(`/v2/admin/user/${userId}/daily-goal`, { goal }),
 }
 
 export default adminService

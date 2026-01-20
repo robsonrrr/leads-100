@@ -441,4 +441,86 @@ router.get('/:id/products', authenticateToken, customersController.getCustomerTo
  */
 router.get('/:id/opportunities', authenticateToken, customersController.getLostOpportunities);
 
+/**
+ * @swagger
+ * /customers/{id}/goal:
+ *   put:
+ *     summary: Atualiza meta anual de máquinas do cliente
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Atualiza a meta anual de unidades (máquinas) do cliente.
+ *       Permissão: gerentes (level > 4) ou vendedor responsável pelo cliente.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do cliente
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - goal_units
+ *             properties:
+ *               goal_units:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Nova meta anual em unidades
+ *     responses:
+ *       200:
+ *         description: Meta atualizada com sucesso
+ *       403:
+ *         description: Sem permissão para editar
+ *       404:
+ *         description: Meta não encontrada
+ */
+router.put('/:id/goal', authenticateToken, customersController.updateCustomerGoal);
+
+/**
+ * @swagger
+ * /customers/{id}/trade-name:
+ *   put:
+ *     summary: Atualiza nome fantasia do cliente
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Atualiza o nome fantasia do cliente.
+ *       Permissão: gerentes (level > 4) ou vendedor responsável.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do cliente
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tradeName
+ *             properties:
+ *               tradeName:
+ *                 type: string
+ *                 maxLength: 255
+ *                 description: Novo nome fantasia
+ *     responses:
+ *       200:
+ *         description: Nome fantasia atualizado com sucesso
+ *       403:
+ *         description: Sem permissão para editar
+ *       404:
+ *         description: Cliente não encontrado
+ */
+router.put('/:id/trade-name', authenticateToken, customersController.updateCustomerTradeName);
+
 export default router;
