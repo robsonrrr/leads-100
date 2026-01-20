@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import {
   Container,
   Paper,
@@ -65,6 +66,8 @@ function LeadDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
+  const { user } = useSelector((state) => state.auth)
+  const isManager = (user?.level || 0) > 4 // Level > 4 pode editar vendedor
   const [lead, setLead] = useState(null)
   const [totals, setTotals] = useState(null)
   const [items, setItems] = useState([])
@@ -74,6 +77,7 @@ function LeadDetailPage() {
   const [segments, setSegments] = useState([])
   const [paymentTypesList, setPaymentTypesList] = useState([])
   const [paymentTermsList, setPaymentTermsList] = useState([])
+  const [sellers, setSellers] = useState([]) // Lista de vendedores para edição
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -167,7 +171,7 @@ function LeadDetailPage() {
         return
       }
 
-      const [leadRes, totalsRes, itemsRes, unitsRes, transportersRes, segmentsRes, paymentTermsRes, paymentTypesRes] = await Promise.all([
+      const [leadRes, totalsRes, itemsRes, unitsRes, transportersRes, segmentsRes, paymentTermsRes, paymentTypesRes, sellersRes] = await Promise.all([
         leadsService.getById(leadId),
         leadsService.calculateTotals(leadId),
         leadsService.getItems(leadId),
@@ -175,7 +179,8 @@ function LeadDetailPage() {
         leadsService.getTransporters(),
         leadsService.getSegments(),
         leadsService.getPaymentTerms(),
-        leadsService.getPaymentTypes()
+        leadsService.getPaymentTypes(),
+        customersService.getSellers().catch(() => ({ data: { success: false, data: [] } }))
       ])
 
       if (leadRes.data.success) {
@@ -208,6 +213,9 @@ function LeadDetailPage() {
       }
       if (paymentTypesRes.data.success) {
         setPaymentTypesList(paymentTypesRes.data.data || [])
+      }
+      if (sellersRes.data.success) {
+        setSellers(sellersRes.data.data || [])
       }
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Erro ao carregar lead')
@@ -916,6 +924,52 @@ function LeadDetailPage() {
                   </FormControl>
                 )}
               </Grid>
+
+              {/* Vendedor - editável por gerentes (level > 4) */}
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <PersonIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Vendedor
+                  </Typography>
+                </Box>
+                {!isManager || lead.orderWeb ? (
+                  <Typography variant="body1" sx={{ ml: 4 }}>
+                    {lead.sellerNick || `#${lead.sellerId}` || '-'}
+                  </Typography>
+                ) : (
+                  <FormControl fullWidth size="small" variant="standard" sx={{ ml: 4, maxWidth: 300 }}>
+                    <Select
+                      value={lead.sellerId || ''}
+                      onChange={(e) => handleFieldUpdate('cSeller', parseInt(e.target.value))}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>Selecione um vendedor</em>
+                      </MenuItem>
+                      {sellers.map((s) => (
+                        <MenuItem key={s.id} value={s.id}>
+                          {s.nick || s.name || s.user}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </Grid>
+
+              {/* Criador - somente leitura */}
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <PersonIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Criador
+                  </Typography>
+                </Box>
+                <Typography variant="body1" sx={{ ml: 4 }}>
+                  {lead.ownerNick || `#${lead.userId}` || '-'}
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                   <PaymentIcon fontSize="small" color="action" />

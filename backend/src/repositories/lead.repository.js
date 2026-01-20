@@ -419,9 +419,15 @@ export class LeadRepository {
         c.nome as customer_nome,
         c.ender as customer_ender,
         c.cidade as customer_cidade,
-        c.estado as customer_estado
+        c.estado as customer_estado,
+        COALESCE(seller.nick, seller.user) as seller_nick,
+        seller.id as seller_id,
+        COALESCE(owner.nick, owner.user) as owner_nick,
+        owner.id as owner_id
       FROM sCart s
       LEFT JOIN clientes c ON s.cCustomer = c.id
+      LEFT JOIN users seller ON s.cSeller = seller.id
+      LEFT JOIN users owner ON s.cUser = owner.id
       WHERE s.cSCart = ?
     `;
     const [rows] = await db().execute(query, [id]);
@@ -442,6 +448,10 @@ export class LeadRepository {
         estado: row.customer_estado
       };
     }
+
+    // Adicionar informações do vendedor e criador
+    lead.sellerNick = row.seller_nick || null;
+    lead.ownerNick = row.owner_nick || null;
 
     return lead;
   }
