@@ -101,12 +101,18 @@ export const SuperbotController = {
      */
     async listCustomers(req, res) {
         try {
-            const { page = 1, limit = 20, search = '' } = req.query;
+            const { page = 1, limit = 20, search = '', sellerPhones = '' } = req.query;
+
+            // Se sellerPhones for passado, converter para array
+            const sellerPhonesArray = sellerPhones
+                ? sellerPhones.split(',').map(p => p.trim()).filter(Boolean)
+                : null;
 
             const result = await SuperbotService.listCustomers({
                 page: parseInt(page),
                 limit: parseInt(limit),
-                search
+                search,
+                sellerPhones: sellerPhonesArray
             });
 
             res.json({
@@ -201,11 +207,12 @@ export const SuperbotController = {
     async getMessages(req, res) {
         try {
             const { sessionId } = req.params;
-            const { page = 1, limit = 50 } = req.query;
+            const { page = 1, limit = 50, phone = null } = req.query;
 
             const result = await SuperbotService.getSessionMessages(sessionId, {
                 page: parseInt(page),
-                limit: parseInt(limit)
+                limit: parseInt(limit),
+                phone: phone || null
             });
 
             res.json({

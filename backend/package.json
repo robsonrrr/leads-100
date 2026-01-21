@@ -1,6 +1,6 @@
 {
   "name": "leads-agent-backend",
-  "version": "1.7.11",
+  "version": "1.7.12",
   "description": "Backend API para sistema moderno de gestão de leads",
   "main": "src/index.js",
   "type": "module",
@@ -12,6 +12,7 @@
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
+    "test:meta30k": "node src/tests/meta30k.test.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix"
   },

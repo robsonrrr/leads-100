@@ -11,7 +11,9 @@ import {
     Collapse,
     Alert,
     Grid,
-    Divider
+    Divider,
+    ToggleButton,
+    ToggleButtonGroup
 } from '@mui/material'
 import {
     Timeline as PipelineIcon,
@@ -40,16 +42,20 @@ function PipelineWidget({ sellerId = null, showForecast = true, compact = false 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [expanded, setExpanded] = useState(!compact)
+    const [periodFilter, setPeriodFilter] = useState('month') // week, month, quarter
 
     useEffect(() => {
         loadData()
-    }, [sellerId])
+    }, [sellerId, periodFilter])
 
     const loadData = async () => {
         try {
             setLoading(true)
             setError(null)
-            const params = sellerId ? { seller_id: sellerId } : {}
+            const params = {
+                ...(sellerId ? { seller_id: sellerId } : {}),
+                granularity: periodFilter
+            }
             const response = await analyticsV2Service.getPipeline(params)
 
             if (response.data.success) {
@@ -135,6 +141,23 @@ function PipelineWidget({ sellerId = null, showForecast = true, compact = false 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PipelineIcon color="primary" />
                     <Typography variant="h6">Pipeline de Vendas</Typography>
+                    <ToggleButtonGroup
+                        value={periodFilter}
+                        exclusive
+                        onChange={(e, value) => value && setPeriodFilter(value)}
+                        size="small"
+                        sx={{ ml: 2 }}
+                    >
+                        <ToggleButton value="week" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+                            Semana
+                        </ToggleButton>
+                        <ToggleButton value="month" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+                            Mês
+                        </ToggleButton>
+                        <ToggleButton value="quarter" sx={{ py: 0.25, px: 1, fontSize: '0.7rem' }}>
+                            Trimestre
+                        </ToggleButton>
+                    </ToggleButtonGroup>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip

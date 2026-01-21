@@ -3,6 +3,8 @@ import { pipelineService } from '../services/analytics/PipelineService.js';
 import { inventoryService } from '../services/analytics/InventoryService.js';
 import { financialService } from '../services/analytics/FinancialService.js';
 import { customerGoalsService } from '../services/analytics/CustomerGoalsService.js';
+import { aiGovernanceService } from '../services/ai/AIGovernanceService.js';
+import { executiveBriefService } from '../services/analytics/ExecutiveBriefService.js';
 import logger from '../../config/logger.js';
 
 /**
@@ -465,6 +467,127 @@ export async function getFinancialOverview(req, res) {
     }
 }
 
+/**
+ * GET /api/v2/analytics/margin
+ * Retorna métricas de margem (alias para financial overview focado em margem)
+ */
+export async function getMargin(req, res) {
+    try {
+        const { period, segment } = req.query;
+
+        const data = await financialService.getOverview({
+            period: period || null,
+            segment: segment || 'machines'
+        });
+
+        // Retornar focado em margem
+        res.json({
+            success: true,
+            data: {
+                period: data.period,
+                segment: data.segment,
+                margin: data.kpis.margin,
+                summary: {
+                    total_revenue: data.summary.total_revenue,
+                    total_cost: data.summary.total_cost,
+                    gross_margin: data.summary.gross_margin,
+                    margin_percent: data.summary.margin_percent,
+                    avg_discount_percent: data.summary.avg_discount_percent
+                },
+                by_seller: data.by_seller,
+                risk_distribution: data.risk_distribution,
+                alerts: data.alerts.filter(a => a.type === 'LOW_MARGIN')
+            }
+        });
+    } catch (error) {
+        logger.error('Analytics: Error getting margin', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get margin metrics',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/analytics/dso
+ * Retorna DSO (Days Sales Outstanding)
+ */
+export async function getDSO(req, res) {
+    try {
+        const { period, segment, customer_id, seller_id } = req.query;
+
+        const data = await financialService.getDSO({
+            period: period || null,
+            segment: segment || 'machines',
+            customerId: customer_id ? parseInt(customer_id) : null,
+            sellerId: seller_id ? parseInt(seller_id) : null
+        });
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Analytics: Error getting DSO', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get DSO metrics',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/analytics/credit/:customerId
+ * Retorna status de crédito de um cliente
+ */
+export async function getCreditStatus(req, res) {
+    try {
+        const { customerId } = req.params;
+
+        const data = await financialService.getCreditStatus(parseInt(customerId));
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Analytics: Error getting credit status', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get credit status',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/analytics/credit/blocked
+ * Retorna lista de clientes com crédito bloqueado
+ */
+export async function getBlockedCredits(req, res) {
+    try {
+        const { limit } = req.query;
+
+        const data = await financialService.getBlockedCredits(
+            limit ? parseInt(limit) : 50
+        );
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Analytics: Error getting blocked credits', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get blocked credits',
+            message: error.message
+        });
+    }
+}
+
 // =====================================================
 // METAS POR CLIENTE
 // =====================================================
@@ -581,6 +704,246 @@ export async function getCustomerGoalsRanking(req, res) {
         res.status(500).json({
             success: false,
             error: 'Failed to get customer goals ranking',
+            message: error.message
+        });
+    }
+}
+
+// =====================================================
+// BLOCO 5 - GOVERNANÇA DE IA (CAIO)
+// =====================================================
+
+/**
+ * GET /api/v2/ai/model-performance
+ * Retorna performance de todos os modelos de IA
+ */
+export async function getModelPerformance(req, res) {
+    try {
+        const { days } = req.query;
+
+        const data = await aiGovernanceService.getModelPerformance({
+            days: days ? parseInt(days) : 30
+        });
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('AI Governance: Error getting model performance', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get model performance',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/ai/drift-detection
+ * Detecta drift nos modelos
+ */
+export async function getDriftDetection(req, res) {
+    try {
+        const { days, baseline_days } = req.query;
+
+        const data = await aiGovernanceService.detectDrift({
+            days: days ? parseInt(days) : 7,
+            baselineDays: baseline_days ? parseInt(baseline_days) : 90
+        });
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('AI Governance: Error detecting drift', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to detect drift',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/ai/performance-history
+ * Retorna histórico de performance dos modelos
+ */
+export async function getPerformanceHistory(req, res) {
+    try {
+        const { days, granularity } = req.query;
+
+        const data = await aiGovernanceService.getPerformanceHistory({
+            days: days ? parseInt(days) : 90,
+            granularity: granularity || 'week'
+        });
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('AI Governance: Error getting performance history', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get performance history',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/ai/alerts
+ * Retorna alertas de IA (performance + drift)
+ */
+export async function getAIAlerts(req, res) {
+    try {
+        const data = await aiGovernanceService.checkAlerts();
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('AI Governance: Error getting AI alerts', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get AI alerts',
+            message: error.message
+        });
+    }
+}
+
+// =====================================================
+// BLOCO 6 - BRIEF EXECUTIVO DIÁRIO (CEO)
+// =====================================================
+
+/**
+ * GET /api/v2/brief/generate
+ * Gera brief executivo
+ */
+export async function generateBrief(req, res) {
+    try {
+        const { format } = req.query;
+
+        const data = await executiveBriefService.generateBrief({
+            format: format || 'json'
+        });
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Brief: Error generating brief', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate brief',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * POST /api/v2/brief/send
+ * Envia brief por email e push notification
+ */
+export async function sendBrief(req, res) {
+    try {
+        const { recipients, send_email = true, send_push = true } = req.body;
+
+        const results = { email: null, push: null };
+
+        if (send_email) {
+            results.email = await executiveBriefService.sendBriefByEmail(recipients);
+        }
+
+        if (send_push) {
+            results.push = await executiveBriefService.sendBriefPushNotification();
+        }
+
+        res.json({
+            success: true,
+            data: results
+        });
+    } catch (error) {
+        logger.error('Brief: Error sending brief', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to send brief',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/brief/history
+ * Retorna histórico de briefs enviados
+ */
+export async function getBriefHistory(req, res) {
+    try {
+        const { limit } = req.query;
+
+        const data = await executiveBriefService.getBriefHistory(
+            limit ? parseInt(limit) : 30
+        );
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Brief: Error getting history', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get brief history',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/brief/config
+ * Retorna configuração de envio de briefs
+ */
+export async function getBriefConfig(req, res) {
+    try {
+        const config = executiveBriefService.getConfig();
+
+        res.json({
+            success: true,
+            data: config
+        });
+    } catch (error) {
+        logger.error('Brief: Error getting config', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get config',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * PUT /api/v2/brief/config
+ * Atualiza configuração de envio de briefs
+ */
+export async function updateBriefConfig(req, res) {
+    try {
+        const newConfig = req.body;
+
+        const config = executiveBriefService.updateConfig(newConfig);
+
+        res.json({
+            success: true,
+            data: config
+        });
+    } catch (error) {
+        logger.error('Brief: Error updating config', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update config',
             message: error.message
         });
     }

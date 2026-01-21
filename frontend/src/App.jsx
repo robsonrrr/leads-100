@@ -32,6 +32,7 @@ const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'))
 const WhatsAppPageV2 = lazy(() => import('./pages/WhatsAppPageV2'))
 const DailyTasksPage = lazy(() => import('./pages/DailyTasksPage'))
 const HelpPage = lazy(() => import('./pages/HelpPage'))
+const AIGovernancePage = lazy(() => import('./pages/AIGovernancePage'))
 
 // Admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -163,6 +164,16 @@ function App() {
               <Route path="/security" element={<ProtectedRoute><Layout><SecurityPage /></Layout></ProtectedRoute>} />
               <Route path="/tasks" element={<ProtectedRoute><Layout><DailyTasksPage /></Layout></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Layout><HelpPage /></Layout></ProtectedRoute>} />
+              <Route
+                path="/ai-governance"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      {userLevel >= 5 ? <AIGovernancePage /> : <Navigate to="/" replace />}
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/whatsapp"
                 element={

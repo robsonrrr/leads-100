@@ -89,10 +89,12 @@ export function useConversations() {
 
     // Carregar conversas quando contato selecionado mudar
     useEffect(() => {
-        if (state.selectedContact?.phone) {
-            loadConversations(state.selectedContact.phone)
+        // Suporte a ambos os campos: phone e phone_number
+        const contactPhone = state.selectedContact?.phone_number || state.selectedContact?.phone
+        if (contactPhone) {
+            loadConversations(contactPhone)
         }
-    }, [state.selectedContact?.phone, loadConversations])
+    }, [state.selectedContact?.phone, state.selectedContact?.phone_number, loadConversations])
 
     return {
         conversations: state.conversations,

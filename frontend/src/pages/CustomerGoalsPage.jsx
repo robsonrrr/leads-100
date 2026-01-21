@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -20,10 +20,13 @@ import {
   TableRow,
   CircularProgress,
   Alert,
-  Button
+  Button,
+  IconButton,
+  Tooltip
 } from '@mui/material'
 import TargetIcon from '@mui/icons-material/GpsFixed'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { analyticsV2Service } from '../services/api'
 
 function CustomerGoalsPage() {
@@ -46,12 +49,24 @@ function CustomerGoalsPage() {
   const [items, setItems] = useState([])
   const [offset, setOffset] = useState(0)
 
+  // AbortController ref for cancelling previous requests
+  const abortControllerRef = useRef(null)
+
   const limit = 50
 
   const sellerId = user?.id
 
-  const fetchData = async ({ append } = { append: false }) => {
+  const fetchData = useCallback(async ({ append } = { append: false }) => {
     if (!sellerId) return
+
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new AbortController for this request
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     if (append) setLoadingMore(true)
     else setLoading(true)
@@ -65,7 +80,7 @@ function CustomerGoalsPage() {
         limit,
         offset: append ? offset : 0,
         order_by: orderBy
-      })
+      }, { signal: controller.signal })
 
       if (response.data?.success) {
         const payload = response.data.data
@@ -77,19 +92,35 @@ function CustomerGoalsPage() {
         setError('Erro ao carregar metas')
       }
     } catch (e) {
+      // Ignore abort errors
+      if (e?.name === 'AbortError' || e?.name === 'CanceledError') return
       setError(e?.message || 'Erro ao carregar metas')
     } finally {
       setLoading(false)
       setLoadingMore(false)
     }
-  }
+  }, [sellerId, year, month, classification, orderBy, offset, limit])
 
   useEffect(() => {
     setOffset(0)
     setItems([])
     if (!sellerId) return
     fetchData({ append: false })
+
+    // Cleanup: cancel request on unmount or dependency change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [sellerId, year, month, classification, orderBy])
+
+  // Handle follow-up action - navigate to customer page with follow-up tab
+  const handleFollowUp = useCallback((customerId, customerName) => {
+    navigate(`/customers/${customerId}?tab=followup`, {
+      state: { action: 'new-followup', customerName }
+    })
+  }, [navigate])
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -167,7 +198,7 @@ function CustomerGoalsPage() {
             <FormControl fullWidth size="small">
               <InputLabel>Mês</InputLabel>
               <Select value={month} label="Mês" onChange={(e) => setMonth(e.target.value)}>
-                {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                   <MenuItem key={m} value={m}>{String(m).padStart(2, '0')}</MenuItem>
                 ))}
               </Select>
@@ -339,14 +370,26 @@ function CustomerGoalsPage() {
                         <TableCell align="right">{formatInt(monthlyGap)}</TableCell>
                         <TableCell align="center">{monthlyAchievementPct}%</TableCell>
                         <TableCell align="center">
-                          <Button
-                            size="small"
-                            variant="text"
-                            startIcon={<OpenInNewIcon fontSize="small" />}
-                            onClick={() => navigate(`/customers/${c.customer_id}`)}
-                          >
-                            Abrir
-                          </Button>
+                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                            <Tooltip title="Abrir cliente">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => navigate(`/customers/${c.customer_id}`)}
+                              >
+                                <OpenInNewIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Iniciar follow-up">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => handleFollowUp(c.customer_id, c.customer_name)}
+                              >
+                                <PlayArrowIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     )

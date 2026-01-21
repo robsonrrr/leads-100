@@ -263,7 +263,9 @@ export class InventoryService {
                 media_mensal_90d,
                 status_estoque,
                 sugestao_acao,
-                prioridade_acao
+                prioridade_acao,
+                segmento,
+                categoria
             FROM mak.p_machines
             WHERE sugestao_acao IN ('Ruptura Crítica', 'Repor Urgente', 'Programar Reposição', 'Aguardar Reposição')
                OR status_estoque IN ('Crítico', 'Baixo', 'Aguardando Reposição')
@@ -271,10 +273,41 @@ export class InventoryService {
             LIMIT 100
         `);
 
+        // Buscar pedidos pendentes por produto (simplificado - verifica leads abertos)
+        const productIds = results.map(p => p.produto_id);
+        let pendingOrdersByProduct = {};
+
+        if (productIds.length > 0) {
+            try {
+                const [pendingOrders] = await database.execute(`
+                    SELECT 
+                        li.prodid as produto_id,
+                        COUNT(DISTINCT li.leadid) as pending_leads,
+                        SUM(li.quantity) as pending_quantity
+                    FROM staging.leads_items li
+                    INNER JOIN staging.leads l ON l.id = li.leadid
+                    WHERE l.cType != 2 
+                      AND l.deleted_at IS NULL
+                      AND li.prodid IN (${productIds.map(() => '?').join(',')})
+                    GROUP BY li.prodid
+                `, productIds);
+
+                for (const order of pendingOrders) {
+                    pendingOrdersByProduct[order.produto_id] = {
+                        leads: order.pending_leads,
+                        quantity: order.pending_quantity
+                    };
+                }
+            } catch (err) {
+                logger.warn('Could not fetch pending orders:', err.message);
+            }
+        }
+
         // Classificar por severidade (S1-S5)
-        const classified = results.map(p => {
+        const classifiedPromises = results.map(async (p) => {
             let severity = 'S1';
             let severityLevel = 1;
+            const pendingOrders = pendingOrdersByProduct[p.produto_id];
 
             if (p.sugestao_acao === 'Ruptura Crítica') {
                 severity = 'S5';
@@ -288,6 +321,18 @@ export class InventoryService {
             } else if (p.status_estoque === 'Baixo' || p.sugestao_acao === 'Programar Reposição') {
                 severity = 'S2';
                 severityLevel = 2;
+            }
+
+            // Upgrade to S4 if has pending orders and stock is zero
+            if (pendingOrders && pendingOrders.quantity > 0 && p.estoque_atual <= 0 && severityLevel < 4) {
+                severity = 'S4';
+                severityLevel = 4;
+            }
+
+            // Find substitutes for critical items
+            let substitutes = [];
+            if (severityLevel >= 3) {
+                substitutes = await this.suggestSubstitutes(p.produto_id, p.marca, p.segmento, 3);
             }
 
             return {
@@ -306,9 +351,13 @@ export class InventoryService {
                 status: p.status_estoque,
                 action: p.sugestao_acao,
                 severity: severity,
-                severity_level: severityLevel
+                severity_level: severityLevel,
+                pending_orders: pendingOrders || null,
+                substitutes: substitutes
             };
         });
+
+        const classified = await Promise.all(classifiedPromises);
 
         // Resumo por severidade
         const bySeverity = {
@@ -328,6 +377,74 @@ export class InventoryService {
             critical_count: critical,
             by_severity: bySeverity,
             alerts: classified.sort((a, b) => b.severity_level - a.severity_level)
+        };
+    }
+
+    /**
+     * Sugere produtos substitutos para um produto em ruptura
+     */
+    async suggestSubstitutes(productId, brand, segment, limit = 3) {
+        const database = db();
+
+        try {
+            const [substitutes] = await database.execute(`
+                SELECT 
+                    produto_id,
+                    codigo,
+                    marca,
+                    descricao,
+                    estoque_atual,
+                    revenda,
+                    vendas_ultimos_30_dias,
+                    cobertura_dias
+                FROM mak.p_machines
+                WHERE estoque_atual > 5
+                  AND (marca = ? OR segmento = ?)
+                  AND produto_id != ?
+                  AND cobertura_dias < 90
+                ORDER BY vendas_ultimos_30_dias DESC
+                LIMIT ?
+            `, [brand, segment, productId, limit]);
+
+            return substitutes.map(s => ({
+                id: s.produto_id,
+                sku: s.codigo,
+                name: s.descricao,
+                brand: s.marca,
+                stock: s.estoque_atual,
+                price: parseFloat(s.revenda) || 0,
+                sales_30d: s.vendas_ultimos_30_dias
+            }));
+        } catch (error) {
+            logger.warn('Error fetching substitutes:', error.message);
+            return [];
+        }
+    }
+
+    /**
+     * Verifica alertas críticos e notifica COO
+     * Usado pelo Scheduler para envio diário de alertas
+     */
+    async checkCriticalAlerts() {
+        const alerts = await this.getStockoutAlerts();
+        const criticalAlerts = alerts.alerts.filter(a => a.severity_level >= 4);
+
+        return {
+            has_critical: criticalAlerts.length > 0,
+            critical_count: criticalAlerts.length,
+            s4_count: alerts.by_severity.S4,
+            s5_count: alerts.by_severity.S5,
+            alerts: criticalAlerts.map(a => ({
+                type: a.severity === 'S5' ? 'RUPTURE_CRITICAL' : 'RUPTURE_URGENT',
+                severity: a.severity,
+                product_id: a.id,
+                product_sku: a.sku,
+                product_name: a.name,
+                stock: a.stock_total,
+                pending_orders: a.pending_orders,
+                substitutes_count: a.substitutes?.length || 0,
+                message: `${a.severity}: ${a.sku} - ${a.name} (Estoque: ${a.stock_total}, Ação: ${a.action})`
+            }))
         };
     }
 

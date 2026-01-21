@@ -173,7 +173,7 @@ function Layout({ children }) {
     { text: 'Lançamentos', icon: <PromotionsIcon />, path: '/pricing/launch-products' },
     ...(isManager ? [{ text: 'Metas', icon: <FlagIcon />, path: '/goals' }] : []),
     ...(!isRestricted ? [{ text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' }] : []),
-    ...(!isLevelLessThan5 ? [{ text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp' }] : []),
+    ...(!isLevelLessThan5 ? [{ text: 'WhatsApp', icon: <WhatsAppIcon sx={{ color: '#25D366' }} />, path: '/whatsapp-v2' }] : []),
     { text: 'Novo Lead', icon: <AddIcon />, path: '/leads/new' },
     { text: 'Segurança', icon: <SecurityIcon />, path: '/security' },
     ...(isManager ? [{ text: 'Admin', icon: <AdminIcon sx={{ color: '#1a237e' }} />, path: '/admin' }] : []),

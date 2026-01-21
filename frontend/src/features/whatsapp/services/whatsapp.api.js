@@ -78,6 +78,7 @@ class WhatsAppAPI {
      * Busca mensagens de uma sessão
      * @param {string} sessionId - ID da sessão
      * @param {Object} params - Parâmetros de paginação
+     * @param {string} params.phone - Telefone do contato para filtrar mensagens
      * @param {AbortSignal} signal - Sinal para cancelamento
      */
     async getMessages(sessionId, params = {}, signal) {
@@ -85,6 +86,7 @@ class WhatsAppAPI {
             params: {
                 limit: params.limit || PAGINATION.MESSAGES_PER_PAGE,
                 offset: params.offset || 0,
+                phone: params.phone || undefined,
                 ...params,
             },
             signal,

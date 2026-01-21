@@ -333,11 +333,28 @@ export const analyticsV2Service = {
 
   // Financeiro (Bloco 4)
   getFinancialOverview: (params) => api.get('/v2/analytics/financial', { params }),
+  getMargin: (params) => api.get('/v2/analytics/margin', { params }),
+  getDSO: (params) => api.get('/v2/analytics/dso', { params }),
+  getCreditStatus: (customerId) => api.get(`/v2/analytics/credit/${customerId}`),
+  getBlockedCredits: (params) => api.get('/v2/analytics/credit/blocked', { params }),
 
   // Metas por Cliente
-  getCustomerGoalsBySeller: (sellerId, params) => api.get(`/v2/analytics/goals/seller/${sellerId}`, { params }),
+  getCustomerGoalsBySeller: (sellerId, params, config = {}) => api.get(`/v2/analytics/goals/seller/${sellerId}`, { params, ...config }),
   getCustomerGoal: (customerId, params) => api.get(`/v2/analytics/goals/customer/${customerId}`, { params }),
   getCustomerGoalsRanking: (params) => api.get('/v2/analytics/goals/ranking', { params }),
+
+  // Governança de IA (Bloco 5)
+  getAIModelPerformance: (params) => api.get('/v2/analytics/ai/model-performance', { params }),
+  getAIDriftDetection: (params) => api.get('/v2/analytics/ai/drift-detection', { params }),
+  getAIPerformanceHistory: (params) => api.get('/v2/analytics/ai/performance-history', { params }),
+  getAIAlerts: () => api.get('/v2/analytics/ai/alerts'),
+
+  // Brief Executivo (Bloco 6)
+  generateBrief: (params) => api.get('/v2/analytics/brief/generate', { params }),
+  sendBrief: (data) => api.post('/v2/analytics/brief/send', data),
+  getBriefHistory: (params) => api.get('/v2/analytics/brief/history', { params }),
+  getBriefConfig: () => api.get('/v2/analytics/brief/config'),
+  updateBriefConfig: (data) => api.put('/v2/analytics/brief/config', data),
 }
 
 export default api

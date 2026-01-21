@@ -27,8 +27,9 @@ export function useMessages() {
      * Carrega mensagens de uma sessão
      * @param {string} sessionId - ID da sessão
      * @param {boolean} reset - Se true, limpa mensagens anteriores
+     * @param {string} phone - Telefone do contato para filtrar mensagens
      */
-    const loadMessages = useCallback(async (sessionId, reset = false) => {
+    const loadMessages = useCallback(async (sessionId, reset = false, phone = null) => {
         if (!sessionId) return
 
         const controller = createAbortController('messages')
@@ -44,12 +45,16 @@ export function useMessages() {
 
         const offset = reset ? 0 : state.messagesOffset
 
+        // Usar o telefone do contato selecionado se não foi passado explicitamente
+        const contactPhone = phone || state.selectedContact?.phone_number || null
+
         try {
             const response = await whatsappApi.getMessages(
                 sessionId,
                 {
                     limit: PAGINATION.MESSAGES_PER_PAGE,
                     offset,
+                    phone: contactPhone,
                 },
                 controller.signal
             )
@@ -82,7 +87,7 @@ export function useMessages() {
                 payload: error.message || 'Erro ao carregar mensagens',
             })
         }
-    }, [dispatch, createAbortController, isRequestValid, setCurrentIds, state.messagesOffset])
+    }, [dispatch, createAbortController, isRequestValid, setCurrentIds, state.messagesOffset, state.selectedContact?.phone_number])
 
     /**
      * Carrega mais mensagens (lazy loading)

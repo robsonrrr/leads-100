@@ -82,6 +82,264 @@ export class AutomationScheduler {
         }, 12 * 60 * 60 * 1000);
 
         this.intervals.push(deviationTask);
+
+        // Tarefa 3: Verificar Pipeline (diariamente - a cada 24h)
+        // Meta 30.000: Pipeline >= 3.000 máquinas/mês, alerta quando < 80%
+        const pipelineTask = setInterval(async () => {
+            try {
+                logger.info('Running scheduled pipeline verification...');
+                const { pipelineService } = await import('../analytics/PipelineService.js');
+                const { alertRepository } = await import('../../../repositories/alert.repository.js');
+                const { pushService } = await import('../../../services/push.service.js');
+
+                // Verificar alertas de pipeline
+                const alertsData = await pipelineService.checkAlerts();
+
+                if (alertsData.has_alerts) {
+                    logger.warn(`Pipeline alerts detected: ${alertsData.alerts_count} alerts`);
+
+                    // Buscar gerentes (CRO/CMO) - usuarios nivel >= 4
+                    const [managers] = await db().execute(`
+                        SELECT id, username, segmento FROM rolemak_users 
+                        WHERE level >= 4 AND blocked = 0
+                        LIMIT 10
+                    `);
+
+                    for (const alert of alertsData.alerts) {
+                        const today = new Date().toISOString().split('T')[0];
+                        const referenceId = `PIPELINE_${alert.type}_${today}`;
+
+                        // Verificar se já existe alerta hoje para evitar duplicação
+                        const [existing] = await db().execute(`
+                            SELECT id FROM staging.alerts 
+                            WHERE reference_id = ? 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                        `, [referenceId]);
+
+                        if (existing.length > 0) {
+                            logger.info(`Pipeline alert ${referenceId} already exists, skipping`);
+                            continue;
+                        }
+
+                        // Criar alerta para cada gerente
+                        for (const manager of managers) {
+                            await alertRepository.create({
+                                userId: manager.id,
+                                type: alert.severity === 'HIGH' ? 'danger' : 'warning',
+                                category: 'PIPELINE',
+                                title: `⚠️ Alerta de Pipeline: ${alert.type}`,
+                                description: alert.message,
+                                referenceId: referenceId
+                            });
+
+                            // Enviar push notification para alertas críticos
+                            if (alert.severity === 'HIGH') {
+                                try {
+                                    await pushService.sendToUser(manager.id, {
+                                        title: '🔴 Alerta Crítico de Pipeline',
+                                        body: alert.message,
+                                        data: {
+                                            type: 'PIPELINE_ALERT',
+                                            alertType: alert.type,
+                                            gap: alert.gap
+                                        }
+                                    });
+                                    logger.info(`Push notification sent to manager ${manager.id} for pipeline alert`);
+                                } catch (pushErr) {
+                                    logger.warn(`Failed to send push to manager ${manager.id}:`, pushErr.message);
+                                }
+                            }
+                        }
+
+                        // Registrar no log de auditoria
+                        await db().execute(`
+                            INSERT INTO staging.audit_log (action, entity_type, entity_id, details, created_at)
+                            VALUES (?, ?, ?, ?, NOW())
+                        `, [
+                            'PIPELINE_ALERT',
+                            'PIPELINE',
+                            referenceId,
+                            JSON.stringify({
+                                type: alert.type,
+                                severity: alert.severity,
+                                message: alert.message,
+                                gap: alert.gap,
+                                managers_notified: managers.length
+                            })
+                        ]);
+
+                        logger.info(`Pipeline alert logged: ${alert.type} - ${alert.message}`);
+                    }
+                } else {
+                    logger.info('Pipeline verification completed: No alerts');
+                }
+            } catch (error) {
+                logger.error('Scheduled Task Error (Pipeline):', error);
+            }
+        }, 24 * 60 * 60 * 1000); // A cada 24 horas
+
+        this.intervals.push(pipelineTask);
+
+        // Tarefa 4: Verificar Rupturas de Estoque (diariamente - a cada 24h)
+        // Meta 30.000: Rupturas S4-S5 = 0
+        const inventoryTask = setInterval(async () => {
+            try {
+                logger.info('Running scheduled inventory stockout check...');
+                const { inventoryService } = await import('../analytics/InventoryService.js');
+                const { alertRepository } = await import('../../../repositories/alert.repository.js');
+                const { pushService } = await import('../../../services/push.service.js');
+
+                // Verificar alertas de ruptura críticos
+                const alertsData = await inventoryService.checkCriticalAlerts();
+
+                if (alertsData.has_critical) {
+                    logger.warn(`Stockout alerts detected: ${alertsData.critical_count} critical alerts (S4: ${alertsData.s4_count}, S5: ${alertsData.s5_count})`);
+
+                    // Buscar COO e gerentes de operações - usuarios nivel >= 4 do segmento machines
+                    const [managers] = await db().execute(`
+                        SELECT id, username, segmento FROM rolemak_users 
+                        WHERE level >= 4 AND blocked = 0 AND (segmento = 'machines' OR level >= 5)
+                        LIMIT 10
+                    `);
+
+                    for (const alert of alertsData.alerts) {
+                        const today = new Date().toISOString().split('T')[0];
+                        const referenceId = `STOCKOUT_${alert.severity}_${alert.product_id}_${today}`;
+
+                        // Verificar se já existe alerta hoje para evitar duplicação
+                        const [existing] = await db().execute(`
+                            SELECT id FROM staging.alerts 
+                            WHERE reference_id = ? 
+                            AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                        `, [referenceId]);
+
+                        if (existing.length > 0) {
+                            logger.info(`Stockout alert ${referenceId} already exists, skipping`);
+                            continue;
+                        }
+
+                        // Criar alerta para cada gerente
+                        for (const manager of managers) {
+                            await alertRepository.create({
+                                userId: manager.id,
+                                type: alert.severity === 'S5' ? 'danger' : 'warning',
+                                category: 'INVENTORY',
+                                title: `🔴 Ruptura ${alert.severity}: ${alert.product_sku}`,
+                                description: alert.message + (alert.substitutes_count > 0 ? ` | ${alert.substitutes_count} substitutos disponíveis` : ''),
+                                referenceId: referenceId
+                            });
+
+                            // Enviar push notification para alertas S5 (críticos)
+                            if (alert.severity === 'S5') {
+                                try {
+                                    await pushService.sendToUser(manager.id, {
+                                        title: '🔴 Ruptura Crítica de Estoque (S5)',
+                                        body: `${alert.product_sku} - ${alert.product_name}`,
+                                        data: {
+                                            type: 'STOCKOUT_ALERT',
+                                            severity: alert.severity,
+                                            productId: alert.product_id
+                                        }
+                                    });
+                                    logger.info(`Push notification sent to manager ${manager.id} for stockout alert`);
+                                } catch (pushErr) {
+                                    logger.warn(`Failed to send push to manager ${manager.id}:`, pushErr.message);
+                                }
+                            }
+                        }
+
+                        // Registrar no log de auditoria
+                        await db().execute(`
+                            INSERT INTO staging.audit_log (action, entity_type, entity_id, details, created_at)
+                            VALUES (?, ?, ?, ?, NOW())
+                        `, [
+                            'STOCKOUT_ALERT',
+                            'INVENTORY',
+                            referenceId,
+                            JSON.stringify({
+                                type: alert.type,
+                                severity: alert.severity,
+                                product_id: alert.product_id,
+                                product_sku: alert.product_sku,
+                                stock: alert.stock,
+                                pending_orders: alert.pending_orders,
+                                substitutes_count: alert.substitutes_count,
+                                managers_notified: managers.length
+                            })
+                        ]);
+
+                        logger.info(`Stockout alert logged: ${alert.severity} - ${alert.product_sku}`);
+                    }
+                } else {
+                    logger.info('Inventory stockout check completed: No critical alerts');
+                }
+            } catch (error) {
+                logger.error('Scheduled Task Error (Inventory):', error);
+            }
+        }, 24 * 60 * 60 * 1000); // A cada 24 horas
+
+        this.intervals.push(inventoryTask);
+
+        // Executar verificação de pipeline imediatamente na inicialização (após 1 minuto)
+        setTimeout(async () => {
+            try {
+                logger.info('Running initial pipeline check...');
+                const { pipelineService } = await import('../analytics/PipelineService.js');
+                const alertsData = await pipelineService.checkAlerts();
+                logger.info(`Initial pipeline check: ${alertsData.alerts_count} alerts found`);
+            } catch (error) {
+                logger.error('Initial pipeline check error:', error);
+            }
+        }, 60 * 1000);
+
+        // Executar verificação de estoque após 2 minutos
+        setTimeout(async () => {
+            try {
+                logger.info('Running initial inventory stockout check...');
+                const { inventoryService } = await import('../analytics/InventoryService.js');
+                const alertsData = await inventoryService.checkCriticalAlerts();
+                logger.info(`Initial stockout check: ${alertsData.critical_count} critical alerts found`);
+            } catch (error) {
+                logger.error('Initial stockout check error:', error);
+            }
+        }, 120 * 1000);
+
+        // Tarefa 5: Enviar Brief Executivo Diário (às 8h)
+        // Verificamos a cada hora se é 8h para enviar o brief
+        const briefTask = setInterval(async () => {
+            try {
+                const now = new Date();
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+
+                // Enviar às 8h (com margem de 5 minutos)
+                if (hour === 8 && minute < 5) {
+                    logger.info('Running scheduled executive brief generation...');
+                    const { executiveBriefService } = await import('../analytics/ExecutiveBriefService.js');
+
+                    // Gerar e enviar brief
+                    try {
+                        // Enviar por email
+                        await executiveBriefService.sendBriefByEmail();
+                        logger.info('Executive brief sent by email');
+                    } catch (emailErr) {
+                        logger.warn('Failed to send brief by email:', emailErr.message);
+                    }
+
+                    try {
+                        // Enviar push notification
+                        await executiveBriefService.sendBriefPushNotification();
+                        logger.info('Executive brief push notification sent');
+                    } catch (pushErr) {
+                        logger.warn('Failed to send brief push:', pushErr.message);
+                    }
+                }
+            } catch (error) {
+                logger.error('Scheduled Task Error (Executive Brief):', error);
+            }
+        }, 60 * 60 * 1000); // A cada 1 hora
+
+        this.intervals.push(briefTask);
     }
 
     stop() {

@@ -27,7 +27,10 @@ const ContactItem = memo(({
     onClick,
 }) => {
     const hasLinked = contact.has_linked_customer || contact.linked_customer_id
-    const displayName = contact.name || contact.push_name || contact.phone
+    // Usar phone_number (da view) ou phone como fallback
+    const phoneNumber = contact.phone_number || contact.phone || contact.contact_phone
+    const displayName = contact.name || contact.push_name || phoneNumber
+    const hasName = contact.name || contact.push_name
     const lastMessage = contact.last_message || contact.last_message_text
 
     return (
@@ -101,33 +104,47 @@ const ContactItem = memo(({
                     </Typography>
                 </Box>
 
-                {/* Última mensagem ou telefone */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                {/* Telefone (se tiver nome, mostrar o telefone abaixo) */}
+                {hasName && phoneNumber && (
                     <Typography
-                        variant="body2"
+                        variant="caption"
                         color="text.secondary"
                         noWrap
-                        sx={{ flex: 1 }}
+                        sx={{ display: 'block' }}
                     >
-                        {lastMessage ? truncateText(lastMessage, 40) : contact.phone}
+                        📱 {phoneNumber}
                     </Typography>
+                )}
 
-                    {/* Badge de mensagens não lidas */}
-                    {contact.unread_count > 0 && (
-                        <Chip
-                            size="small"
-                            label={contact.unread_count}
-                            sx={{
-                                height: 20,
-                                minWidth: 20,
-                                bgcolor: '#25D366',
-                                color: '#fff',
-                                fontSize: '0.7rem',
-                                fontWeight: 'bold',
-                            }}
-                        />
-                    )}
-                </Box>
+                {/* Total de mensagens */}
+                {contact.total_messages > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            noWrap
+                            sx={{ flex: 1 }}
+                        >
+                            {contact.total_messages} msgs • {contact.incoming_messages || 0} ⬇️ • {contact.outgoing_messages || 0} ⬆️
+                        </Typography>
+
+                        {/* Badge de mensagens não lidas */}
+                        {contact.unread_count > 0 && (
+                            <Chip
+                                size="small"
+                                label={contact.unread_count}
+                                sx={{
+                                    height: 20,
+                                    minWidth: 20,
+                                    bgcolor: '#25D366',
+                                    color: '#fff',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold',
+                                }}
+                            />
+                        )}
+                    </Box>
+                )}
 
                 {/* Tags/Info adicional */}
                 {(contact.company_name || contact.seller_name) && (

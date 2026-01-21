@@ -16,7 +16,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Tooltip
+    Tooltip,
+    Button
 } from '@mui/material';
 import {
     Inventory as InventoryIcon,
@@ -26,8 +27,11 @@ import {
     Warning as WarningIcon,
     Speed as SpeedIcon,
     TrendingDown as TrendingDownIcon,
-    LocalOffer as BundleIcon
+    LocalOffer as BundleIcon,
+    Add as AddIcon,
+    ShoppingCart as CartIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { analyticsV2Service } from '../services/api';
 
 const STATUS_COLORS = {
@@ -54,9 +58,11 @@ const SEVERITY_COLORS = {
  * - Rupturas S4-S5 = 0
  */
 export default function InventoryHealthWidget() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
+    const [bundles, setBundles] = useState([]);
     const [expanded, setExpanded] = useState(true);
     const [showAlerts, setShowAlerts] = useState(false);
 
@@ -64,17 +70,39 @@ export default function InventoryHealthWidget() {
         setLoading(true);
         setError(null);
         try {
-            const response = await analyticsV2Service.getInventoryOverview();
-            if (response.data?.success) {
-                setData(response.data.data);
+            const [overviewResponse, bundlesResponse] = await Promise.all([
+                analyticsV2Service.getInventoryOverview(),
+                analyticsV2Service.getBundleSuggestions({ limit: 5 })
+            ]);
+
+            if (overviewResponse.data?.success) {
+                setData(overviewResponse.data.data);
             } else {
                 setError('Erro ao carregar dados');
+            }
+
+            if (bundlesResponse.data?.success) {
+                setBundles(bundlesResponse.data.data?.bundles || []);
             }
         } catch (err) {
             setError(err.message || 'Erro ao carregar dados');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCreateLeadWithBundle = (bundle) => {
+        // Navigate to new lead page with bundle products pre-selected
+        navigate('/leads/new', {
+            state: {
+                bundleProducts: [
+                    { id: bundle.low_turn_product.id, sku: bundle.low_turn_product.sku, name: bundle.low_turn_product.name, price: bundle.low_turn_product.price },
+                    { id: bundle.complement_product.id, sku: bundle.complement_product.sku, name: bundle.complement_product.name, price: bundle.complement_product.price }
+                ],
+                suggestedDiscount: bundle.suggested_discount_percent,
+                bundleId: bundle.bundle_id
+            }
+        });
     };
 
     useEffect(() => {
@@ -327,6 +355,60 @@ export default function InventoryHealthWidget() {
                         </Tooltip>
                     ))}
                 </Box>
+
+                {/* Bundles Sugeridos do Dia */}
+                {bundles.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)', my: 2 }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <BundleIcon sx={{ fontSize: 18 }} />
+                            <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
+                                Bundles Sugeridos ({bundles.length})
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {bundles.slice(0, 3).map((bundle, idx) => (
+                                <Paper
+                                    key={idx}
+                                    sx={{
+                                        p: 1.5,
+                                        bgcolor: 'rgba(255,255,255,0.95)',
+                                        borderRadius: 2,
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography variant="body2" fontWeight="bold" color="text.primary" noWrap>
+                                            {bundle.low_turn_product?.sku} + {bundle.complement_product?.sku}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Economia: {formatCurrency(bundle.customer_savings)} ({bundle.suggested_discount_percent}% desc.)
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip title="Criar lead com este bundle">
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            color="success"
+                                            startIcon={<CartIcon sx={{ fontSize: 16 }} />}
+                                            onClick={() => handleCreateLeadWithBundle(bundle)}
+                                            sx={{
+                                                minWidth: 'auto',
+                                                px: 1.5,
+                                                fontSize: '0.7rem',
+                                                textTransform: 'none'
+                                            }}
+                                        >
+                                            Lead
+                                        </Button>
+                                    </Tooltip>
+                                </Paper>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
             </Collapse>
         </Paper>
     );

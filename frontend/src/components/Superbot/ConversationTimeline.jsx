@@ -655,6 +655,7 @@ const ConversationTimeline = ({
             const params = {
                 limit: pageSize,
                 offset: reset ? 0 : offset,
+                phone: currentPhoneRef.current, // ← PASSAR O TELEFONE DO CLIENTE PARA FILTRAR
             }
 
             let response

@@ -16,7 +16,9 @@ import {
     Tooltip,
     LinearProgress,
     Collapse,
-    Alert
+    Alert,
+    Tab,
+    Tabs
 } from '@mui/material'
 import {
     Group as GroupIcon,
@@ -26,8 +28,19 @@ import {
     Refresh as RefreshIcon,
     ExpandMore as ExpandMoreIcon,
     ExpandLess as ExpandLessIcon,
-    EmojiEvents as TrophyIcon
+    EmojiEvents as TrophyIcon,
+    Timeline as TimelineIcon
 } from '@mui/icons-material'
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    ReferenceLine,
+    CartesianGrid
+} from 'recharts'
 import { analyticsV2Service } from '../services/api'
 import { useManagerFilter } from '../contexts/ManagerFilterContext'
 
@@ -41,9 +54,11 @@ import { useManagerFilter } from '../contexts/ManagerFilterContext'
 function PenetrationWidget({ sellerId = null, showRanking = true, compact = false }) {
     const { isManager } = useManagerFilter()
     const [data, setData] = useState(null)
+    const [historyData, setHistoryData] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [expanded, setExpanded] = useState(!compact)
+    const [activeTab, setActiveTab] = useState(0)
 
     useEffect(() => {
         loadData()
@@ -54,10 +69,25 @@ function PenetrationWidget({ sellerId = null, showRanking = true, compact = fals
             setLoading(true)
             setError(null)
             const params = sellerId ? { seller_id: sellerId } : {}
-            const response = await analyticsV2Service.getPenetration(params)
 
+            // Load current penetration data
+            const response = await analyticsV2Service.getPenetration(params)
             if (response.data.success) {
                 setData(response.data.data)
+            }
+
+            // Load penetration history for chart
+            const historyResponse = await analyticsV2Service.getPenetrationHistory(params)
+            if (historyResponse.data.success && historyResponse.data.data?.history) {
+                // Format history data for chart
+                const formattedHistory = historyResponse.data.data.history.map(item => ({
+                    month: item.month_label || item.period,
+                    penetration: parseFloat(item.penetration_rate) || 0,
+                    target: item.target || 2.5,
+                    active: item.active_customers || 0,
+                    total: item.total_customers || 0
+                }))
+                setHistoryData(formattedHistory)
             }
         } catch (err) {
             console.error('Erro ao carregar penetração:', err)
@@ -231,8 +261,95 @@ function PenetrationWidget({ sellerId = null, showRanking = true, compact = fals
                 />
             </Box>
 
-            {/* Detalhes Expandidos */}
-            <Collapse in={expanded}>
+            {/* Tabs para alternar entre atual e histórico */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={(e, newValue) => setActiveTab(newValue)}
+                    variant="fullWidth"
+                    sx={{ minHeight: 36 }}
+                >
+                    <Tab label="Atual" sx={{ minHeight: 36, py: 0.5 }} />
+                    <Tab
+                        label="Evolução"
+                        icon={<TimelineIcon sx={{ fontSize: 16 }} />}
+                        iconPosition="start"
+                        sx={{ minHeight: 36, py: 0.5 }}
+                    />
+                </Tabs>
+            </Box>
+
+            {/* Gráfico de Evolução Mensal (Tab 1) */}
+            {activeTab === 1 && historyData.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TimelineIcon fontSize="small" color="primary" />
+                        Evolução dos Últimos 12 Meses
+                    </Typography>
+                    <Box sx={{ width: '100%', height: 200 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={historyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                <XAxis
+                                    dataKey="month"
+                                    tick={{ fontSize: 10 }}
+                                    interval="preserveStartEnd"
+                                />
+                                <YAxis
+                                    domain={[0, 'auto']}
+                                    tick={{ fontSize: 10 }}
+                                    tickFormatter={(value) => value.toFixed(1)}
+                                />
+                                <RechartsTooltip
+                                    formatter={(value, name) => [
+                                        name === 'penetration' ? value.toFixed(2) : value,
+                                        name === 'penetration' ? 'Penetração' : name
+                                    ]}
+                                    labelFormatter={(label) => `Período: ${label}`}
+                                    contentStyle={{
+                                        backgroundColor: '#fff',
+                                        border: '1px solid #e0e0e0',
+                                        borderRadius: 4
+                                    }}
+                                />
+                                <ReferenceLine
+                                    y={2.5}
+                                    stroke="#4caf50"
+                                    strokeDasharray="5 5"
+                                    label={{ value: 'Meta 2.5', position: 'right', fontSize: 10, fill: '#4caf50' }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="penetration"
+                                    stroke="#1976d2"
+                                    strokeWidth={2}
+                                    dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                    activeDot={{ r: 6, stroke: '#1976d2', strokeWidth: 2 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ width: 12, height: 3, bgcolor: '#1976d2', borderRadius: 1 }} />
+                            <Typography variant="caption" color="text.secondary">Penetração</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ width: 12, height: 3, bgcolor: '#4caf50', borderRadius: 1, borderStyle: 'dashed' }} />
+                            <Typography variant="caption" color="text.secondary">Meta (2.5)</Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            )}
+
+            {activeTab === 1 && historyData.length === 0 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Histórico de penetração não disponível.
+                </Alert>
+            )}
+
+            {/* Detalhes Expandidos (Tab 0 - Atual) */}
+            <Collapse in={expanded && activeTab === 0}>
                 <Divider sx={{ my: 2 }} />
 
                 {/* Status dos Vendedores (para visão consolidada - apenas gerentes) */}

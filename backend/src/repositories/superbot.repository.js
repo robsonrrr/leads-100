@@ -104,11 +104,12 @@ export const SuperbotRepository = {
    * Lista todos os clientes do Superbot com estatísticas básicas
    */
   async listCustomers(options = {}) {
-    const { page = 1, limit = 20, search = '', hasLink = null } = options;
+    const { page = 1, limit = 20, search = '', hasLink = null, sellerPhones = null } = options;
     const offset = (page - 1) * limit;
 
-    // Cache key
-    const cacheKey = `superbot:customers:list:${page}:${limit}:${search || 'all'}`;
+    // Cache key (incluir sellerPhones se fornecido)
+    const sellerKey = sellerPhones ? sellerPhones.join(',') : 'all';
+    const cacheKey = `superbot:customers:list:${page}:${limit}:${search || 'none'}:${sellerKey}`;
     const cached = await cacheGet(cacheKey);
     if (cached) return cached;
 
@@ -125,34 +126,96 @@ export const SuperbotRepository = {
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
-    // PASSO 1: Buscar clientes ordenados pela última mensagem (query otimizada com subquery)
-    const [customers] = await db().query(`
-      SELECT 
-        sc.id,
-        sc.jid,
-        sc.name,
-        sc.push_name,
-        sc.phone_number,
-        sc.is_group,
-        sc.created_at,
-        sc.updated_at,
-        msg_stats.last_message_at
-      FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
-      LEFT JOIN (
+    // Se sellerPhones foi passado, filtrar apenas clientes que conversaram com esses telefones
+    let sellerFilter = '';
+    let sellerPhonesPlaceholders = '';
+    if (sellerPhones && sellerPhones.length > 0) {
+      sellerPhonesPlaceholders = sellerPhones.map(() => '?').join(',');
+      sellerFilter = `
+        AND sc.phone_number IN (
+          SELECT DISTINCT
+            CASE 
+              WHEN sender_phone IN (${sellerPhonesPlaceholders}) THEN recipient_phone
+              ELSE sender_phone
+            END as client_phone
+          FROM ${SUPERBOT_SCHEMA}.messages
+          WHERE (sender_phone IN (${sellerPhonesPlaceholders}) OR recipient_phone IN (${sellerPhonesPlaceholders}))
+            AND is_group = 0
+        )
+      `;
+      // Adicionar os telefones 3 vezes (para cada IN clause)
+      params.push(...sellerPhones, ...sellerPhones, ...sellerPhones);
+    }
+
+    // PASSO 1: Buscar clientes ordenados pela última mensagem
+    let query;
+    let queryParams;
+
+    if (sellerPhones && sellerPhones.length > 0) {
+      // Query usando a VIEW vw_whatsapp_contacts
+      // Filtra por seller_phone (session_id = telefone do vendedor)
+      // JOIN com seller_phones e rolemak_users para obter o nome do vendedor
+      query = `
         SELECT 
-          CASE 
-            WHEN sender_phone LIKE '55%' AND LENGTH(sender_phone) >= 12 THEN sender_phone
-            ELSE recipient_phone 
-          END as phone,
-          MAX(received_at) as last_message_at
-        FROM ${SUPERBOT_SCHEMA}.messages
-        WHERE is_group = 0
-        GROUP BY phone
-      ) msg_stats ON msg_stats.phone = sc.phone_number
-      ${whereClause}
-      ORDER BY COALESCE(msg_stats.last_message_at, '1970-01-01') DESC, sc.updated_at DESC
-      LIMIT ? OFFSET ?
-    `, [...params, parseInt(limit), parseInt(offset)]);
+          v.contact_phone AS phone_number,
+          v.contact_name AS name,
+          v.push_name,
+          v.seller_phone,
+          COALESCE(u.nick, u.user) AS seller_name,
+          v.total_messages,
+          v.incoming_messages,
+          v.outgoing_messages,
+          v.first_message_at,
+          v.last_message_at,
+          v.days_since_last_message,
+          v.superbot_customer_id AS id,
+          v.has_linked_customer,
+          v.leads_customer_id,
+          0 AS is_group
+        FROM ${SUPERBOT_SCHEMA}.vw_whatsapp_contacts v
+        LEFT JOIN ${SUPERBOT_SCHEMA}.seller_phones sp ON sp.phone_number = v.seller_phone
+        LEFT JOIN mak.rolemak_users u ON u.id = sp.user_id
+        WHERE v.seller_phone IN (${sellerPhonesPlaceholders})
+        ${search ? `AND (v.contact_name LIKE ? OR v.contact_phone LIKE ?)` : ''}
+        ORDER BY v.last_message_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      // Parâmetros: sellerPhones, search params (se houver), limit, offset
+      const searchParams = search ? [`%${search}%`, `%${search}%`] : [];
+      queryParams = [...sellerPhones, ...searchParams, parseInt(limit), parseInt(offset)];
+    } else {
+      // Query padrão (sem filtro de vendedor)
+      query = `
+        SELECT 
+          sc.id,
+          sc.jid,
+          sc.name,
+          sc.push_name,
+          sc.phone_number,
+          sc.is_group,
+          sc.created_at,
+          sc.updated_at,
+          msg_stats.last_message_at
+        FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
+        LEFT JOIN (
+          SELECT 
+            CASE 
+              WHEN sender_phone LIKE '55%' AND LENGTH(sender_phone) >= 12 THEN sender_phone
+              ELSE recipient_phone 
+            END as phone,
+            MAX(received_at) as last_message_at
+          FROM ${SUPERBOT_SCHEMA}.messages
+          WHERE is_group = 0
+          GROUP BY phone
+        ) msg_stats ON msg_stats.phone = sc.phone_number
+        ${whereClause}
+        ORDER BY COALESCE(msg_stats.last_message_at, '1970-01-01') DESC, sc.updated_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      queryParams = [...params, parseInt(limit), parseInt(offset)];
+    }
+
+    const [customers] = await db().query(query, queryParams);
 
     // PASSO 2: Se tiver clientes, buscar estatísticas em batch
     let statsMap = {};
@@ -211,9 +274,10 @@ export const SuperbotRepository = {
     }
 
     // PASSO 3.5: Buscar vendedor associado (para admins/gerentes)
+    // APENAS quando NÃO usamos a view (que já traz o seller_name)
     // O vendedor é identificado pelo telefone que participou das conversas
     let sellerMap = {};
-    if (customers.length > 0) {
+    if (customers.length > 0 && !sellerPhones) {
       const phoneNumbers = customers.map(c => c.phone_number);
       const placeholders = phoneNumbers.map(() => '?').join(',');
 
@@ -254,21 +318,39 @@ export const SuperbotRepository = {
     }
 
     // PASSO 4: Combinar resultados
+    // Se usamos a view (sellerPhones fornecido), o seller_name já vem da query
+    // Caso contrário, usamos o sellerMap
     const rows = customers.map(c => ({
       ...c,
       total_sessions: statsMap[c.phone_number]?.total_sessions || 0,
-      total_messages: statsMap[c.phone_number]?.total_messages || 0,
-      last_message_at: statsMap[c.phone_number]?.last_message_at || null,
-      has_linked_customer: !!linksMap[c.id],
-      seller_name: sellerMap[c.phone_number] || null
+      total_messages: c.total_messages || statsMap[c.phone_number]?.total_messages || 0,
+      last_message_at: c.last_message_at || statsMap[c.phone_number]?.last_message_at || null,
+      has_linked_customer: c.has_linked_customer || !!linksMap[c.id],
+      seller_name: c.seller_name || sellerMap[c.phone_number] || null
     }));
 
     // Contagem total (query separada, rápida)
-    const [countResult] = await db().query(`
-      SELECT COUNT(*) as total
-      FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
-      ${whereClause}
-    `, params);
+    let countQuery, countParams;
+    if (sellerPhones && sellerPhones.length > 0) {
+      // Contar da view quando temos filtro de vendedor
+      countQuery = `
+        SELECT COUNT(*) as total
+        FROM ${SUPERBOT_SCHEMA}.vw_whatsapp_contacts v
+        WHERE v.seller_phone IN (${sellerPhonesPlaceholders})
+        ${search ? `AND (v.contact_name LIKE ? OR v.contact_phone LIKE ?)` : ''}
+      `;
+      const searchParams = search ? [`%${search}%`, `%${search}%`] : [];
+      countParams = [...sellerPhones, ...searchParams];
+    } else {
+      countQuery = `
+        SELECT COUNT(*) as total
+        FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
+        ${whereClause}
+      `;
+      countParams = params;
+    }
+
+    const [countResult] = await db().query(countQuery, countParams);
 
     const result = {
       data: rows,
@@ -328,24 +410,44 @@ export const SuperbotRepository = {
    * Busca mensagens de uma sessão específica
    * NOTA: Página 1 retorna as mensagens MAIS RECENTES (para exibição inicial no chat)
    * As mensagens são ordenadas cronologicamente (ASC) para display correto
+   * @param {string} sessionId - ID da sessão
+   * @param {Object} options - Opções de busca
+   * @param {number} options.page - Página (default: 1)
+   * @param {number} options.limit - Limite por página (default: 50)
+   * @param {string} options.phone - Telefone do contato para filtrar mensagens
+   * @param {boolean} options.includeMedia - Incluir mídia (default: true)
    */
   async getMessagesBySession(sessionId, options = {}) {
-    const { page = 1, limit = 50, includeMedia = true } = options;
+    const { page = 1, limit = 50, includeMedia = true, phone = null } = options;
 
-    const cacheKey = `superbot:messages:${sessionId}:${page}:${limit}`;
+    // Gerar cache key incluindo o phone se fornecido
+    const phoneSuffix = phone ? getPhoneSuffix(phone) : '';
+    const cacheKey = `superbot:messages:${sessionId}:${page}:${limit}:${phoneSuffix}`;
     const cached = await cacheGet(cacheKey);
     if (cached) return cached;
+
+    // Construir filtro de telefone se fornecido
+    let phoneFilter = '';
+    const countParams = [sessionId];
+    const queryParams = [sessionId];
+
+    if (phone) {
+      phoneFilter = ` AND (m.sender_phone = ? OR m.recipient_phone = ?)`;
+      countParams.push(phone, phone);
+      queryParams.push(phone, phone);
+    }
 
     // Contagem total (excluindo mensagens de Status)
     const [countResult] = await db().query(`
       SELECT COUNT(*) as total
-      FROM ${SUPERBOT_SCHEMA}.messages
-      WHERE session_id = ?
-        AND sender_phone NOT LIKE '%status@broadcast%'
-        AND recipient_phone NOT LIKE '%status@broadcast%'
-        AND COALESCE(sender_phone, '') NOT LIKE 'status%'
-        AND COALESCE(recipient_phone, '') NOT LIKE 'status%'
-    `, [sessionId]);
+      FROM ${SUPERBOT_SCHEMA}.messages m
+      WHERE m.session_id = ?
+        ${phoneFilter}
+        AND m.sender_phone NOT LIKE '%status@broadcast%'
+        AND m.recipient_phone NOT LIKE '%status@broadcast%'
+        AND COALESCE(m.sender_phone, '') NOT LIKE 'status%'
+        AND COALESCE(m.recipient_phone, '') NOT LIKE 'status%'
+    `, countParams);
 
     const total = countResult[0]?.total || 0;
     const totalPages = Math.ceil(total / limit);
@@ -390,6 +492,7 @@ export const SuperbotRepository = {
         LEFT JOIN ${SUPERBOT_SCHEMA}.message_transcriptions mt ON mt.media_id = mm.id
         LEFT JOIN ${SUPERBOT_SCHEMA}.message_responses mr ON mr.message_id = m.id
         WHERE m.session_id = ?
+          ${phoneFilter}
           -- Excluir mensagens de Status do WhatsApp (stories)
           AND m.sender_phone NOT LIKE '%status@broadcast%'
           AND m.recipient_phone NOT LIKE '%status@broadcast%'
@@ -399,7 +502,7 @@ export const SuperbotRepository = {
         LIMIT ? OFFSET ?
       ) recent_messages
       ORDER BY received_at ASC
-    `, [sessionId, parseInt(limit), parseInt(offset)]);
+    `, [...queryParams, parseInt(limit), parseInt(offset)]);
 
     const result = {
       data: rows,

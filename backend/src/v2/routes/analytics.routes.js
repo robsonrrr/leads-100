@@ -143,6 +143,42 @@ router.get('/inventory/bundles/suggest', auth, analyticsV2.getBundleSuggestions)
  */
 router.get('/financial', auth, analyticsV2.getFinancialOverview);
 
+/**
+ * @swagger
+ * /api/v2/analytics/margin:
+ *   get:
+ *     summary: Métricas de margem bruta
+ *     tags: [Analytics V2]
+ */
+router.get('/margin', auth, analyticsV2.getMargin);
+
+/**
+ * @swagger
+ * /api/v2/analytics/dso:
+ *   get:
+ *     summary: DSO (Days Sales Outstanding)
+ *     tags: [Analytics V2]
+ */
+router.get('/dso', auth, analyticsV2.getDSO);
+
+/**
+ * @swagger
+ * /api/v2/analytics/credit/blocked:
+ *   get:
+ *     summary: Clientes com crédito bloqueado
+ *     tags: [Analytics V2]
+ */
+router.get('/credit/blocked', auth, analyticsV2.getBlockedCredits);
+
+/**
+ * @swagger
+ * /api/v2/analytics/credit/{customerId}:
+ *   get:
+ *     summary: Status de crédito de um cliente
+ *     tags: [Analytics V2]
+ */
+router.get('/credit/:customerId', auth, analyticsV2.getCreditStatus);
+
 // ============================================
 // METAS (do AnalyticsController original)
 // ============================================
@@ -182,5 +218,94 @@ router.get('/goals/ranking', auth, analyticsController.getCustomerGoalsRanking);
  *     tags: [Analytics V2]
  */
 router.get('/replenishment', auth, analyticsController.getReplenishmentSuggestions);
+
+// ============================================
+// GOVERNANÇA DE IA (Bloco 5)
+// ============================================
+
+/**
+ * @swagger
+ * /api/v2/ai/model-performance:
+ *   get:
+ *     summary: Performance dos modelos de IA
+ *     tags: [AI Governance]
+ */
+router.get('/ai/model-performance', auth, analyticsV2.getModelPerformance);
+
+/**
+ * @swagger
+ * /api/v2/ai/drift-detection:
+ *   get:
+ *     summary: Detecção de drift nos modelos
+ *     tags: [AI Governance]
+ */
+router.get('/ai/drift-detection', auth, analyticsV2.getDriftDetection);
+
+/**
+ * @swagger
+ * /api/v2/ai/performance-history:
+ *   get:
+ *     summary: Histórico de performance dos modelos
+ *     tags: [AI Governance]
+ */
+router.get('/ai/performance-history', auth, analyticsV2.getPerformanceHistory);
+
+/**
+ * @swagger
+ * /api/v2/ai/alerts:
+ *   get:
+ *     summary: Alertas de IA
+ *     tags: [AI Governance]
+ */
+router.get('/ai/alerts', auth, analyticsV2.getAIAlerts);
+
+// ============================================
+// BRIEF EXECUTIVO (Bloco 6)
+// ============================================
+
+/**
+ * @swagger
+ * /api/v2/brief/generate:
+ *   get:
+ *     summary: Gera brief executivo
+ *     tags: [Executive Brief]
+ */
+router.get('/brief/generate', auth, analyticsV2.generateBrief);
+
+/**
+ * @swagger
+ * /api/v2/brief/send:
+ *   post:
+ *     summary: Envia brief por email e push
+ *     tags: [Executive Brief]
+ */
+router.post('/brief/send', auth, analyticsV2.sendBrief);
+
+/**
+ * @swagger
+ * /api/v2/brief/history:
+ *   get:
+ *     summary: Histórico de briefs enviados
+ *     tags: [Executive Brief]
+ */
+router.get('/brief/history', auth, analyticsV2.getBriefHistory);
+
+/**
+ * @swagger
+ * /api/v2/brief/config:
+ *   get:
+ *     summary: Configuração de envio de briefs
+ *     tags: [Executive Brief]
+ */
+router.get('/brief/config', auth, analyticsV2.getBriefConfig);
+
+/**
+ * @swagger
+ * /api/v2/brief/config:
+ *   put:
+ *     summary: Atualiza configuração de envio
+ *     tags: [Executive Brief]
+ */
+router.put('/brief/config', auth, analyticsV2.updateBriefConfig);
 
 export default router;
