@@ -1030,5 +1030,32 @@ export class CustomerRepository {
       throw error;
     }
   }
+
+  /**
+   * Busca telefone WhatsApp do cliente via view superbot
+   * @param {number} customerId - ID do cliente (mak.clientes.id)
+   * @returns {Object|null} { phone, name, linkStatus } ou null se não encontrado
+   */
+  async getCustomerWhatsApp(customerId) {
+    try {
+      const query = `
+        SELECT 
+          superbot_phone as phone,
+          superbot_name as name,
+          link_status as linkStatus
+        FROM superbot.vw_superbot_leads_customers 
+        WHERE leads_customer_id = ?
+        LIMIT 1
+      `;
+
+      const [rows] = await db().execute(query, [customerId]);
+
+      return rows[0] || null;
+    } catch (error) {
+      // Se a view não existir ou der erro, retornar null (não bloqueia o fluxo)
+      console.warn('[getCustomerWhatsApp] Error:', error.message);
+      return null;
+    }
+  }
 }
 

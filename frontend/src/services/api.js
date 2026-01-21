@@ -190,6 +190,8 @@ export const leadsService = {
   getHistory: (id) => api.get(`/leads/${id}/history`),
   // Envio de email
   sendEmail: (id, data) => api.post(`/leads/${id}/send-email`, data),
+  // Envio de WhatsApp
+  sendWhatsApp: (id, data) => api.post(`/leads/${id}/whatsapp`, data),
 }
 
 export const ordersService = {

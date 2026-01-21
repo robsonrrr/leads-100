@@ -49,7 +49,8 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Chat as ChatIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  WhatsApp as WhatsAppIcon
 } from '@mui/icons-material'
 import { leadsService, customersService, interactionsService } from '../services/api'
 import CartItems from '../components/CartItems'
@@ -102,6 +103,12 @@ function LeadDetailPage() {
     notes: '',
     followUpDate: ''
   })
+
+  // Modal de WhatsApp
+  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false)
+  const [whatsAppMessage, setWhatsAppMessage] = useState('')
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
+  const [customerWhatsApp, setCustomerWhatsApp] = useState(null)
 
   const [conversionFormData, setConversionFormData] = useState({
     cTransporter: '',
@@ -489,6 +496,131 @@ function LeadDetailPage() {
     }
   }
 
+  // Arredonda centavos para cima (ex: 1853.10 -> 1854.00) - apenas para máquinas
+  const roundCentsUp = (price) => {
+    if (!price || isNaN(price)) return price
+    const numPrice = parseFloat(price)
+    // Se tem centavos (não é número inteiro), arredonda para cima
+    return numPrice % 1 !== 0 ? Math.ceil(numPrice) : numPrice
+  }
+
+  // Verifica se o item é do segmento de máquinas
+  const isMachineSegment = (item) => {
+    const productSegment = item.product?.segment?.code ||
+      item.product?.segment ||
+      item.product?.product_segment ||
+      ''
+    const segmentStr = typeof productSegment === 'string' ? productSegment : ''
+    return segmentStr?.toLowerCase() === 'machines' ||
+      segmentStr?.toLowerCase() === 'máquinas' ||
+      segmentStr?.toLowerCase() === 'maquinas'
+  }
+
+  // Gerar mensagem de orçamento formatada para WhatsApp
+  const generateQuoteMessage = () => {
+    if (!lead || !items || items.length === 0) {
+      return 'Olá! Segue seu orçamento.'
+    }
+
+    const customerName = lead.customer?.nome || lead.customer?.fantasia || 'Cliente'
+    const leadId = lead.id
+
+    let message = `🛒 *ORÇAMENTO #${leadId}*\n`
+    message += `━━━━━━━━━━━━━━━━━━\n\n`
+    message += `Olá, *${customerName.split(' ')[0]}*! 👋\n\n`
+    message += `Segue sua cotação:\n\n`
+
+    let grandTotal = 0
+
+    // Listar itens
+    items.forEach((item, index) => {
+      const productName = item.product?.description || item.productDescription || 'Produto'
+      const productCode = item.product?.model || item.productModel || ''
+      const qty = item.quantity || 1
+      let price = item.unitPrice || item.price || 0
+
+      // Arredondar preço para cima se for máquina
+      if (isMachineSegment(item)) {
+        price = roundCentsUp(price)
+      }
+
+      const total = qty * price
+      grandTotal += total
+
+      message += `*${index + 1}. ${productName}*\n`
+      if (productCode) message += `   Código: ${productCode}\n`
+      message += `   Qtd: ${qty} x R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`
+      message += `   *Subtotal: R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`
+    })
+
+    message += `━━━━━━━━━━━━━━━━━━\n`
+
+    // Totais (usar grandTotal calculado com arredondamento ou totals se disponível)
+    const displayTotal = totals?.grandTotal || totals?.total || grandTotal
+
+    if (totals) {
+      if (totals.totalDiscount > 0) {
+        message += `Desconto: -R$ ${totals.totalDiscount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`
+      }
+      if (totals.totalIPI > 0) {
+        message += `IPI: +R$ ${totals.totalIPI.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`
+      }
+      if (totals.totalST > 0) {
+        message += `ST: +R$ ${totals.totalST.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`
+      }
+    }
+
+    message += `\n💰 *TOTAL: R$ ${displayTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`
+
+    message += `━━━━━━━━━━━━━━━━━━\n\n`
+
+    // Condições de pagamento
+    const paymentInfo = formatPaymentTerms()
+    if (paymentInfo) {
+      message += `💳 *Condição:* ${paymentInfo}\n`
+    }
+
+    // Validade
+    message += `⏰ *Validade:* 7 dias\n\n`
+
+    message += `Posso te ajudar com mais alguma informação? 😊`
+
+    return message
+  }
+
+  // Abrir modal de WhatsApp com mensagem pré-carregada
+  const handleOpenWhatsAppDialog = () => {
+    const quoteMessage = generateQuoteMessage()
+    setWhatsAppMessage(quoteMessage)
+    setWhatsAppDialogOpen(true)
+  }
+
+  // Enviar WhatsApp
+  const handleSendWhatsApp = async () => {
+    if (!whatsAppMessage.trim()) {
+      toast.showError('Digite uma mensagem')
+      return
+    }
+
+    setSendingWhatsApp(true)
+    try {
+      const response = await leadsService.sendWhatsApp(lead.id, {
+        message: whatsAppMessage.trim()
+      })
+
+      if (response.data.success) {
+        toast.showSuccess(response.data.message || 'Mensagem WhatsApp enviada com sucesso!')
+        setWhatsAppDialogOpen(false)
+        setWhatsAppMessage('')
+      }
+    } catch (err) {
+      toast.showError(err.response?.data?.error?.message || 'Erro ao enviar WhatsApp')
+    } finally {
+      setSendingWhatsApp(false)
+    }
+  }
+
+
   const formatPaymentTerms = () => {
     // Verificar se algum item é do segmento "machines"
     const hasMachinesSegment = items.some(item => {
@@ -656,6 +788,26 @@ function LeadDetailPage() {
               }}
             >
               Enviar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<WhatsAppIcon />}
+              onClick={handleOpenWhatsAppDialog}
+              disabled={!lead.customerWhatsApp?.phone}
+              title={lead.customerWhatsApp?.phone
+                ? `Enviar WhatsApp para ${lead.customerWhatsApp.phone}`
+                : 'Cliente sem WhatsApp vinculado'}
+              sx={{
+                bgcolor: lead.customerWhatsApp?.phone ? '#25D366' : 'rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                '&:hover': { bgcolor: '#128C7E' },
+                '&.Mui-disabled': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'rgba(255, 255, 255, 0.5)'
+                }
+              }}
+            >
+              WhatsApp
             </Button>
             <Button
               variant="contained"
@@ -1852,6 +2004,55 @@ function LeadDetailPage() {
         lead={lead}
         defaultEmail={lead?.customer?.email || emailAddress}
       />
+
+      {/* Modal de WhatsApp */}
+      <Dialog
+        open={whatsAppDialogOpen}
+        onClose={() => setWhatsAppDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WhatsAppIcon sx={{ color: '#25D366' }} />
+          Enviar WhatsApp
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Enviando para: <strong>{lead?.customerWhatsApp?.phone}</strong>
+            {lead?.customerWhatsApp?.name && ` (${lead.customerWhatsApp.name})`}
+          </Alert>
+
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            label="Mensagem"
+            value={whatsAppMessage}
+            onChange={(e) => setWhatsAppMessage(e.target.value)}
+            placeholder="Digite sua mensagem..."
+            sx={{ mt: 1 }}
+          />
+
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Lead #{lead?.id} | Cliente: {lead?.customer?.nome}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWhatsAppDialogOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSendWhatsApp}
+            disabled={sendingWhatsApp || !whatsAppMessage.trim()}
+            startIcon={sendingWhatsApp ? <CircularProgress size={16} /> : <WhatsAppIcon />}
+            sx={{ bgcolor: '#25D366', '&:hover': { bgcolor: '#128C7E' } }}
+          >
+            {sendingWhatsApp ? 'Enviando...' : 'Enviar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
 
       {/* Modal de Detalhes do Cliente */}
       <Dialog

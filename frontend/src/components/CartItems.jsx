@@ -66,12 +66,35 @@ import CartRecommendations from './CartRecommendations'
 import ProductDetailModal from './ProductDetailModal'
 import { useToast } from '../contexts/ToastContext'
 
+// Verifica se o item é do segmento de máquinas
+const isMachineSegment = (item) => {
+  if (!item) return false
+  const productSegment = item.product?.segment?.code ||
+    item.product?.segment ||
+    item.product?.product_segment ||
+    item.segment ||
+    ''
+  const segmentStr = typeof productSegment === 'string' ? productSegment : ''
+  return segmentStr?.toLowerCase() === 'machines' ||
+    segmentStr?.toLowerCase() === 'máquinas' ||
+    segmentStr?.toLowerCase() === 'maquinas'
+}
+
 // Arredonda centavos para cima (ex: 1853.10 -> 1854.00)
+// IMPORTANTE: Aplicar APENAS para segmento de máquinas
 const roundCentsUp = (price) => {
   if (!price || isNaN(price)) return price
   const numPrice = parseFloat(price)
   // Se tem centavos (não é número inteiro), arredonda para cima
   return numPrice % 1 !== 0 ? Math.ceil(numPrice) : numPrice
+}
+
+// Arredonda preço condicionalmente - apenas para máquinas
+const roundPriceIfMachine = (price, item) => {
+  if (isMachineSegment(item)) {
+    return roundCentsUp(price)
+  }
+  return price
 }
 
 function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
@@ -700,8 +723,8 @@ function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
           }
         }
 
-        // Salvar resultado do pricing para este item (arredondando centavos para cima)
-        const pricingPrice = roundCentsUp(newPrice || finalPrice)
+        // Salvar resultado do pricing para este item (arredondando centavos para cima APENAS para máquinas)
+        const pricingPrice = roundPriceIfMachine(newPrice || finalPrice, item)
         setPricingResults(prev => ({
           ...prev,
           [item.id]: {
@@ -840,8 +863,8 @@ function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
           const decision = pricingRoot?.decision
           const execution = pricingRoot?.execution
           const newPrice = execution?.actions?.[0]?.new_price || decision?.final_price
-          // Arredondar centavos para cima
-          const roundedPrice = roundCentsUp(newPrice)
+          // Arredondar centavos para cima APENAS para máquinas
+          const roundedPrice = roundPriceIfMachine(newPrice, item)
 
           if (roundedPrice && roundedPrice > 0) {
             // Atualizar o item com o novo preço
@@ -956,8 +979,8 @@ function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
         const finalPrice = decision?.final_price
         const explanation = decision?.explanation
 
-        // Atualizar preço no formulário (arredondando centavos para cima)
-        const roundedPrice = roundCentsUp(newPrice || finalPrice)
+        // Atualizar preço no formulário (arredondando centavos para cima APENAS para máquinas)
+        const roundedPrice = roundPriceIfMachine(newPrice || finalPrice, formData)
         if (roundedPrice) {
           setFormData(prev => ({
             ...prev,

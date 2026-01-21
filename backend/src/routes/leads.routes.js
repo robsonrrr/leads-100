@@ -824,4 +824,59 @@ router.get('/:id/history', leadsController.getLeadHistory);
  */
 router.post('/:id/send-email', leadsController.sendLeadEmail);
 
+/**
+ * @swagger
+ * /leads/{id}/whatsapp:
+ *   post:
+ *     summary: Envia mensagem WhatsApp para o cliente do lead
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do lead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 description: Mensagem a ser enviada
+ *     responses:
+ *       200:
+ *         description: Mensagem enviada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sentTo:
+ *                       type: string
+ *                     sentFrom:
+ *                       type: string
+ *                     customerName:
+ *                       type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Cliente sem WhatsApp ou vendedor sem telefone configurado
+ *       404:
+ *         description: Lead não encontrado
+ */
+router.post('/:id/whatsapp', leadsController.sendWhatsApp);
+
 export default router;

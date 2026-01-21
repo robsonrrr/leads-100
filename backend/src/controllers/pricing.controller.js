@@ -30,7 +30,8 @@ const calculatePriceSchema = Joi.object({
   order_items: Joi.array().items(orderItemSchema).optional().default([])
 });
 
-const PRICING_API_URL = process.env.PRICING_API_URL || 'https://csuite.internut.com.br/pricing/run';
+const PRICING_API_BASE = process.env.PRICING_API_URL || 'https://csuite.internut.com.br/pricing';
+const PRICING_API_URL = PRICING_API_BASE.endsWith('/run') ? PRICING_API_BASE : `${PRICING_API_BASE}/run`;
 const PRICING_API_KEY = process.env.PRICING_API_KEY || 'eff0bf9efe8238b433f2587153c0c8209c4737e6a56fa90018308500678cafd5';
 
 /**

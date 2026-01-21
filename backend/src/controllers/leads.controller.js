@@ -2,6 +2,7 @@ import { LeadRepository } from '../repositories/lead.repository.js';
 import { CartItemRepository } from '../repositories/cartItem.repository.js';
 import { OrderRepository } from '../repositories/order.repository.js';
 import { TaxRepository } from '../repositories/tax.repository.js';
+import { CustomerRepository } from '../repositories/customer.repository.js';
 import { getDatabase } from '../config/database.js';
 import Joi from 'joi';
 import { Errors } from '../utils/AppError.js';
@@ -10,12 +11,14 @@ import { CacheService } from '../services/cache.service.js';
 import { pricingAgent } from '../v2/services/pricing/PricingAgent.js';
 import { automationEngine } from '../v2/services/automation/AutomationEngine.js';
 import { fourCService } from '../v2/services/ai/FourCService.js';
+import * as whatsappService from '../services/whatsapp.service.js';
 import logger from '../config/logger.js';
 
 const leadRepository = new LeadRepository();
 const cartItemRepository = new CartItemRepository();
 const orderRepository = new OrderRepository();
 const taxRepository = new TaxRepository();
+const customerRepository = new CustomerRepository();
 
 // Schema de validação para criar lead
 const createLeadSchema = Joi.object({
@@ -206,9 +209,25 @@ export async function getLeadById(req, res, next) {
       }
     }
 
+    // Buscar WhatsApp do cliente via view superbot (se tiver cliente)
+    // Em modo de teste, permite usar número fixo como fallback
+    const TEST_PHONE = '5511978884508'; // TODO: Remover em produção
+    const leadData = lead.toJSON();
+    if (leadData.customerId) {
+      let whatsappInfo = await customerRepository.getCustomerWhatsApp(leadData.customerId);
+      // Fallback para número de teste se não encontrar
+      if (!whatsappInfo?.phone) {
+        whatsappInfo = { phone: TEST_PHONE, name: 'TESTE', linkStatus: 'test' };
+      }
+      leadData.customerWhatsApp = whatsappInfo;
+    } else {
+      // Mesmo sem cliente, usar número de teste
+      leadData.customerWhatsApp = { phone: TEST_PHONE, name: 'TESTE', linkStatus: 'test' };
+    }
+
     res.json({
       success: true,
-      data: lead.toJSON()
+      data: leadData
     });
   } catch (error) {
     next(error);
@@ -1802,6 +1821,122 @@ export async function sendLeadEmail(req, res, next) {
     });
   } catch (error) {
     logger.error('Erro ao enviar email:', error);
+    next(error);
+  }
+}
+
+/**
+ * Envia mensagem WhatsApp para o cliente do lead
+ * POST /api/leads/:id/whatsapp
+ */
+export async function sendWhatsApp(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return next(Errors.invalidId('lead'));
+    }
+
+    // Buscar lead
+    const lead = await leadRepository.findById(id);
+    if (!lead) {
+      return next(Errors.leadNotFound(id));
+    }
+
+    // Verificar permissões
+    const userLevel = req.user?.level || 0;
+    const currentUserId = req.user?.userId;
+    if (userLevel <= 4 && lead.cUser !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Sem permissão para enviar WhatsApp deste lead' }
+      });
+    }
+
+    // Validar mensagem
+    const { message } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Mensagem é obrigatória' }
+      });
+    }
+
+    // Buscar WhatsApp do cliente via view superbot
+    // Em modo de teste, permite usar número fixo como fallback
+    const TEST_PHONE = '5511978884508'; // TODO: Remover em produção
+    let whatsappInfo = await customerRepository.getCustomerWhatsApp(lead.cCustomer);
+
+    // Fallback para número de teste se não encontrar
+    if (!whatsappInfo?.phone) {
+      logger.info('WhatsApp do cliente não encontrado, usando número de teste', {
+        customerId: lead.cCustomer,
+        testPhone: TEST_PHONE
+      });
+      whatsappInfo = { phone: TEST_PHONE, name: 'TESTE', linkStatus: 'test' };
+    }
+
+
+    // Buscar telefone WhatsApp do vendedor
+    const [sellerRows] = await getDatabase().execute(`
+      SELECT sp.phone_number 
+      FROM superbot.seller_phones sp
+      WHERE sp.user_id = ? AND sp.is_active = 1
+      ORDER BY sp.is_primary DESC
+      LIMIT 1
+    `, [currentUserId]);
+
+    const sellerPhone = sellerRows[0]?.phone_number;
+    if (!sellerPhone) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Telefone WhatsApp do vendedor não configurado. Configure em Admin > Telefones de Vendedores' }
+      });
+    }
+
+    // Enviar via serviço WhatsApp
+    const result = await whatsappService.sendMessage({
+      sellerPhone,
+      customerPhone: whatsappInfo.phone,
+      message: message.trim(),
+      leadId: id
+    });
+
+    // Registrar no audit log
+    await auditLog.logEvent(
+      'WHATSAPP_SENT',
+      req.user?.userId,
+      req.user?.username,
+      `WhatsApp enviado para ${whatsappInfo.phone} - Lead #${id}`,
+      req,
+      {
+        leadId: id,
+        customerPhone: whatsappInfo.phone,
+        sellerPhone,
+        messagePreview: message.substring(0, 100)
+      }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        sentTo: whatsappInfo.phone,
+        sentFrom: sellerPhone,
+        customerName: whatsappInfo.name
+      },
+      message: `Mensagem enviada com sucesso para ${whatsappInfo.phone}`
+    });
+  } catch (error) {
+    logger.error('Erro ao enviar WhatsApp:', error);
+
+    // Retornar erro mais amigável
+    if (error.message) {
+      return res.status(500).json({
+        success: false,
+        error: { message: error.message }
+      });
+    }
+
     next(error);
   }
 }
