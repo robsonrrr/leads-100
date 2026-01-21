@@ -136,16 +136,7 @@ function App() {
                 }
               />
               <Route path="/promotions" element={<ProtectedRoute><Layout><PromotionsPage /></Layout></ProtectedRoute>} />
-              <Route
-                path="/products"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      {isLevelLessThan5 ? <Navigate to="/tasks" replace /> : <ProductsPage />}
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/products" element={<ProtectedRoute><Layout><ProductsPage /></Layout></ProtectedRoute>} />
               <Route path="/pricing/quantity-discounts" element={<ProtectedRoute><Layout><QuantityDiscountsPage /></Layout></ProtectedRoute>} />
               <Route path="/pricing/launch-products" element={<ProtectedRoute><Layout><LaunchProductsPage /></Layout></ProtectedRoute>} />
               <Route path="/goals" element={<ProtectedRoute><Layout><GoalsPage /></Layout></ProtectedRoute>} />

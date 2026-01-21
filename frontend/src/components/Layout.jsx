@@ -164,7 +164,7 @@ function Layout({ children }) {
     ...(!isRestricted ? [{ text: 'Dashboard', icon: <Badge badgeContent={followUpCount} color="error" max={9}><DashboardIcon /></Badge>, path: '/' }] : []),
     { text: '📋 Seu Dia', icon: <TasksIcon sx={{ color: '#667eea' }} />, path: '/tasks' },
     { text: 'Leads', icon: <ListAltIcon />, path: '/leads' },
-    ...(!isLevelLessThan5 ? [{ text: 'Produtos', icon: <ProductsIcon />, path: '/products' }] : []),
+    { text: 'Produtos', icon: <ProductsIcon />, path: '/products' },
     { text: 'Minha Carteira', icon: <PeopleIcon />, path: '/customers' },
     ...(!isRestricted ? [{ text: 'Analytics', icon: <BarChartIcon />, path: '/analytics' }] : []),
     { text: 'Metas por Cliente', icon: <TargetIcon />, path: '/metas-por-cliente' },
@@ -181,7 +181,7 @@ function Layout({ children }) {
   ]
 
   // Versão do app (importada do package.json via Vite)
-  const appVersion = import.meta.env.PACKAGE_VERSION || '1.6.0'
+  const appVersion = import.meta.env.PACKAGE_VERSION || '1.7.13'
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
