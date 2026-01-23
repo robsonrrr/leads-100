@@ -70,18 +70,28 @@ const corsOptions = {
       'http://18.229.23.153:5173',
       'http://54.232.49.52:5173',
       'https://dev.office.internut.com.br',
+      'https://leads-dev.vallery.com.br',
+      'https://leads.vallery.com.br',
+      'https://csuite-dev.vallery.com.br',
+      'https://csuite.vallery.com.br',
       process.env.CORS_ORIGIN
     ].filter(Boolean); // Remove valores undefined/null
 
-    // Em desenvolvimento, permitir qualquer origem local ou do IP remoto
+    // Em desenvolvimento, permitir qualquer origem local ou conhecida
     if (process.env.NODE_ENV !== 'production') {
       if (origin.includes('localhost') ||
         origin.includes('127.0.0.1') ||
         origin.includes('18.229.23.153') ||
         origin.includes('54.232.49.52') ||
-        origin.includes('dev.office.internut.com.br')) {
+        origin.includes('dev.office.internut.com.br') ||
+        origin.includes('vallery.com.br')) {
         return callback(null, true);
       }
+    }
+
+    // Em produção, também permitir vallery.com.br
+    if (origin.includes('vallery.com.br')) {
+      return callback(null, true);
     }
 
     // Verificar se a origem está na lista permitida
