@@ -311,23 +311,23 @@ class FinancialService {
             });
         }
 
-        // 2. Fallback para consulta local (tabela clientes)
+        // 2. Fallback para consulta local (view v_clientes_credito_real)
         try {
             const database = db();
 
-            // Buscar limite de crédito do cliente da tabela clientes
+            // Buscar limite de crédito do cliente da view que calcula saldo da tabela cheques
             const [customerResult] = await database.execute(`
                 SELECT 
-                    id AS ClienteID,
-                    nome AS NomeCliente,
-                    fantasia,
-                    limite AS LimiteCredito,
-                    credito AS SaldoDevedor,
-                    bloqueado,
-                    risk,
-                    abc
-                FROM mak.clientes
-                WHERE id = ?
+                    v.cliente_id AS ClienteID,
+                    v.nome AS NomeCliente,
+                    v.limite_credito AS LimiteCredito,
+                    v.credito_utilizado AS SaldoDevedor,
+                    v.credito_disponivel AS CreditoDisponivel,
+                    v.dias_atraso_max AS DiasAtraso,
+                    v.bloqueado,
+                    v.risk_grade
+                FROM mak.v_clientes_credito_real v
+                WHERE v.cliente_id = ?
             `, [customerId]);
 
             if (customerResult.length === 0) {
@@ -348,7 +348,7 @@ class FinancialService {
             const customer = customerResult[0];
             const creditLimit = parseFloat(customer.LimiteCredito) || 0;
             const creditUsed = parseFloat(customer.SaldoDevedor) || 0;
-            const overdueDays = 0; // tabela clientes não tem dias de atraso diretamente
+            const overdueDays = parseInt(customer.DiasAtraso) || 0;
             const creditAvailable = Math.max(creditLimit - creditUsed, 0);
             const isBlocked = customer.bloqueado === 1 || customer.bloqueado === '1';
 
@@ -380,7 +380,7 @@ class FinancialService {
 
             return {
                 customer_id: customerId,
-                customer_name: customer.NomeCliente || customer.fantasia,
+                customer_name: customer.NomeCliente,
                 credit_limit: creditLimit,
                 credit_used: creditUsed,
                 credit_available: creditAvailable,
@@ -388,7 +388,7 @@ class FinancialService {
                 status: status,
                 can_convert: canConvert,
                 message: message,
-                risk_grade: riskGradeMap[customer.risk] || customer.abc || 'NA',
+                risk_grade: customer.risk_grade || 'NA',
                 risk_score: null,
                 is_blocked: isBlocked,
                 source: 'local_db'
