@@ -1,5 +1,6 @@
 import { getDatabase as db } from '../../../config/database.js';
 import logger from '../../../config/logger.js';
+import { creditAgentClient } from '../credit/CreditAgentClient.js';
 
 /**
  * FinancialService - Métricas Financeiras (CFO)
@@ -261,27 +262,76 @@ class FinancialService {
 
     /**
      * Retorna status de crédito de um cliente
+     * 
+     * Estratégia híbrida:
+     * 1. Tenta obter do Credit Agent (fonte primária se habilitado)
+     * 2. Fallback para consulta local ao banco de dados
+     * 
+     * @param {number|string} customerId - ID do cliente
+     * @param {string} authToken - Token de autenticação (opcional)
+     * @returns {Promise<Object>} Status de crédito do cliente
      */
-    async getCreditStatus(customerId) {
+    async getCreditStatus(customerId, authToken = null) {
         logger.info('FinancialService: Getting credit status', { customerId });
 
+        // 1. Tentar obter do Credit Agent
+        if (creditAgentClient.isEnabled()) {
+            const agentResult = await creditAgentClient.getCustomerProfile(customerId, authToken);
+
+            if (agentResult.success && agentResult.data) {
+                logger.info('FinancialService: Credit status from Credit Agent', {
+                    customerId,
+                    source: 'credit_agent',
+                    riskGrade: agentResult.data.risk_grade
+                });
+
+                return {
+                    customer_id: agentResult.data.customer_id,
+                    customer_name: null, // Credit Agent não retorna nome
+                    credit_limit: agentResult.data.credit_limit,
+                    credit_used: agentResult.data.credit_used,
+                    credit_available: agentResult.data.credit_available,
+                    overdue_days: agentResult.data.days_past_due_max,
+                    status: agentResult.data.status,
+                    can_convert: agentResult.data.can_convert,
+                    message: agentResult.data.message,
+                    // Campos extras do Credit Agent
+                    risk_grade: agentResult.data.risk_grade,
+                    risk_score: agentResult.data.risk_score,
+                    is_blocked: agentResult.data.is_blocked,
+                    is_new_customer: agentResult.data.is_new_customer,
+                    last_review_at: agentResult.data.last_review_at,
+                    source: 'credit_agent'
+                };
+            }
+
+            logger.warn('FinancialService: Credit Agent unavailable, falling back to local DB', {
+                customerId,
+                error: agentResult.error
+            });
+        }
+
+        // 2. Fallback para consulta local (tabela clientes)
         try {
             const database = db();
 
-            // Buscar limite de crédito do cliente
+            // Buscar limite de crédito do cliente da tabela clientes
             const [customerResult] = await database.execute(`
                 SELECT 
-                    ClienteID,
-                    NomeCliente,
-                    LimiteCredito,
-                    SaldoDevedor,
-                    DiasAtraso
-                FROM mak.v_clientes_credito
-                WHERE ClienteID = ?
+                    id AS ClienteID,
+                    nome AS NomeCliente,
+                    fantasia,
+                    limite AS LimiteCredito,
+                    credito AS SaldoDevedor,
+                    bloqueado,
+                    risk,
+                    abc
+                FROM mak.clientes
+                WHERE id = ?
             `, [customerId]);
 
             if (customerResult.length === 0) {
-                // Cliente sem dados de crédito - retornar status padrão
+                // Cliente não encontrado - retornar status padrão
                 return {
                     customer_id: customerId,
                     credit_limit: 0,
@@ -290,49 +340,62 @@ class FinancialService {
                     overdue_days: 0,
                     status: 'PENDING',
                     can_convert: true,
-                    message: 'Cliente sem limite de crédito definido'
+                    message: 'Cliente não encontrado',
+                    source: 'local_db'
                 };
             }
 
             const customer = customerResult[0];
             const creditLimit = parseFloat(customer.LimiteCredito) || 0;
             const creditUsed = parseFloat(customer.SaldoDevedor) || 0;
-            const overdueDays = parseInt(customer.DiasAtraso) || 0;
+            const overdueDays = 0; // tabela clientes não tem dias de atraso diretamente
             const creditAvailable = Math.max(creditLimit - creditUsed, 0);
+            const isBlocked = customer.bloqueado === 1 || customer.bloqueado === '1';
 
             // Determinar status
             let status = 'OK';
             let canConvert = true;
             let message = 'Crédito disponível';
 
-            if (overdueDays > 30) {
+            if (isBlocked) {
                 status = 'BLOCKED';
                 canConvert = false;
-                message = `Cliente com ${overdueDays} dias de atraso`;
-            } else if (creditAvailable <= 0) {
+                message = 'Cliente bloqueado';
+            } else if (creditAvailable <= 0 && creditLimit > 0) {
                 status = 'LIMIT_EXCEEDED';
                 canConvert = false;
                 message = 'Limite de crédito excedido';
-            } else if (creditAvailable < creditLimit * 0.2) {
+            } else if (creditLimit > 0 && creditAvailable < creditLimit * 0.2) {
                 status = 'LOW_CREDIT';
                 canConvert = true;
                 message = 'Crédito disponível baixo';
+            } else if (creditLimit === 0) {
+                status = 'OK';
+                canConvert = true;
+                message = 'Sem limite definido';
             }
+
+            // Mapear risk para risk_grade
+            const riskGradeMap = { '1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E' };
 
             return {
                 customer_id: customerId,
-                customer_name: customer.NomeCliente,
+                customer_name: customer.NomeCliente || customer.fantasia,
                 credit_limit: creditLimit,
                 credit_used: creditUsed,
                 credit_available: creditAvailable,
                 overdue_days: overdueDays,
                 status: status,
                 can_convert: canConvert,
-                message: message
+                message: message,
+                risk_grade: riskGradeMap[customer.risk] || customer.abc || 'NA',
+                risk_score: null,
+                is_blocked: isBlocked,
+                source: 'local_db'
             };
         } catch (error) {
-            logger.warn('FinancialService: Error getting credit status (view may not exist)', { error: error.message });
-            // Retornar status padrão se a view não existir
+            logger.warn('FinancialService: Error getting credit status from local DB', { error: error.message });
+            // Retornar status padrão se houver erro
             return {
                 customer_id: customerId,
                 credit_limit: 50000,
@@ -341,9 +404,188 @@ class FinancialService {
                 overdue_days: 0,
                 status: 'OK',
                 can_convert: true,
-                message: 'Crédito disponível (padrão)'
+                message: 'Crédito disponível (padrão)',
+                source: 'fallback'
             };
         }
+    }
+
+    /**
+     * Avalia crédito para um pedido via Credit Agent
+     * 
+     * @param {Object} options - Opções de avaliação
+     * @param {string} authToken - Token de autenticação
+     * @returns {Promise<Object>} Resultado da avaliação
+     */
+    async evaluateCreditForOrder(options, authToken = null) {
+        const {
+            customerId,
+            orderId,
+            orderTotal,
+            termsDays = 30,
+            installments = 1,
+            downPaymentPct = 0,
+            pricingStatus = 'OK',
+            marginOk = true,
+            policyRefs = [],
+            pricingDecisionLogId = null
+        } = options;
+
+        logger.info('FinancialService: Evaluating credit for order', { customerId, orderId, orderTotal });
+
+        // Se Credit Agent está habilitado, usa API
+        if (creditAgentClient.isEnabled()) {
+            // Primeiro, obter perfil do cliente
+            const customerProfile = await this.getCreditStatus(customerId, authToken);
+
+            // Montar payload
+            const payload = creditAgentClient.buildEvaluationPayload({
+                customerId,
+                customerRiskGrade: customerProfile.risk_grade || 'NA',
+                customerRiskScore: customerProfile.risk_score || 0,
+                creditLimit: customerProfile.credit_limit || 0,
+                creditUsed: customerProfile.credit_used || 0,
+                daysPastDueMax: customerProfile.overdue_days || 0,
+                isBlocked: customerProfile.is_blocked || false,
+                isNewCustomer: customerProfile.is_new_customer || false,
+                orderId,
+                orderTotal,
+                termsDays,
+                installments,
+                downPaymentPct,
+                pricingStatus,
+                marginOk,
+                policyRefs,
+                pricingDecisionLogId
+            });
+
+            const evalResult = await creditAgentClient.evaluateCredit(payload, authToken);
+
+            if (evalResult.success && evalResult.data) {
+                const outcome = evalResult.data.outcome;
+                const reasons = evalResult.data.reasons || [];
+
+                // Se o Policy Engine falhou, usar lógica local como fallback
+                const policyEngineFailed = reasons.includes('POLICY_ENGINE_ERROR') ||
+                    reasons.includes('policy_engine_unavailable');
+
+                if (policyEngineFailed) {
+                    logger.warn('FinancialService: Policy Engine failed, using local credit logic', {
+                        originalOutcome: outcome,
+                        reasons
+                    });
+
+                    // Usar lógica local baseada no perfil do cliente
+                    let localOutcome = 'ALLOW';
+                    let localReasons = [];
+
+                    if (customerProfile.is_blocked || customerProfile.status === 'BLOCKED') {
+                        localOutcome = 'DENY';
+                        localReasons.push('Cliente bloqueado');
+                    } else if (orderTotal > customerProfile.credit_available) {
+                        localOutcome = 'DENY';
+                        localReasons.push(`Valor do pedido (R$ ${orderTotal.toLocaleString('pt-BR')}) excede crédito disponível (R$ ${customerProfile.credit_available.toLocaleString('pt-BR')})`);
+                    } else if (customerProfile.status === 'LOW_CREDIT') {
+                        localOutcome = 'RECOMMEND';
+                        localReasons.push('Crédito disponível baixo');
+                    }
+
+                    return {
+                        success: true,
+                        source: 'local_fallback',
+                        outcome: localOutcome,
+                        approved_amount: localOutcome === 'ALLOW' || localOutcome === 'RECOMMEND' ? orderTotal : null,
+                        conditions: null,
+                        reasons: localReasons,
+                        risk_grade: customerProfile.risk_grade || 'NA',
+                        risk_score: customerProfile.risk_score || 0,
+                        customer_profile: customerProfile
+                    };
+                }
+
+                // Policy Engine respondeu corretamente
+                return {
+                    success: true,
+                    source: 'credit_agent',
+                    outcome: evalResult.data.outcome,
+                    approved_amount: evalResult.data.approved_amount,
+                    conditions: evalResult.data.conditions,
+                    reasons: evalResult.data.reasons,
+                    risk_grade: evalResult.data.risk_grade,
+                    risk_score: evalResult.data.risk_score,
+                    customer_profile: customerProfile
+                };
+            }
+
+            logger.warn('FinancialService: Credit Agent evaluation failed, using local logic', {
+                error: evalResult.error
+            });
+        }
+
+        // Fallback: lógica local simples
+        const creditStatus = await this.getCreditStatus(customerId, authToken);
+
+        let outcome = 'ALLOW';
+        let reasons = [];
+
+        if (creditStatus.is_blocked || creditStatus.status === 'BLOCKED') {
+            outcome = 'DENY';
+            reasons.push('Cliente bloqueado por inadimplência');
+        } else if (creditStatus.status === 'LIMIT_EXCEEDED') {
+            outcome = 'DENY';
+            reasons.push('Limite de crédito excedido');
+        } else if (orderTotal > creditStatus.credit_available) {
+            outcome = 'ESCALATE';
+            reasons.push(`Valor do pedido (${orderTotal}) excede crédito disponível (${creditStatus.credit_available})`);
+        } else if (creditStatus.status === 'LOW_CREDIT') {
+            outcome = 'RECOMMEND';
+            reasons.push('Crédito disponível baixo - considerar entrada');
+        }
+
+        return {
+            success: true,
+            source: 'local_fallback',
+            outcome,
+            approved_amount: outcome === 'ALLOW' || outcome === 'RECOMMEND' ? orderTotal : null,
+            conditions: null,
+            reasons,
+            risk_grade: creditStatus.risk_grade || 'NA',
+            risk_score: creditStatus.risk_score || 0,
+            customer_profile: creditStatus
+        };
+    }
+
+    /**
+     * Obtém clientes de alto risco via Credit Agent
+     * 
+     * @param {string} authToken - Token de autenticação
+     * @returns {Promise<Object>} Lista de clientes de risco
+     */
+    async getRiskyCustomers(authToken = null) {
+        logger.info('FinancialService: Getting risky customers');
+
+        if (creditAgentClient.isEnabled()) {
+            const result = await creditAgentClient.getRiskyCustomers(authToken);
+
+            if (result.success && result.data) {
+                return {
+                    success: true,
+                    source: 'credit_agent',
+                    customers: result.data.customers,
+                    count: result.data.count
+                };
+            }
+        }
+
+        // Fallback para blocked credits local
+        const blockedCredits = await this.getBlockedCredits(100);
+
+        return {
+            success: true,
+            source: 'local_db',
+            customers: blockedCredits.customers,
+            count: blockedCredits.count
+        };
     }
 
     /**

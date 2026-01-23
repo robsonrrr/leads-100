@@ -109,19 +109,48 @@ function LeadsPage() {
         return segmentParam !== null ? segmentParam : (stored || '')
     })
 
-    const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '')
-    const [debouncedQuery, setDebouncedQuery] = useState(() => searchParams.get('q') || '')
+    const [searchQuery, setSearchQuery] = useState(() => {
+        const urlParam = searchParams.get('q')
+        const stored = localStorage.getItem('leads-page-query')
+        return urlParam || stored || ''
+    })
+    const [debouncedQuery, setDebouncedQuery] = useState(() => {
+        const urlParam = searchParams.get('q')
+        const stored = localStorage.getItem('leads-page-query')
+        return urlParam || stored || ''
+    })
     const getTodayDate = () => new Date().toISOString().split('T')[0]
-    const [dateFrom, setDateFrom] = useState(() => searchParams.get('dateFrom') || getTodayDate())
-    const [dateTo, setDateTo] = useState(() => searchParams.get('dateTo') || getTodayDate())
+    const [dateFrom, setDateFrom] = useState(() => {
+        const urlParam = searchParams.get('dateFrom')
+        const stored = localStorage.getItem('leads-page-dateFrom')
+        return urlParam || stored || getTodayDate()
+    })
+    const [dateTo, setDateTo] = useState(() => {
+        const urlParam = searchParams.get('dateTo')
+        const stored = localStorage.getItem('leads-page-dateTo')
+        return urlParam || stored || getTodayDate()
+    })
     const [metrics, setMetrics] = useState({ totalCount: 0, totalValue: 0, convertedCount: 0 })
-    const [statusFilter, setStatusFilter] = useState('')
-    const [typeFilter, setTypeFilter] = useState('') // '' = Todos, '1' = Ativo, '2' = Receptivo
+    const [statusFilter, setStatusFilter] = useState(() => {
+        const urlParam = searchParams.get('status')
+        const stored = localStorage.getItem('leads-page-status')
+        return urlParam || stored || ''
+    })
+    const [typeFilter, setTypeFilter] = useState(() => {
+        const urlParam = searchParams.get('type')
+        const stored = localStorage.getItem('leads-page-type')
+        return urlParam || stored || ''
+    }) // '' = Todos, '1' = Ativo, '2' = Receptivo
     const [sellers, setSellers] = useState([])
-    const [sellerFilter, setSellerFilter] = useState('')
+    const [sellerFilter, setSellerFilter] = useState(() => {
+        const urlParam = searchParams.get('seller')
+        const stored = localStorage.getItem('leads-page-seller')
+        return urlParam || stored || ''
+    })
     const [exporting, setExporting] = useState(false)
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
     const [advancedFilters, setAdvancedFilters] = useState({})
+
 
     const { isManager, selectedSellerSegment, selectedSeller, getFilterParams } = useManagerFilter()
 
@@ -138,6 +167,40 @@ function LeadsPage() {
         const timeout = setTimeout(() => setDebouncedQuery(searchQuery), 400)
         return () => clearTimeout(timeout)
     }, [searchQuery])
+
+    // Sincronizar filtros com URL e localStorage ao mudar
+    useEffect(() => {
+        const params = new URLSearchParams()
+
+        // Adicionar filtros não-vazios à URL
+        if (page > 0) params.set('page', String(page + 1))
+        if (rowsPerPage !== 100) params.set('limit', String(rowsPerPage))
+        if (sortConfig.key && sortConfig.key !== 'id') params.set('sort', sortConfig.key)
+        if (sortConfig.direction !== 'desc') params.set('dir', sortConfig.direction)
+        if (debouncedQuery) params.set('q', debouncedQuery)
+        if (selectedSegment) params.set('segment', selectedSegment)
+        if (dateFrom && dateFrom !== getTodayDate()) params.set('dateFrom', dateFrom)
+        if (dateTo && dateTo !== getTodayDate()) params.set('dateTo', dateTo)
+        if (statusFilter) params.set('status', statusFilter)
+        if (typeFilter) params.set('type', typeFilter)
+        if (sellerFilter) params.set('seller', sellerFilter)
+
+        // Atualizar URL sem recarregar a página
+        setSearchParams(params, { replace: true })
+
+        // Salvar no localStorage para persistência entre sessões
+        localStorage.setItem('leads-page-page', String(page))
+        localStorage.setItem('leads-page-rowsPerPage', String(rowsPerPage))
+        localStorage.setItem('leads-page-sort', sortConfig.key || '')
+        localStorage.setItem('leads-page-sortDir', sortConfig.direction || 'desc')
+        localStorage.setItem('leads-page-segment', selectedSegment || '')
+        localStorage.setItem('leads-page-dateFrom', dateFrom || '')
+        localStorage.setItem('leads-page-dateTo', dateTo || '')
+        localStorage.setItem('leads-page-status', statusFilter || '')
+        localStorage.setItem('leads-page-type', typeFilter || '')
+        localStorage.setItem('leads-page-seller', sellerFilter || '')
+        localStorage.setItem('leads-page-query', debouncedQuery || '')
+    }, [page, rowsPerPage, sortConfig, selectedSegment, debouncedQuery, dateFrom, dateTo, statusFilter, typeFilter, sellerFilter])
 
     useEffect(() => {
         loadLeads()

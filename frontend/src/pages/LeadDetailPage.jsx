@@ -57,6 +57,7 @@ import CartItems from '../components/CartItems'
 import CartRecommendations from '../components/CartRecommendations'
 import MakPrimeLogo from '../components/MakPrimeLogo'
 import CustomerGoalCard from '../components/CustomerGoalCard'
+import CustomerCreditCard from '../components/CustomerCreditCard'
 import { formatDate, formatCurrency, getPaymentTypeLabel, getFreightTypeLabel } from '../utils'
 import { LeadDetailSkeleton } from '../components/skeletons'
 import { useToast } from '../contexts/ToastContext'
@@ -69,6 +70,7 @@ function LeadDetailPage() {
   const toast = useToast()
   const { user } = useSelector((state) => state.auth)
   const isManager = (user?.level || 0) > 4 // Level > 4 pode editar vendedor
+  const canSendWhatsApp = (user?.level || 0) >= 4 // Level >= 4 pode enviar WhatsApp
   const [lead, setLead] = useState(null)
   const [totals, setTotals] = useState(null)
   const [items, setItems] = useState([])
@@ -90,6 +92,12 @@ function LeadDetailPage() {
   const [emailAddress, setEmailAddress] = useState('')
   const [stockIssues, setStockIssues] = useState([]) // Lista de itens com estoque insuficiente na unidade
 
+  // Avaliação de crédito para conversão
+  const [creditEvaluation, setCreditEvaluation] = useState({
+    canConvert: true,
+    reason: ''
+  })
+
   // Modal de detalhes do cliente
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [customerDetails, setCustomerDetails] = useState(null)
@@ -107,6 +115,7 @@ function LeadDetailPage() {
   // Modal de WhatsApp
   const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false)
   const [whatsAppMessage, setWhatsAppMessage] = useState('')
+  const [whatsAppImages, setWhatsAppImages] = useState([]) // Imagens dos produtos para envio
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
   const [customerWhatsApp, setCustomerWhatsApp] = useState(null)
 
@@ -531,9 +540,22 @@ function LeadDetailPage() {
     message += `Segue sua cotação:\n\n`
 
     let grandTotal = 0
+    let itemIndex = 0
 
-    // Listar itens
-    items.forEach((item, index) => {
+    // Filtrar itens com preço > 0 e listar
+    const validItems = items.filter(item => {
+      const price = item.unitPrice || item.price || 0
+      return price > 0
+    })
+
+    if (validItems.length === 0) {
+      return 'Olá! Segue seu orçamento. (Nenhum produto com preço definido)'
+    }
+
+    const productImages = [] // Armazenar URLs das imagens para envio separado
+
+    validItems.forEach((item) => {
+      itemIndex++
       const productName = item.product?.description || item.productDescription || 'Produto'
       const productCode = item.product?.model || item.productModel || ''
       const qty = item.quantity || 1
@@ -547,7 +569,16 @@ function LeadDetailPage() {
       const total = qty * price
       grandTotal += total
 
-      message += `*${index + 1}. ${productName}*\n`
+      // Coletar URL da imagem do produto para envio separado (imagem grande)
+      const productId = item.productId || item.product?.id
+      if (productId) {
+        productImages.push({
+          url: `https://img.rolemak.com.br/id/h800/${productId}.jpg`,
+          caption: `${productName} - ${productCode}`
+        })
+      }
+
+      message += `*${itemIndex}. ${productName}*\n`
       if (productCode) message += `   Código: ${productCode}\n`
       message += `   Qtd: ${qty} x R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`
       message += `   *Subtotal: R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`
@@ -585,13 +616,20 @@ function LeadDetailPage() {
 
     message += `Posso te ajudar com mais alguma informação? 😊`
 
-    return message
+    return { message, images: productImages }
   }
 
   // Abrir modal de WhatsApp com mensagem pré-carregada
   const handleOpenWhatsAppDialog = () => {
-    const quoteMessage = generateQuoteMessage()
-    setWhatsAppMessage(quoteMessage)
+    const quoteData = generateQuoteMessage()
+    // Verificar se retornou objeto (novo formato) ou string (fallback)
+    if (typeof quoteData === 'object') {
+      setWhatsAppMessage(quoteData.message)
+      setWhatsAppImages(quoteData.images || [])
+    } else {
+      setWhatsAppMessage(quoteData)
+      setWhatsAppImages([])
+    }
     setWhatsAppDialogOpen(true)
   }
 
@@ -604,14 +642,17 @@ function LeadDetailPage() {
 
     setSendingWhatsApp(true)
     try {
+      // Enviar com imagens dos produtos
       const response = await leadsService.sendWhatsApp(lead.id, {
-        message: whatsAppMessage.trim()
+        message: whatsAppMessage.trim(),
+        images: whatsAppImages // Enviar URLs das imagens para o backend
       })
 
       if (response.data.success) {
         toast.showSuccess(response.data.message || 'Mensagem WhatsApp enviada com sucesso!')
         setWhatsAppDialogOpen(false)
         setWhatsAppMessage('')
+        setWhatsAppImages([])
       }
     } catch (err) {
       toast.showError(err.response?.data?.error?.message || 'Erro ao enviar WhatsApp')
@@ -789,26 +830,28 @@ function LeadDetailPage() {
             >
               Enviar
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<WhatsAppIcon />}
-              onClick={handleOpenWhatsAppDialog}
-              disabled={!lead.customerWhatsApp?.phone}
-              title={lead.customerWhatsApp?.phone
-                ? `Enviar WhatsApp para ${lead.customerWhatsApp.phone}`
-                : 'Cliente sem WhatsApp vinculado'}
-              sx={{
-                bgcolor: lead.customerWhatsApp?.phone ? '#25D366' : 'rgba(255, 255, 255, 0.1)',
-                color: 'white',
-                '&:hover': { bgcolor: '#128C7E' },
-                '&.Mui-disabled': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.5)'
-                }
-              }}
-            >
-              WhatsApp
-            </Button>
+            {canSendWhatsApp && (
+              <Button
+                variant="contained"
+                startIcon={<WhatsAppIcon />}
+                onClick={handleOpenWhatsAppDialog}
+                disabled={!lead.customerWhatsApp?.phone}
+                title={lead.customerWhatsApp?.phone
+                  ? `Enviar WhatsApp para ${lead.customerWhatsApp.phone}`
+                  : 'Cliente sem WhatsApp vinculado'}
+                sx={{
+                  bgcolor: lead.customerWhatsApp?.phone ? '#25D366' : 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  '&:hover': { bgcolor: '#128C7E' },
+                  '&.Mui-disabled': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    color: 'rgba(255, 255, 255, 0.5)'
+                  }
+                }}
+              >
+                WhatsApp
+              </Button>
+            )}
             <Button
               variant="contained"
               startIcon={<ChatIcon />}
@@ -827,22 +870,43 @@ function LeadDetailPage() {
               variant="contained"
               startIcon={<ShoppingCartIcon />}
               onClick={handleOpenConvertDialog}
-              disabled={!!lead.orderWeb || lead.type === 2 || stockIssues.length > 0}
+              disabled={
+                !!lead.orderWeb ||
+                lead.type === 2 ||
+                stockIssues.length > 0 ||
+                !creditEvaluation.canConvert
+              }
               title={
                 lead.orderWeb
                   ? 'Este lead já foi convertido'
-                  : stockIssues.length > 0
-                    ? `Estoque insuficiente: ${stockIssues.map(i => i.productModel).join(', ')}`
-                    : 'Converter em pedido real'
+                  : !creditEvaluation.canConvert
+                    ? `Crédito insuficiente: ${creditEvaluation.reason}`
+                    : stockIssues.length > 0
+                      ? `Estoque insuficiente: ${stockIssues.map(i => i.productModel).join(', ')}`
+                      : 'Converter em pedido real'
               }
               sx={{
-                bgcolor: stockIssues.length > 0 ? 'warning.main' : 'success.main',
+                bgcolor: !creditEvaluation.canConvert
+                  ? 'error.main'
+                  : stockIssues.length > 0
+                    ? 'warning.main'
+                    : 'success.main',
                 color: 'white',
-                '&:hover': { bgcolor: stockIssues.length > 0 ? 'warning.dark' : 'success.dark' },
+                '&:hover': {
+                  bgcolor: !creditEvaluation.canConvert
+                    ? 'error.dark'
+                    : stockIssues.length > 0
+                      ? 'warning.dark'
+                      : 'success.dark'
+                },
                 '&.Mui-disabled': { bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255, 255, 255, 0.5)' }
               }}
             >
-              {stockIssues.length > 0 ? `Converter (${stockIssues.length} sem estoque)` : 'Converter'}
+              {!creditEvaluation.canConvert
+                ? 'Sem Crédito'
+                : stockIssues.length > 0
+                  ? `Converter (${stockIssues.length} sem estoque)`
+                  : 'Converter'}
             </Button>
             <Button
               variant="contained"
@@ -1278,6 +1342,24 @@ function LeadDetailPage() {
         {/* Observações e Lucratividade */}
         <Grid item xs={12} md={4}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Card de Crédito do Cliente (Credit Agent) */}
+            {lead.customerId && (
+              <CustomerCreditCard
+                customerId={lead.customerId}
+                orderTotal={totals?.grandTotal || totals?.total || 0}
+                leadId={lead.id}
+                termsDays={30}
+                marginOk={totals?.v2Evaluation?.is_within_policy !== false}
+                onCreditEvaluated={(result) => {
+                  setCreditEvaluation({
+                    canConvert: result.canConvert,
+                    reason: result.reason,
+                    fullEvaluation: result.fullEvaluation
+                  })
+                }}
+              />
+            )}
+
             {/* Card de Meta do Cliente (se tiver customerId) */}
             {lead.customerId && (
               <CustomerGoalCard customerId={lead.customerId} />

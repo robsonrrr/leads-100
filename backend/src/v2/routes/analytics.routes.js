@@ -172,6 +172,59 @@ router.get('/credit/blocked', auth, analyticsV2.getBlockedCredits);
 
 /**
  * @swagger
+ * /api/v2/analytics/credit/health:
+ *   get:
+ *     summary: Verifica saúde da integração com Credit Agent
+ *     tags: [Credit Agent]
+ */
+router.get('/credit/health', auth, analyticsV2.getCreditAgentHealth);
+
+/**
+ * @swagger
+ * /api/v2/analytics/credit/evaluate:
+ *   post:
+ *     summary: Avalia crédito para um pedido via Credit Agent
+ *     tags: [Credit Agent]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - customer_id
+ *               - order_id
+ *               - order_total
+ *             properties:
+ *               customer_id:
+ *                 type: integer
+ *               order_id:
+ *                 type: string
+ *               order_total:
+ *                 type: number
+ *               terms_days:
+ *                 type: integer
+ *                 default: 30
+ *               installments:
+ *                 type: integer
+ *                 default: 1
+ *               down_payment_pct:
+ *                 type: number
+ *                 default: 0
+ */
+router.post('/credit/evaluate', auth, analyticsV2.evaluateCreditForOrder);
+
+/**
+ * @swagger
+ * /api/v2/analytics/credit/risky-customers:
+ *   get:
+ *     summary: Clientes de alto risco via Credit Agent
+ *     tags: [Credit Agent]
+ */
+router.get('/credit/risky-customers', auth, analyticsV2.getRiskyCustomers);
+
+/**
+ * @swagger
  * /api/v2/analytics/credit/{customerId}:
  *   get:
  *     summary: Status de crédito de um cliente

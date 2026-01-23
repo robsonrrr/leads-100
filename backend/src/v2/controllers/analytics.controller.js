@@ -588,6 +588,116 @@ export async function getBlockedCredits(req, res) {
     }
 }
 
+/**
+ * POST /api/v2/analytics/credit/evaluate
+ * Avalia crédito para um pedido via Credit Agent
+ */
+export async function evaluateCreditForOrder(req, res) {
+    try {
+        const {
+            customer_id,
+            order_id,
+            order_total,
+            terms_days,
+            installments,
+            down_payment_pct,
+            pricing_status,
+            margin_ok,
+            policy_refs,
+            pricing_decision_log_id
+        } = req.body;
+
+        if (!customer_id || !order_id || order_total === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: customer_id, order_id, order_total'
+            });
+        }
+
+        // Obter token de autenticação do request
+        const authToken = req.headers.authorization?.replace('Bearer ', '') || null;
+
+        const data = await financialService.evaluateCreditForOrder({
+            customerId: customer_id,
+            orderId: order_id,
+            orderTotal: parseFloat(order_total),
+            termsDays: terms_days ? parseInt(terms_days) : 30,
+            installments: installments ? parseInt(installments) : 1,
+            downPaymentPct: down_payment_pct ? parseFloat(down_payment_pct) : 0,
+            pricingStatus: pricing_status || 'OK',
+            marginOk: margin_ok !== false,
+            policyRefs: policy_refs || [],
+            pricingDecisionLogId: pricing_decision_log_id || null
+        }, authToken);
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Analytics: Error evaluating credit', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to evaluate credit',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/analytics/credit/risky-customers
+ * Retorna clientes de alto risco via Credit Agent
+ */
+export async function getRiskyCustomers(req, res) {
+    try {
+        const authToken = req.headers.authorization?.replace('Bearer ', '') || null;
+
+        const data = await financialService.getRiskyCustomers(authToken);
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        logger.error('Analytics: Error getting risky customers', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get risky customers',
+            message: error.message
+        });
+    }
+}
+
+/**
+ * GET /api/v2/analytics/credit/health
+ * Verifica saúde da integração com Credit Agent
+ */
+export async function getCreditAgentHealth(req, res) {
+    try {
+        const { creditAgentClient } = await import('../services/credit/CreditAgentClient.js');
+
+        const health = await creditAgentClient.healthCheck();
+
+        res.json({
+            success: true,
+            data: {
+                credit_agent: {
+                    enabled: creditAgentClient.isEnabled(),
+                    base_url: creditAgentClient.baseUrl,
+                    ...health
+                }
+            }
+        });
+    } catch (error) {
+        logger.error('Analytics: Error checking Credit Agent health', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check Credit Agent health',
+            message: error.message
+        });
+    }
+}
+
 // =====================================================
 // METAS POR CLIENTE
 // =====================================================

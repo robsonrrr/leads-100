@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireLevel } from '../middleware/auth.js';
 import * as leadsController from '../controllers/leads.controller.js';
 
 const router = express.Router();
@@ -877,6 +877,6 @@ router.post('/:id/send-email', leadsController.sendLeadEmail);
  *       404:
  *         description: Lead não encontrado
  */
-router.post('/:id/whatsapp', leadsController.sendWhatsApp);
+router.post('/:id/whatsapp', requireLevel(4), leadsController.sendWhatsApp);
 
 export default router;

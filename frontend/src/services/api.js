@@ -17,6 +17,10 @@ if (!API_URL) {
     else if (hostname.includes('office.internut.com.br')) {
       API_URL = `${protocol}//${hostname}/leads/modern/api`
     }
+    // Domínios vallery.com.br - usar /api via Traefik
+    else if (hostname.includes('vallery.com.br')) {
+      API_URL = `${protocol}//${hostname}/api`
+    }
     // Se for IP privado (10.x, 172.x, 192.x), tentar usar IP público conhecido
     else if (hostname.startsWith('10.') || hostname.startsWith('172.') || hostname.startsWith('192.168.')) {
       API_URL = `${protocol}//18.229.23.153:3001/api`
@@ -339,6 +343,9 @@ export const analyticsV2Service = {
   getDSO: (params) => api.get('/v2/analytics/dso', { params }),
   getCreditStatus: (customerId) => api.get(`/v2/analytics/credit/${customerId}`),
   getBlockedCredits: (params) => api.get('/v2/analytics/credit/blocked', { params }),
+  getCreditHealth: () => api.get('/v2/analytics/credit/health'),
+  evaluateCredit: (data) => api.post('/v2/analytics/credit/evaluate', data),
+  getRiskyCustomers: (params) => api.get('/v2/analytics/credit/risky-customers', { params }),
 
   // Metas por Cliente
   getCustomerGoalsBySeller: (sellerId, params, config = {}) => api.get(`/v2/analytics/goals/seller/${sellerId}`, { params, ...config }),

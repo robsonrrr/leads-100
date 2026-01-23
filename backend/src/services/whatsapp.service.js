@@ -48,7 +48,9 @@ export async function sendMessage({ sellerPhone, customerPhone, message, imageUr
             sellerPhone,
             to: formattedPhone,
             leadId,
-            messageLength: message?.length
+            messageLength: message?.length,
+            hasImage: !!imageUrl,
+            payload: JSON.stringify(payload) // Log do payload completo
         });
 
         const response = await axios.post(url, payload, {

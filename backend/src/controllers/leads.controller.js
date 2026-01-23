@@ -1854,7 +1854,7 @@ export async function sendWhatsApp(req, res, next) {
     }
 
     // Validar mensagem
-    const { message } = req.body;
+    const { message, images } = req.body;
     if (!message || !message.trim()) {
       return res.status(400).json({
         success: false,
@@ -1894,7 +1894,40 @@ export async function sendWhatsApp(req, res, next) {
       });
     }
 
-    // Enviar via serviço WhatsApp
+    // Enviar imagens dos produtos primeiro (se houver)
+    let imagesSent = 0;
+    if (images && Array.isArray(images) && images.length > 0) {
+      logger.info('Enviando imagens dos produtos', {
+        totalImages: images.length,
+        images: images.map(i => ({ url: i.url, caption: i.caption }))
+      });
+
+      for (const img of images) {
+        try {
+          logger.info('Enviando imagem', { imageUrl: img.url, caption: img.caption });
+
+          await whatsappService.sendMessage({
+            sellerPhone,
+            customerPhone: whatsappInfo.phone,
+            message: img.caption || '', // Legenda da imagem
+            imageUrl: img.url,
+            leadId: id
+          });
+          imagesSent++;
+          // Pequeno delay entre envios para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (imgError) {
+          logger.warn('Erro ao enviar imagem do produto:', {
+            imageUrl: img.url,
+            error: imgError.message
+          });
+        }
+      }
+    } else {
+      logger.info('Nenhuma imagem para enviar', { images });
+    }
+
+    // Enviar mensagem de texto principal
     const result = await whatsappService.sendMessage({
       sellerPhone,
       customerPhone: whatsappInfo.phone,
@@ -1913,7 +1946,8 @@ export async function sendWhatsApp(req, res, next) {
         leadId: id,
         customerPhone: whatsappInfo.phone,
         sellerPhone,
-        messagePreview: message.substring(0, 100)
+        messagePreview: message.substring(0, 100),
+        imagesSent
       }
     );
 
@@ -1922,9 +1956,10 @@ export async function sendWhatsApp(req, res, next) {
       data: {
         sentTo: whatsappInfo.phone,
         sentFrom: sellerPhone,
-        customerName: whatsappInfo.name
+        customerName: whatsappInfo.name,
+        imagesSent
       },
-      message: `Mensagem enviada com sucesso para ${whatsappInfo.phone}`
+      message: `Mensagem enviada com sucesso para ${whatsappInfo.phone}${imagesSent > 0 ? ` (${imagesSent} imagens)` : ''}`
     });
   } catch (error) {
     logger.error('Erro ao enviar WhatsApp:', error);
