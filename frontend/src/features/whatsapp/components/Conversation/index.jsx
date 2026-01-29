@@ -3,8 +3,8 @@
  * Container principal da conversa
  */
 
-import React, { useRef, useEffect, useCallback } from 'react'
-import { Box, Button, CircularProgress } from '@mui/material'
+import React, { useRef, useEffect, useCallback, useState } from 'react'
+import { Box, Button, CircularProgress, Snackbar, Alert } from '@mui/material'
 import { KeyboardArrowUp as LoadMoreIcon } from '@mui/icons-material'
 import ConversationHeader from './ConversationHeader'
 import SessionList from './SessionList'
@@ -13,6 +13,9 @@ import DateSeparator from './DateSeparator'
 import { LoadingState, EmptyState, ErrorState } from '../common'
 import { useConversations, useMessages } from '../../hooks'
 import { CHAT_BACKGROUND } from '../../utils/constants'
+import { MessageComposer, MediaUploadDialog } from '../../../../components/WhatsApp'
+import { useSendMessage } from '../../../../hooks/useSendMessage'
+import { useMediaUpload } from '../../../../hooks/useMediaUpload'
 
 /**
  * Componente principal de conversa
@@ -42,12 +45,38 @@ function Conversation({
         loadMore,
     } = useMessages()
 
+    // Send message hook
+    const { sendMessage, sending: sendingMessage, error: sendError } = useSendMessage({
+        onSuccess: (sentMessage) => {
+            setSnackbar({ open: true, message: 'Mensagem enviada!', severity: 'success' })
+            // Refresh messages after send
+            setTimeout(() => handleRefresh(), 500)
+        },
+        onError: (err) => {
+            setSnackbar({ open: true, message: err.message || 'Erro ao enviar', severity: 'error' })
+        }
+    })
+
+    // Snackbar state for feedback
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
+
+    // Media upload state
+    const [mediaDialogOpen, setMediaDialogOpen] = useState(false)
+    const { sendMedia, uploading: uploadingMedia, progress: uploadProgress } = useMediaUpload({
+        onSuccess: (uploadedMedia) => {
+            setMediaDialogOpen(false)
+            setSnackbar({ open: true, message: 'Mídia enviada com sucesso!', severity: 'success' })
+            setTimeout(() => handleRefresh(), 500)
+        },
+        onError: (err) => {
+            setSnackbar({ open: true, message: err.message || 'Erro ao enviar mídia', severity: 'error' })
+        }
+    })
+
     const containerRef = useRef(null)
     const messagesEndRef = useRef(null)
-    const previousScrollHeightRef = useRef(0)
     const isLoadingMoreRef = useRef(false)
-
-    // Scroll to bottom on new messages
+    const previousScrollHeightRef = useRef(0)
     useEffect(() => {
         if (messagesEndRef.current && !isLoadingMoreRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -217,6 +246,53 @@ function Conversation({
                     <div ref={messagesEndRef} />
                 </Box>
             </Box>
+
+            {/* Message Composer */}
+            {selectedSession && (
+                <Box sx={{ p: 1.5, borderTop: '1px solid #e0e0e0', bgcolor: 'background.paper' }}>
+                    <MessageComposer
+                        phone={contact?.phone}
+                        onSend={async (message) => {
+                            const result = await sendMessage(contact.phone, message)
+                            return result
+                        }}
+                        onMediaUpload={() => setMediaDialogOpen(true)}
+                        disabled={!contact || sendingMessage || uploadingMedia}
+                        sending={sendingMessage}
+                        placeholder={`Enviar mensagem para ${contact?.name || contact?.phone || 'contato'}...`}
+                        showAttachment={true}
+                    />
+                </Box>
+            )}
+
+            {/* Media Upload Dialog */}
+            <MediaUploadDialog
+                open={mediaDialogOpen}
+                onClose={() => setMediaDialogOpen(false)}
+                onUpload={async (media) => {
+                    await sendMedia(contact.phone, media)
+                }}
+                phone={contact?.phone}
+                uploading={uploadingMedia}
+                uploadProgress={uploadProgress}
+            />
+
+            {/* Snackbar for feedback */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+                    severity={snackbar.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     )
 }

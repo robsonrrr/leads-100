@@ -192,8 +192,86 @@ class WhatsAppAPI {
         const response = await api.get(`/superbot/seller-phones/seller/${phone}`, { signal })
         return response.data
     }
+
+    // ==========================================
+    // LID (Linked ID) Methods - WhatsApp Business API
+    // ==========================================
+
+    /**
+     * Verifica localmente se um telefone é um LID (Linked ID)
+     * LIDs são usados quando clientes vêm de anúncios Facebook/Instagram
+     * @param {string} phone - Telefone ou LID
+     * @returns {boolean} - true se for um LID
+     */
+    isLinkedId(phone) {
+        if (!phone) return false
+        const digits = String(phone).replace(/\D/g, '')
+        // LIDs têm 13-15 dígitos e NÃO começam com 55 (código Brasil)
+        return digits.length >= 13 && digits.length <= 15 && !digits.startsWith('55')
+    }
+
+    /**
+     * Verifica se um telefone é um LID (Linked ID) via API
+     * LIDs são usados quando clientes vêm de anúncios Facebook/Instagram
+     * @param {string} phone - Telefone ou LID
+     * @param {AbortSignal} signal - Sinal para cancelamento
+     */
+    async checkIsLid(phone, signal) {
+        const response = await api.get(`/superbot/lid/check/${phone}`, { signal })
+        return response.data
+    }
+
+    /**
+     * Resolve um LID para o telefone real
+     * @param {string} lid - Linked ID
+     * @param {AbortSignal} signal - Sinal para cancelamento
+     */
+    async resolveLid(lid, signal) {
+        const response = await api.get(`/superbot/lid/resolve/${lid}`, { signal })
+        return response.data
+    }
+
+    /**
+     * Busca estatísticas de LIDs no sistema
+     * @param {AbortSignal} signal - Sinal para cancelamento
+     */
+    async getLidStats(signal) {
+        const response = await api.get('/superbot/lid/stats', { signal })
+        return response.data
+    }
+
+    /**
+     * Lista mapeamentos LID -> telefone
+     * @param {Object} params - Parâmetros de busca
+     * @param {AbortSignal} signal - Sinal para cancelamento
+     */
+    async getLidMappings(params = {}, signal) {
+        const response = await api.get('/superbot/lid/mappings', {
+            params: {
+                page: params.page || 1,
+                limit: params.limit || 50,
+                verified: params.verified,
+                search: params.search,
+            },
+            signal,
+        })
+        return response.data
+    }
+
+    /**
+     * Detecta se um número é LID (local, sem chamada de API)
+     * @param {string} phone - Telefone ou identificador
+     * @returns {boolean}
+     */
+    isLinkedId(phone) {
+        if (!phone) return false
+        const digits = phone.replace(/\D/g, '')
+        // LIDs têm 13-15 dígitos e NÃO começam com 55 (código Brasil)
+        return digits.length >= 13 && digits.length <= 15 && !digits.startsWith('55')
+    }
 }
 
 // Exportar instância singleton
 export const whatsappApi = new WhatsAppAPI()
 export default whatsappApi
+

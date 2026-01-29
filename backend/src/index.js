@@ -42,6 +42,8 @@ import superbotRoutes from './routes/superbot.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import pricingAdminRoutes from './routes/pricing-admin.routes.js';
 import v2Routes from './v2/index.js';
+import whatsappSendRoutes from './routes/whatsapp-send.routes.js';
+import whatsappAIRoutes from './routes/whatsapp-ai.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -234,6 +236,8 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/superbot', superbotRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/pricing-admin', pricingAdminRoutes);
+app.use('/api/whatsapp', whatsappSendRoutes);
+app.use('/api/whatsapp/ai', whatsappAIRoutes);
 
 // API V2 Routes (Plan 2026)
 app.use('/api/v2', v2Routes);

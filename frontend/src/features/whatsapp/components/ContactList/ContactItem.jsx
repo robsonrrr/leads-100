@@ -10,13 +10,16 @@ import {
     Typography,
     Badge,
     Chip,
+    Tooltip,
 } from '@mui/material'
 import {
     Person as PersonIcon,
     Link as LinkIcon,
     Store as StoreIcon,
+    Facebook as FacebookIcon,
 } from '@mui/icons-material'
 import { formatRelativeTime, truncateText } from '../../utils/formatters'
+import { whatsappApi } from '../../services/whatsapp.api'
 
 /**
  * Item de contato na lista (memoizado para performance)
@@ -32,6 +35,12 @@ const ContactItem = memo(({
     const displayName = contact.name || contact.push_name || phoneNumber
     const hasName = contact.name || contact.push_name
     const lastMessage = contact.last_message || contact.last_message_text
+
+    // Detectar se é um Linked ID (LID) - vem de anúncios Facebook/Instagram
+    const isLid = whatsappApi.isLinkedId(phoneNumber)
+
+    // Telefone real mapeado (vindo do backend se o LID foi mapeado)
+    const mappedPhone = contact.mapped_phone || contact.real_phone || null
 
     return (
         <Box
@@ -106,14 +115,54 @@ const ContactItem = memo(({
 
                 {/* Telefone (se tiver nome, mostrar o telefone abaixo) */}
                 {hasName && phoneNumber && (
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        noWrap
-                        sx={{ display: 'block' }}
-                    >
-                        📱 {phoneNumber}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                        {/* Se for LID com telefone mapeado, mostrar o telefone real */}
+                        {isLid && mappedPhone ? (
+                            <Tooltip title={`ID original: ${phoneNumber}`} arrow placement="top">
+                                <Typography
+                                    variant="caption"
+                                    color="success.main"
+                                    noWrap
+                                    sx={{ fontWeight: 500 }}
+                                >
+                                    📱 {mappedPhone}
+                                </Typography>
+                            </Tooltip>
+                        ) : (
+                            <Typography
+                                variant="caption"
+                                color={isLid ? 'warning.main' : 'text.secondary'}
+                                noWrap
+                            >
+                                📱 {phoneNumber}
+                            </Typography>
+                        )}
+                        {/* Badge LID - indica que veio de anúncio FB/IG */}
+                        {isLid && (
+                            <Tooltip
+                                title={mappedPhone
+                                    ? "Contato veio de anúncios FB/IG. Telefone real identificado!"
+                                    : "Este contato iniciou a conversa através de anúncios do Facebook/Instagram. O número exibido é um ID temporário."
+                                }
+                                arrow
+                                placement="top"
+                            >
+                                <Chip
+                                    size="small"
+                                    icon={<FacebookIcon sx={{ fontSize: '12px !important' }} />}
+                                    label={mappedPhone ? "Ads ✓" : "Ads"}
+                                    sx={{
+                                        height: 18,
+                                        fontSize: '0.65rem',
+                                        bgcolor: mappedPhone ? '#25D366' : '#1877F2',
+                                        color: '#fff',
+                                        cursor: 'help',
+                                        '& .MuiChip-icon': { color: '#fff' },
+                                    }}
+                                />
+                            </Tooltip>
+                        )}
+                    </Box>
                 )}
 
                 {/* Total de mensagens */}

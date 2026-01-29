@@ -55,6 +55,31 @@ function getPhoneSuffix(phone) {
   return normalized.slice(-9);
 }
 
+/**
+ * Detecta se um número é um Linked ID (LID) do WhatsApp Business API
+ * LIDs são usados quando clientes contactam via Facebook/Instagram ads
+ * 
+ * @param {string} phone - Número ou identificador
+ * @returns {boolean} - True se for um LID
+ */
+function isLinkedId(phone) {
+  if (!phone) return false;
+
+  // LIDs têm entre 13-15 dígitos e NÃO começam com 55 (código Brasil)
+  const digits = phone.replace(/\D/g, '');
+
+  if (digits.length >= 13 && digits.length <= 15 && !digits.startsWith('55')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Tabela de mapeamento LID -> Telefone real
+ */
+const LID_MAPPING_TABLE = `${SUPERBOT_SCHEMA}.phone_lid_mappings`;
+
 export const SuperbotRepository = {
   /**
    * Busca cliente do Superbot por telefone
@@ -155,6 +180,7 @@ export const SuperbotRepository = {
       // Query usando a VIEW vw_whatsapp_contacts
       // Filtra por seller_phone (session_id = telefone do vendedor)
       // JOIN com seller_phones e rolemak_users para obter o nome do vendedor
+      // JOIN com phone_lid_mappings para obter telefone real de LIDs
       query = `
         SELECT 
           v.contact_phone AS phone_number,
@@ -171,10 +197,19 @@ export const SuperbotRepository = {
           v.superbot_customer_id AS id,
           v.has_linked_customer,
           v.leads_customer_id,
-          0 AS is_group
+          0 AS is_group,
+          -- LID mapping info
+          lm.phone_number AS mapped_phone,
+          lm.confidence AS lid_confidence,
+          lm.is_verified AS lid_verified,
+          CASE 
+            WHEN lm.id IS NOT NULL THEN TRUE
+            ELSE FALSE
+          END AS has_lid_mapping
         FROM ${SUPERBOT_SCHEMA}.vw_whatsapp_contacts v
         LEFT JOIN ${SUPERBOT_SCHEMA}.seller_phones sp ON sp.phone_number = v.seller_phone
         LEFT JOIN mak.rolemak_users u ON u.id = sp.user_id
+        LEFT JOIN ${SUPERBOT_SCHEMA}.phone_lid_mappings lm ON lm.lid = SUBSTRING_INDEX(v.contact_phone, '@', 1)
         WHERE v.seller_phone IN (${sellerPhonesPlaceholders})
         ${search ? `AND (v.contact_name LIKE ? OR v.contact_phone LIKE ?)` : ''}
         ORDER BY v.last_message_at DESC
@@ -185,6 +220,7 @@ export const SuperbotRepository = {
       queryParams = [...sellerPhones, ...searchParams, parseInt(limit), parseInt(offset)];
     } else {
       // Query padrão (sem filtro de vendedor)
+      // Inclui JOIN com phone_lid_mappings para LIDs
       query = `
         SELECT 
           sc.id,
@@ -195,7 +231,15 @@ export const SuperbotRepository = {
           sc.is_group,
           sc.created_at,
           sc.updated_at,
-          msg_stats.last_message_at
+          msg_stats.last_message_at,
+          -- LID mapping info
+          lm.phone_number AS mapped_phone,
+          lm.confidence AS lid_confidence,
+          lm.is_verified AS lid_verified,
+          CASE 
+            WHEN lm.id IS NOT NULL THEN TRUE
+            ELSE FALSE
+          END AS has_lid_mapping
         FROM ${SUPERBOT_SCHEMA}.superbot_customers sc
         LEFT JOIN (
           SELECT 
@@ -208,6 +252,7 @@ export const SuperbotRepository = {
           WHERE is_group = 0
           GROUP BY phone
         ) msg_stats ON msg_stats.phone = sc.phone_number
+        LEFT JOIN ${SUPERBOT_SCHEMA}.phone_lid_mappings lm ON lm.lid = sc.phone_number
         ${whereClause}
         ORDER BY COALESCE(msg_stats.last_message_at, '1970-01-01') DESC, sc.updated_at DESC
         LIMIT ? OFFSET ?
@@ -1057,6 +1102,238 @@ export const SuperbotRepository = {
       ORDER BY m.received_at DESC
       LIMIT ?
     `, [...params, parseInt(limit)]);
+
+    return rows;
+  },
+
+  // ==========================================================================
+  // LID (Linked ID) Management Methods
+  // ==========================================================================
+
+  /**
+   * Verifica se um telefone é um Linked ID (LID)
+   * @param {string} phone - Número ou identificador
+   * @returns {boolean}
+   */
+  isLinkedId(phone) {
+    return isLinkedId(phone);
+  },
+
+  /**
+   * Resolve um LID para o número de telefone real (se mapeamento existir)
+   * @param {string} lid - Linked ID
+   * @returns {Object|null} - Mapeamento ou null
+   */
+  async resolveLid(lid) {
+    if (!isLinkedId(lid)) return null;
+
+    const cacheKey = `superbot:lid:${lid}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) return cached;
+
+    const [rows] = await db().query(`
+      SELECT 
+        lid,
+        phone_number,
+        push_name,
+        customer_name,
+        confidence,
+        is_verified,
+        match_method
+      FROM ${LID_MAPPING_TABLE}
+      WHERE lid = ?
+      LIMIT 1
+    `, [lid]);
+
+    const result = rows[0] || null;
+    if (result) {
+      await cacheSet(cacheKey, result, CACHE_TTL.CUSTOMER);
+    }
+    return result;
+  },
+
+  /**
+   * Resolve múltiplos LIDs de uma vez (para otimização)
+   * @param {string[]} lids - Array de LIDs
+   * @returns {Object} - Mapa de lid -> phone_number
+   */
+  async resolveLids(lids) {
+    if (!lids || lids.length === 0) return {};
+
+    // Filtrar apenas os que são realmente LIDs
+    const actualLids = lids.filter(isLinkedId);
+    if (actualLids.length === 0) return {};
+
+    const placeholders = actualLids.map(() => '?').join(',');
+    const [rows] = await db().query(`
+      SELECT lid, phone_number, push_name, confidence
+      FROM ${LID_MAPPING_TABLE}
+      WHERE lid IN (${placeholders})
+    `, actualLids);
+
+    const result = {};
+    rows.forEach(row => {
+      result[row.lid] = row.phone_number;
+    });
+
+    return result;
+  },
+
+  /**
+   * Cria ou atualiza um mapeamento LID -> telefone
+   * @param {string} lid - Linked ID
+   * @param {string} phoneNumber - Número de telefone real
+   * @param {Object} options - Opções adicionais
+   */
+  async createLidMapping(lid, phoneNumber, options = {}) {
+    const {
+      pushName = null,
+      customerName = null,
+      confidence = 0.5,
+      matchMethod = 'manual',
+      isVerified = false,
+      verifiedBy = null
+    } = options;
+
+    const [result] = await db().query(`
+      INSERT INTO ${LID_MAPPING_TABLE} 
+        (lid, phone_number, push_name, customer_name, confidence, match_method, is_verified, verified_by, verified_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${isVerified ? 'NOW()' : 'NULL'})
+      ON DUPLICATE KEY UPDATE
+        phone_number = VALUES(phone_number),
+        push_name = COALESCE(VALUES(push_name), push_name),
+        customer_name = COALESCE(VALUES(customer_name), customer_name),
+        confidence = GREATEST(confidence, VALUES(confidence)),
+        match_method = VALUES(match_method),
+        is_verified = VALUES(is_verified),
+        verified_by = VALUES(verified_by),
+        verified_at = IF(VALUES(is_verified), NOW(), verified_at)
+    `, [lid, phoneNumber, pushName, customerName, confidence, matchMethod, isVerified, verifiedBy]);
+
+    // Invalidar cache
+    await cacheDelete(`superbot:lid:${lid}`);
+
+    return result;
+  },
+
+  /**
+   * Remove mapeamento LID
+   * @param {string} lid - Linked ID
+   */
+  async deleteLidMapping(lid) {
+    const [result] = await db().query(`
+      DELETE FROM ${LID_MAPPING_TABLE}
+      WHERE lid = ?
+    `, [lid]);
+
+    await cacheDelete(`superbot:lid:${lid}`);
+    return result.affectedRows > 0;
+  },
+
+  /**
+   * Lista todos os mapeamentos LID
+   * @param {Object} options - Opções de filtro
+   */
+  async listLidMappings(options = {}) {
+    const { page = 1, limit = 50, verified = null, search = null } = options;
+    const offset = (page - 1) * limit;
+
+    let whereClause = '1=1';
+    const params = [];
+
+    if (verified !== null) {
+      whereClause += ' AND is_verified = ?';
+      params.push(verified);
+    }
+
+    if (search) {
+      whereClause += ' AND (lid LIKE ? OR phone_number LIKE ? OR push_name LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const [countResult] = await db().query(`
+      SELECT COUNT(*) as total FROM ${LID_MAPPING_TABLE} WHERE ${whereClause}
+    `, params);
+
+    const [rows] = await db().query(`
+      SELECT 
+        id,
+        lid,
+        phone_number,
+        push_name,
+        customer_name,
+        lid_customer_id,
+        phone_customer_id,
+        confidence,
+        match_method,
+        is_verified,
+        created_at,
+        updated_at,
+        verified_at,
+        verified_by
+      FROM ${LID_MAPPING_TABLE}
+      WHERE ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: countResult[0]?.total || 0,
+        totalPages: Math.ceil((countResult[0]?.total || 0) / limit)
+      }
+    };
+  },
+
+  /**
+   * Obtém estatísticas de LIDs
+   */
+  async getLidStats() {
+    const [stats] = await db().query(`
+      SELECT 
+        (SELECT COUNT(*) FROM ${SUPERBOT_SCHEMA}.superbot_customers WHERE jid LIKE '%@lid') as total_lids,
+        (SELECT COUNT(*) FROM ${LID_MAPPING_TABLE}) as mapped_lids,
+        (SELECT COUNT(*) FROM ${LID_MAPPING_TABLE} WHERE is_verified = TRUE) as verified_mappings,
+        (SELECT AVG(confidence) FROM ${LID_MAPPING_TABLE}) as avg_confidence
+    `);
+
+    return stats[0] || { total_lids: 0, mapped_lids: 0, verified_mappings: 0, avg_confidence: 0 };
+  },
+
+  /**
+   * Encontra potenciais mapeamentos LID baseados em push_name
+   * Útil para descobrir novos mapeamentos automaticamente
+   */
+  async findPotentialLidMappings(minConfidence = 0.7) {
+    const [rows] = await db().query(`
+      SELECT 
+        lid_rec.phone_number as lid,
+        phone_rec.phone_number as phone_number,
+        COALESCE(lid_rec.push_name, lid_rec.name) as push_name,
+        phone_rec.name as customer_name,
+        lid_rec.id as lid_customer_id,
+        phone_rec.id as phone_customer_id,
+        0.85 as confidence
+      FROM ${SUPERBOT_SCHEMA}.superbot_customers lid_rec
+      INNER JOIN ${SUPERBOT_SCHEMA}.superbot_customers phone_rec 
+        ON COALESCE(lid_rec.push_name, lid_rec.name) = COALESCE(phone_rec.push_name, phone_rec.name)
+        AND lid_rec.id != phone_rec.id
+      WHERE 
+        lid_rec.jid LIKE '%@lid'
+        AND phone_rec.jid LIKE '%@s.whatsapp.net'
+        AND COALESCE(lid_rec.push_name, lid_rec.name) IS NOT NULL
+        AND COALESCE(lid_rec.push_name, lid_rec.name) != ''
+        AND COALESCE(lid_rec.push_name, lid_rec.name) NOT IN ('', 'WhatsApp User', 'Usuario', 'Cliente', 'Contato')
+        AND LENGTH(COALESCE(lid_rec.push_name, lid_rec.name)) > 3
+        AND NOT EXISTS (
+          SELECT 1 FROM ${LID_MAPPING_TABLE} plm WHERE plm.lid = lid_rec.phone_number
+        )
+      LIMIT 50
+    `);
 
     return rows;
   }

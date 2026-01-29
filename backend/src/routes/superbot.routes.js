@@ -456,4 +456,86 @@ router.get('/seller-phones/seller/:phone', SuperbotController.getSellerByPhone);
  */
 router.get('/my-customers', SuperbotController.listCustomersBySeller);
 
+// ============================================
+// LID (Linked ID) MANAGEMENT - WhatsApp Business API
+// ============================================
+// LIDs são identificadores usados quando clientes contactam via Facebook/Instagram ads
+
+/**
+ * @swagger
+ * /api/superbot/lid/stats:
+ *   get:
+ *     tags: [Superbot]
+ *     summary: Estatísticas de LIDs no sistema
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/lid/stats', SuperbotController.getLidStats);
+
+/**
+ * @swagger
+ * /api/superbot/lid/mappings:
+ *   get:
+ *     tags: [Superbot]
+ *     summary: Lista mapeamentos LID -> telefone
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/lid/mappings', SuperbotController.listLidMappings);
+
+/**
+ * @swagger
+ * /api/superbot/lid/resolve/{lid}:
+ *   get:
+ *     tags: [Superbot]
+ *     summary: Resolve um LID para telefone real
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/lid/resolve/:lid', SuperbotController.resolveLid);
+
+/**
+ * @swagger
+ * /api/superbot/lid/mappings:
+ *   post:
+ *     tags: [Superbot]
+ *     summary: Cria ou atualiza mapeamento LID -> telefone
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/lid/mappings', SuperbotController.createLidMapping);
+
+/**
+ * @swagger
+ * /api/superbot/lid/mappings/{lid}:
+ *   delete:
+ *     tags: [Superbot]
+ *     summary: Remove mapeamento LID
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete('/lid/mappings/:lid', SuperbotController.deleteLidMapping);
+
+/**
+ * @swagger
+ * /api/superbot/lid/potential-mappings:
+ *   get:
+ *     tags: [Superbot]
+ *     summary: Encontra potenciais mapeamentos baseado em push_name
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/lid/potential-mappings', SuperbotController.findPotentialLidMappings);
+
+/**
+ * @swagger
+ * /api/superbot/lid/check/{phone}:
+ *   get:
+ *     tags: [Superbot]
+ *     summary: Verifica se um número é LID
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/lid/check/:phone', SuperbotController.checkIsLid);
+
 export default router;

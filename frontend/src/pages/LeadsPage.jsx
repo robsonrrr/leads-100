@@ -601,6 +601,7 @@ function LeadsPage() {
                                             <TableCell>Tipo</TableCell>
                                             <TableCell>Responsável</TableCell>
                                             <SortableHeader columnKey="orderWeb"># Pedido</SortableHeader>
+                                            <TableCell>Obs. Gerente</TableCell>
                                             <SortableHeader columnKey="total" align="right">Total</SortableHeader>
                                             <TableCell align="right">Ações</TableCell>
                                         </TableRow>
@@ -666,6 +667,25 @@ function LeadsPage() {
                                                     <Typography variant="caption" sx={{ fontWeight: 500 }}>{lead.sellerNick || '-'}</Typography>
                                                 </TableCell>
                                                 <TableCell>{lead.orderWeb || '-'}</TableCell>
+                                                <TableCell>
+                                                    {lead.remarks?.manager ? (
+                                                        <Tooltip title={lead.remarks.manager}>
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    maxWidth: 120,
+                                                                    display: 'block',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    cursor: 'help'
+                                                                }}
+                                                            >
+                                                                {lead.remarks.manager}
+                                                            </Typography>
+                                                        </Tooltip>
+                                                    ) : '-'}
+                                                </TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 700 }}>{formatCurrency(lead.totalValue || 0)}</TableCell>
                                                 <TableCell align="right">
                                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
@@ -694,7 +714,7 @@ function LeadsPage() {
                                         ))}
                                         {leads.length === 0 && (
                                             <TableRow>
-                                                <TableCell colSpan={11}>
+                                                <TableCell colSpan={12}>
                                                     <EmptyState
                                                         title="Nenhum lead encontrado"
                                                         description="Tente ajustar seus filtros ou crie um novo lead."

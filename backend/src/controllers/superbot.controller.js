@@ -10,6 +10,7 @@
 import { SuperbotService, SUPERBOT_INTENTS, SENTIMENT } from '../services/superbot.service.js';
 import { SuperbotAIService, INTENTS as AI_INTENTS } from '../services/superbot-ai.service.js';
 import { SuperbotAnalyticsRepository } from '../repositories/superbot-analytics.repository.js';
+import { SuperbotRepository } from '../repositories/superbot.repository.js';
 import { SuperbotChatbotService } from '../services/superbot-chatbot.service.js';
 import logger from '../config/logger.js';
 
@@ -1636,7 +1637,242 @@ export const SuperbotController = {
                 error: 'Erro ao buscar vendedor por telefone'
             });
         }
+    },
+
+    // ==========================================
+    // LID (Linked ID) Management - WhatsApp Business API
+    // ==========================================
+
+    /**
+     * GET /api/superbot/lid/stats
+     * Retorna estatísticas de LIDs no sistema
+     */
+    async getLidStats(req, res) {
+        try {
+            const stats = await SuperbotRepository.getLidStats();
+            res.json({
+                success: true,
+                data: {
+                    ...stats,
+                    description: 'LIDs são identificadores usados pelo WhatsApp Business API quando clientes contactam via Facebook/Instagram ads'
+                }
+            });
+        } catch (error) {
+            logger.error('Erro ao buscar estatísticas de LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao buscar estatísticas de LID'
+            });
+        }
+    },
+
+    /**
+     * GET /api/superbot/lid/mappings
+     * Lista todos os mapeamentos LID -> telefone
+     */
+    async listLidMappings(req, res) {
+        try {
+            const { page = 1, limit = 50, verified, search } = req.query;
+
+            const result = await SuperbotRepository.listLidMappings({
+                page: parseInt(page),
+                limit: parseInt(limit),
+                verified: verified === 'true' ? true : verified === 'false' ? false : null,
+                search
+            });
+
+            res.json({
+                success: true,
+                ...result
+            });
+        } catch (error) {
+            logger.error('Erro ao listar mapeamentos LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao listar mapeamentos LID'
+            });
+        }
+    },
+
+    /**
+     * GET /api/superbot/lid/resolve/:lid
+     * Resolve um LID para o número de telefone real
+     */
+    async resolveLid(req, res) {
+        try {
+            const { lid } = req.params;
+
+            const mapping = await SuperbotRepository.resolveLid(lid);
+
+            if (mapping) {
+                res.json({
+                    success: true,
+                    data: {
+                        lid,
+                        phone_number: mapping.phone_number,
+                        push_name: mapping.push_name,
+                        confidence: mapping.confidence,
+                        is_verified: mapping.is_verified,
+                        match_method: mapping.match_method
+                    }
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: 'Nenhum mapeamento encontrado para este LID',
+                    lid,
+                    is_lid: SuperbotRepository.isLinkedId(lid)
+                });
+            }
+        } catch (error) {
+            logger.error('Erro ao resolver LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao resolver LID'
+            });
+        }
+    },
+
+    /**
+     * POST /api/superbot/lid/mappings
+     * Cria ou atualiza mapeamento LID -> telefone
+     */
+    async createLidMapping(req, res) {
+        try {
+            const { lid, phone_number, push_name, customer_name, confidence, is_verified } = req.body;
+
+            if (!lid || !phone_number) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'lid e phone_number são obrigatórios'
+                });
+            }
+
+            // Verificar se o lid é realmente um LID
+            if (!SuperbotRepository.isLinkedId(lid)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'O valor fornecido não parece ser um LID válido (13-15 dígitos, não começa com 55)'
+                });
+            }
+
+            const result = await SuperbotRepository.createLidMapping(lid, phone_number, {
+                pushName: push_name,
+                customerName: customer_name,
+                confidence: confidence || 1.0,
+                matchMethod: 'manual',
+                isVerified: is_verified || true,
+                verifiedBy: req.user?.userId
+            });
+
+            res.json({
+                success: true,
+                message: 'Mapeamento LID criado/atualizado com sucesso',
+                data: {
+                    lid,
+                    phone_number,
+                    affected_rows: result.affectedRows
+                }
+            });
+        } catch (error) {
+            logger.error('Erro ao criar mapeamento LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao criar mapeamento LID'
+            });
+        }
+    },
+
+    /**
+     * DELETE /api/superbot/lid/mappings/:lid
+     * Remove mapeamento LID
+     */
+    async deleteLidMapping(req, res) {
+        try {
+            const { lid } = req.params;
+
+            const deleted = await SuperbotRepository.deleteLidMapping(lid);
+
+            if (deleted) {
+                res.json({
+                    success: true,
+                    message: 'Mapeamento LID removido com sucesso'
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: 'Mapeamento não encontrado'
+                });
+            }
+        } catch (error) {
+            logger.error('Erro ao remover mapeamento LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao remover mapeamento LID'
+            });
+        }
+    },
+
+    /**
+     * GET /api/superbot/lid/potential-mappings
+     * Encontra potenciais mapeamentos baseados em push_name
+     */
+    async findPotentialLidMappings(req, res) {
+        try {
+            const mappings = await SuperbotRepository.findPotentialLidMappings();
+
+            res.json({
+                success: true,
+                data: mappings,
+                count: mappings.length,
+                description: 'Potenciais mapeamentos encontrados baseados em push_name igual entre LID e telefone real'
+            });
+        } catch (error) {
+            logger.error('Erro ao buscar potenciais mapeamentos LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao buscar potenciais mapeamentos'
+            });
+        }
+    },
+
+    /**
+     * GET /api/superbot/lid/check/:phone
+     * Verifica se um número é LID
+     */
+    async checkIsLid(req, res) {
+        try {
+            const { phone } = req.params;
+
+            const isLid = SuperbotRepository.isLinkedId(phone);
+            let mapping = null;
+
+            if (isLid) {
+                mapping = await SuperbotRepository.resolveLid(phone);
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    phone,
+                    is_lid: isLid,
+                    has_mapping: !!mapping,
+                    mapped_phone: mapping?.phone_number || null,
+                    mapping_confidence: mapping?.confidence || null,
+                    description: isLid
+                        ? 'Este é um Linked ID (LID) do WhatsApp Business API'
+                        : 'Este parece ser um número de telefone normal'
+                }
+            });
+        } catch (error) {
+            logger.error('Erro ao verificar LID', { error: error.message });
+            res.status(500).json({
+                success: false,
+                error: 'Erro ao verificar LID'
+            });
+        }
     }
 };
 
 export default SuperbotController;
+

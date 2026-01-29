@@ -566,7 +566,7 @@ export async function getLeadItems(req, res, next) {
       return next(Errors.leadNotFound(leadId));
     }
 
-    const items = await cartItemRepository.findByLeadId(leadId);
+    const items = await cartItemRepository.findByLeadId(leadId, lead.cCustomer);
 
     res.json({
       success: true,

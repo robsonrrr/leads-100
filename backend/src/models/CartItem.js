@@ -20,6 +20,9 @@ export class CartItem {
 
     // Dados do produto (join opcional)
     this.product = data.product || null;
+
+    // Histórico de compra
+    this.lastPurchase = data.lastPurchase || null;
   }
 
   toJSON() {
@@ -38,7 +41,8 @@ export class CartItem {
       inquiryDate: this.dInquiry,
       aiDecisionId: this.aiDecisionId,
       product: this.product,
-      subtotal: parseFloat(this.qProduct) * parseFloat(this.vProduct)
+      subtotal: parseFloat(this.qProduct) * parseFloat(this.vProduct),
+      lastPurchase: this.lastPurchase || null
     };
   }
 }
