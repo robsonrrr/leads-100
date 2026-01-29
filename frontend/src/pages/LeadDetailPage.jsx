@@ -64,6 +64,7 @@ import { useToast } from '../contexts/ToastContext'
 import LeadHistoryTimeline from '../components/LeadHistoryTimeline'
 import SendEmailDialog from '../components/SendEmailDialog'
 
+
 function LeadDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -1365,7 +1366,8 @@ function LeadDetailPage() {
               <CustomerGoalCard customerId={lead.customerId} />
             )}
 
-            {/* Card de Lucratividade (apenas se houver comissão) */}
+            {/* Widget de WhatsApp integrado removido a pedido do usuário */}
+
             {totals?.profitability && (
               <Paper
                 elevation={4}

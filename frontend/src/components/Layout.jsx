@@ -181,7 +181,7 @@ function Layout({ children }) {
   ]
 
   // Versão do app (importada do package.json via Vite)
-  const appVersion = import.meta.env.PACKAGE_VERSION || '1.7.13'
+  const appVersion = import.meta.env.PACKAGE_VERSION || '1.7.15'
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

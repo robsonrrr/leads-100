@@ -1485,6 +1485,17 @@ function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
                             <Typography variant="body2">
                               {item.product?.name || `Produto #${item.productId}`}
                             </Typography>
+                            {/* Histórico de última compra */}
+                            {item.lastPurchase && (
+                              <Box sx={{ mt: 0.5, mb: 0.5, p: 0.5, bgcolor: '#f0f7ff', borderRadius: 1, border: '1px dashed #bdddfd', fontSize: '0.75rem' }}>
+                                <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                  Última Compra ({item.lastPurchase.daysAgo} dias atrás):
+                                </Typography>
+                                <Typography variant="caption" display="block">
+                                  Qtd: {item.lastPurchase.quantity} | {item.lastPurchase.times}x | Preço: {formatCurrency(item.lastPurchase.price)}
+                                </Typography>
+                              </Box>
+                            )}
                             {/* Chips de promoção e estoque */}
                             <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
                               {/* Badge de promoção */}

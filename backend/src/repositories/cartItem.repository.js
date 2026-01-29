@@ -8,7 +8,7 @@ export class CartItemRepository {
   /**
    * Busca todos os itens de um lead
    */
-  async findByLeadId(leadId) {
+  async findByLeadId(leadId, customerId = null) {
     const query = `
       SELECT 
         i.*,
@@ -19,7 +19,35 @@ export class CartItemRepository {
         inv.description as product_description,
         p.segmento as product_segment,
         p.categoria as product_category,
-        COALESCE(e.total_disponivel, 0) as product_stock
+        COALESCE(e.total_disponivel, 0) as product_stock,
+        (
+          SELECT h.data 
+          FROM mak.hist hist 
+          JOIN mak.hoje h ON hist.pedido = h.id 
+          WHERE hist.idcli = ? AND hist.isbn = i.cProduct 
+          ORDER BY h.data DESC LIMIT 1
+        ) as last_purchase_date,
+        (
+          SELECT hist.valor_base 
+          FROM mak.hist hist 
+          JOIN mak.hoje h ON hist.pedido = h.id 
+          WHERE hist.idcli = ? AND hist.isbn = i.cProduct 
+          ORDER BY h.data DESC LIMIT 1
+        ) as last_purchase_price,
+        (
+          SELECT hist.quant 
+          FROM mak.hist hist 
+          JOIN mak.hoje h ON hist.pedido = h.id 
+          WHERE hist.idcli = ? AND hist.isbn = i.cProduct 
+          ORDER BY h.data DESC LIMIT 1
+        ) as last_purchase_quantity,
+        (
+          SELECT hist.vezes 
+          FROM mak.hist hist 
+          JOIN mak.hoje h ON hist.pedido = h.id 
+          WHERE hist.idcli = ? AND hist.isbn = i.cProduct 
+          ORDER BY h.data DESC LIMIT 1
+        ) as last_purchase_times
       FROM icart i
       LEFT JOIN inv inv ON i.cProduct = inv.id
       LEFT JOIN produtos p ON inv.idcf = p.id
@@ -27,7 +55,11 @@ export class CartItemRepository {
       WHERE i.cSCart = ?
       ORDER BY i.cCart ASC
     `;
-    const [rows] = await db().execute(query, [leadId]);
+
+    // Params: customerId (4x) + leadId
+    const params = [customerId, customerId, customerId, customerId, leadId];
+
+    const [rows] = await db().execute(query, params);
 
     return rows.map(row => {
       const item = new CartItem(row);
@@ -43,6 +75,24 @@ export class CartItemRepository {
           stock: parseInt(row.product_stock) || 0
         };
       }
+
+      // Add last purchase info if available
+      if (row.last_purchase_date) {
+        // Calculate days ago
+        const lastDate = new Date(row.last_purchase_date);
+        const today = new Date();
+        const diffTime = Math.abs(today - lastDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        item.lastPurchase = {
+          date: row.last_purchase_date,
+          price: parseFloat(row.last_purchase_price) || 0,
+          quantity: parseFloat(row.last_purchase_quantity) || 0,
+          times: parseInt(row.last_purchase_times) || 1,
+          daysAgo: diffDays
+        };
+      }
+
       return item;
     });
   }
