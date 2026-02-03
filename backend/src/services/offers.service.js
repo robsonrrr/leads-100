@@ -7,9 +7,9 @@
  * Flow: Leads-Agent → Offers Agent → Pricing Agent → Credit Agent
  */
 
-const axios = require('axios');
+import axios from 'axios';
 
-// Use console for logging (compatible with CommonJS)
+// Use console for logging (compatible with ES modules)
 const logger = {
     info: (...args) => console.log('[OffersService]', ...args),
     error: (...args) => console.error('[OffersService]', ...args),
@@ -32,11 +32,11 @@ const offersClient = axios.create({
 // Request interceptor for logging
 offersClient.interceptors.request.use(
     (config) => {
-        logger.info(`[OffersService] Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        logger.info(`Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         return config;
     },
     (error) => {
-        logger.error('[OffersService] Request error:', error.message);
+        logger.error('Request error:', error.message);
         return Promise.reject(error);
     }
 );
@@ -44,11 +44,11 @@ offersClient.interceptors.request.use(
 // Response interceptor for logging
 offersClient.interceptors.response.use(
     (response) => {
-        logger.info(`[OffersService] Response: ${response.status} from ${response.config.url}`);
+        logger.info(`Response: ${response.status} from ${response.config.url}`);
         return response;
     },
     (error) => {
-        logger.error(`[OffersService] Response error: ${error.response?.status || error.code} - ${error.message}`);
+        logger.error(`Response error: ${error.response?.status || error.code} - ${error.message}`);
         return Promise.reject(error);
     }
 );
@@ -56,7 +56,7 @@ offersClient.interceptors.response.use(
 /**
  * Segment mapping from leads-agent to offers agent
  */
-const SEGMENT_MAPPING = {
+export const SEGMENT_MAPPING = {
     'maquinas': 'machines',
     'machines': 'machines',
     'pecas': 'parts',
@@ -72,7 +72,7 @@ const SEGMENT_MAPPING = {
 /**
  * Goal mapping from UI to offers agent
  */
-const GOAL_MAPPING = {
+export const GOAL_MAPPING = {
     'giro': 'giro',           // High turnover products
     'ruptura': 'ruptura',     // Products customer usually buys
     'mix': 'mix',             // Products to increase penetration
@@ -94,7 +94,7 @@ const GOAL_MAPPING = {
  * @param {string} authToken - Auth token for the request
  * @returns {Promise<Object>} Offer build response
  */
-async function buildOffer({
+export async function buildOffer({
     segment,
     customerId,
     sellerId,
@@ -124,7 +124,7 @@ async function buildOffer({
             }
         };
 
-        logger.info(`[OffersService] Building offer for customer ${customerId}, segment: ${mappedSegment}, goal: ${mappedGoal}`);
+        logger.info(`Building offer for customer ${customerId}, segment: ${mappedSegment}, goal: ${mappedGoal}`);
 
         const response = await offersClient.post('/v1/offers/build', payload, {
             headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
@@ -145,7 +145,7 @@ async function buildOffer({
             handoff: result.handoff
         };
     } catch (error) {
-        logger.error(`[OffersService] Error building offer: ${error.message}`);
+        logger.error(`Error building offer: ${error.message}`);
 
         if (error.response) {
             return {
@@ -170,7 +170,7 @@ async function buildOffer({
  * @param {string} authToken - Auth token
  * @returns {Promise<Object>} Offer details
  */
-async function getOffer(offerId, authToken) {
+export async function getOffer(offerId, authToken) {
     try {
         const response = await offersClient.get(`/v1/offers/${offerId}`, {
             headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
@@ -181,7 +181,7 @@ async function getOffer(offerId, authToken) {
             offer: response.data.offer
         };
     } catch (error) {
-        logger.error(`[OffersService] Error getting offer ${offerId}: ${error.message}`);
+        logger.error(`Error getting offer ${offerId}: ${error.message}`);
 
         if (error.response?.status === 404) {
             return {
@@ -207,7 +207,7 @@ async function getOffer(offerId, authToken) {
  * @param {string} authToken - Auth token
  * @returns {Promise<Object>} List of offers
  */
-async function getCustomerOffers(customerId, limit = 10, authToken) {
+export async function getCustomerOffers(customerId, limit = 10, authToken) {
     try {
         const response = await offersClient.get(`/v1/offers/customer/${customerId}`, {
             params: { limit },
@@ -220,7 +220,7 @@ async function getCustomerOffers(customerId, limit = 10, authToken) {
             total: response.data.total || 0
         };
     } catch (error) {
-        logger.error(`[OffersService] Error getting customer offers: ${error.message}`);
+        logger.error(`Error getting customer offers: ${error.message}`);
 
         return {
             success: false,
@@ -237,7 +237,7 @@ async function getCustomerOffers(customerId, limit = 10, authToken) {
  * @param {string} authToken - Auth token
  * @returns {Promise<Object>} List of today's offers
  */
-async function getTodayOffers(authToken) {
+export async function getTodayOffers(authToken) {
     try {
         const response = await offersClient.get('/v1/offers/today', {
             headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
@@ -249,7 +249,7 @@ async function getTodayOffers(authToken) {
             total: response.data.total || 0
         };
     } catch (error) {
-        logger.error(`[OffersService] Error getting today offers: ${error.message}`);
+        logger.error(`Error getting today offers: ${error.message}`);
 
         return {
             success: false,
@@ -268,7 +268,7 @@ async function getTodayOffers(authToken) {
  * @param {string} authToken - Auth token
  * @returns {Promise<Object>} Pricing result
  */
-async function priceOffer(offerId, options = {}, authToken) {
+export async function priceOffer(offerId, options = {}, authToken) {
     try {
         const response = await offersClient.post(`/v1/offers/${offerId}/price`, {
             payment_term: options.paymentTerm || 'standard',
@@ -290,7 +290,7 @@ async function priceOffer(offerId, options = {}, authToken) {
             pricedAt: result.priced_at
         };
     } catch (error) {
-        logger.error(`[OffersService] Error pricing offer ${offerId}: ${error.message}`);
+        logger.error(`Error pricing offer ${offerId}: ${error.message}`);
 
         return {
             success: false,
@@ -308,7 +308,7 @@ async function priceOffer(offerId, options = {}, authToken) {
  * @param {string} authToken - Auth token
  * @returns {Promise<Object>} Credit evaluation result
  */
-async function evaluateCredit(offerId, options = {}, authToken) {
+export async function evaluateCredit(offerId, options = {}, authToken) {
     try {
         const response = await offersClient.post(`/v1/offers/${offerId}/credit`, {
             payment_terms_days: options.paymentTermsDays || 30,
@@ -332,7 +332,7 @@ async function evaluateCredit(offerId, options = {}, authToken) {
             error: result.error
         };
     } catch (error) {
-        logger.error(`[OffersService] Error evaluating credit for offer ${offerId}: ${error.message}`);
+        logger.error(`Error evaluating credit for offer ${offerId}: ${error.message}`);
 
         return {
             success: false,
@@ -347,7 +347,7 @@ async function evaluateCredit(offerId, options = {}, authToken) {
  * 
  * @returns {Promise<Object>} Health status
  */
-async function healthCheck() {
+export async function healthCheck() {
     try {
         const response = await offersClient.get('/health', { timeout: 5000 });
         return {
@@ -364,7 +364,8 @@ async function healthCheck() {
     }
 }
 
-module.exports = {
+// Default export with all functions
+export default {
     buildOffer,
     getOffer,
     getCustomerOffers,
@@ -372,7 +373,6 @@ module.exports = {
     priceOffer,
     evaluateCredit,
     healthCheck,
-    // Constants for UI
     SEGMENT_MAPPING,
     GOAL_MAPPING
 };

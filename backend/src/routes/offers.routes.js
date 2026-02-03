@@ -5,17 +5,18 @@
  * via the CSuite Offers Agent integration.
  */
 
-const express = require('express');
+import express from 'express';
+import { authenticateToken } from '../middleware/auth.js';
+import * as offersService from '../services/offers.service.js';
+
 const router = express.Router();
-const offersService = require('../services/offers.service');
-const { authenticate } = require('../middleware/auth.middleware');
 
 /**
  * @route POST /api/offers/build
  * @desc Build an offer for a customer
  * @access Protected
  */
-router.post('/build', authenticate, async (req, res) => {
+router.post('/build', authenticateToken, async (req, res) => {
     try {
         const {
             segment,
@@ -68,27 +69,73 @@ router.post('/build', authenticate, async (req, res) => {
 });
 
 /**
- * @route GET /api/offers/:offerId
- * @desc Get offer by ID
+ * @route GET /api/offers/config
+ * @desc Get available segments and goals
  * @access Protected
  */
-router.get('/:offerId', authenticate, async (req, res) => {
+router.get('/config', authenticateToken, async (req, res) => {
     try {
-        const { offerId } = req.params;
-        const authToken = req.headers.authorization?.replace('Bearer ', '');
-
-        const result = await offersService.getOffer(offerId, authToken);
-
-        if (!result.success) {
-            return res.status(result.statusCode || 404).json(result);
-        }
-
-        res.json(result);
+        res.json({
+            success: true,
+            segments: [
+                { code: 'machines', label: 'Máquinas', icon: '🔧' },
+                { code: 'parts', label: 'Peças', icon: '⚙️' },
+                { code: 'bearings', label: 'Rolamentos', icon: '🔩' },
+                { code: 'autoparts', label: 'Autopeças', icon: '🚗' },
+                { code: 'motoparts', label: 'Motopeças', icon: '🏍️' }
+            ],
+            goals: [
+                { code: 'giro', label: 'Alto Giro', description: 'Produtos com alta velocidade de venda', icon: '🔄' },
+                { code: 'ruptura', label: 'Ruptura', description: 'Itens que o cliente costuma comprar', icon: '📦' },
+                { code: 'mix', label: 'Mix', description: 'Aumentar penetração de categorias', icon: '🎯' },
+                { code: 'margem', label: 'Margem', description: 'Produtos com maior margem', icon: '💰' },
+                { code: 'campanha', label: 'Campanha', description: 'Itens em promoção', icon: '🏷️' },
+                { code: 'geral', label: 'Geral', description: 'Mix de estratégias', icon: '📊' }
+            ]
+        });
     } catch (error) {
-        console.error('[OffersRoutes] Error getting offer:', error);
         res.status(500).json({
             success: false,
-            error: 'Internal server error'
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route GET /api/offers/health
+ * @desc Health check for Offers Agent connection
+ * @access Public
+ */
+router.get('/health', async (req, res) => {
+    try {
+        const result = await offersService.healthCheck();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            status: 'error',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route GET /api/offers/today
+ * @desc Get today's offers
+ * @access Protected
+ */
+router.get('/today', authenticateToken, async (req, res) => {
+    try {
+        const authToken = req.headers.authorization?.replace('Bearer ', '');
+        const result = await offersService.getTodayOffers(authToken);
+        res.json(result);
+    } catch (error) {
+        console.error('[OffersRoutes] Error getting today offers:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            offers: [],
+            total: 0
         });
     }
 });
@@ -98,7 +145,7 @@ router.get('/:offerId', authenticate, async (req, res) => {
  * @desc Get offers for a customer
  * @access Protected
  */
-router.get('/customer/:customerId', authenticate, async (req, res) => {
+router.get('/customer/:customerId', authenticateToken, async (req, res) => {
     try {
         const { customerId } = req.params;
         const { limit } = req.query;
@@ -123,32 +170,11 @@ router.get('/customer/:customerId', authenticate, async (req, res) => {
 });
 
 /**
- * @route GET /api/offers/today
- * @desc Get today's offers
- * @access Protected
- */
-router.get('/today', authenticate, async (req, res) => {
-    try {
-        const authToken = req.headers.authorization?.replace('Bearer ', '');
-        const result = await offersService.getTodayOffers(authToken);
-        res.json(result);
-    } catch (error) {
-        console.error('[OffersRoutes] Error getting today offers:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error',
-            offers: [],
-            total: 0
-        });
-    }
-});
-
-/**
  * @route POST /api/offers/:offerId/price
  * @desc Calculate prices for an offer
  * @access Protected
  */
-router.post('/:offerId/price', authenticate, async (req, res) => {
+router.post('/:offerId/price', authenticateToken, async (req, res) => {
     try {
         const { offerId } = req.params;
         const { paymentTerm, installments } = req.body;
@@ -178,7 +204,7 @@ router.post('/:offerId/price', authenticate, async (req, res) => {
  * @desc Evaluate credit for an offer
  * @access Protected
  */
-router.post('/:offerId/credit', authenticate, async (req, res) => {
+router.post('/:offerId/credit', authenticateToken, async (req, res) => {
     try {
         const { offerId } = req.params;
         const { paymentTermsDays, installments } = req.body;
@@ -204,54 +230,29 @@ router.post('/:offerId/credit', authenticate, async (req, res) => {
 });
 
 /**
- * @route GET /api/offers/health
- * @desc Health check for Offers Agent connection
- * @access Public
- */
-router.get('/health', async (req, res) => {
-    try {
-        const result = await offersService.healthCheck();
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            status: 'error',
-            error: error.message
-        });
-    }
-});
-
-/**
- * @route GET /api/offers/config
- * @desc Get available segments and goals
+ * @route GET /api/offers/:offerId
+ * @desc Get offer by ID
  * @access Protected
  */
-router.get('/config', authenticate, async (req, res) => {
+router.get('/:offerId', authenticateToken, async (req, res) => {
     try {
-        res.json({
-            success: true,
-            segments: [
-                { code: 'machines', label: 'Máquinas', icon: '🔧' },
-                { code: 'parts', label: 'Peças', icon: '⚙️' },
-                { code: 'bearings', label: 'Rolamentos', icon: '🔩' },
-                { code: 'autoparts', label: 'Autopeças', icon: '🚗' },
-                { code: 'motoparts', label: 'Motopeças', icon: '🏍️' }
-            ],
-            goals: [
-                { code: 'giro', label: 'Alto Giro', description: 'Produtos com alta velocidade de venda', icon: '🔄' },
-                { code: 'ruptura', label: 'Ruptura', description: 'Itens que o cliente costuma comprar', icon: '📦' },
-                { code: 'mix', label: 'Mix', description: 'Aumentar penetração de categorias', icon: '🎯' },
-                { code: 'margem', label: 'Margem', description: 'Produtos com maior margem', icon: '💰' },
-                { code: 'campanha', label: 'Campanha', description: 'Itens em promoção', icon: '🏷️' },
-                { code: 'geral', label: 'Geral', description: 'Mix de estratégias', icon: '📊' }
-            ]
-        });
+        const { offerId } = req.params;
+        const authToken = req.headers.authorization?.replace('Bearer ', '');
+
+        const result = await offersService.getOffer(offerId, authToken);
+
+        if (!result.success) {
+            return res.status(result.statusCode || 404).json(result);
+        }
+
+        res.json(result);
     } catch (error) {
+        console.error('[OffersRoutes] Error getting offer:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Internal server error'
         });
     }
 });
 
-module.exports = router;
+export default router;

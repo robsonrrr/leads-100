@@ -35,13 +35,15 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   ShoppingCart as CartIcon,
-  OpenInNew as OpenInNewIcon
+  OpenInNew as OpenInNewIcon,
+  LocalOffer as OfferIcon
 } from '@mui/icons-material'
-import { customersService } from '../services/api'
+import { customersService, offersService } from '../services/api'
 import { useToast } from '../contexts/ToastContext'
 import InteractionsTimeline from '../components/InteractionsTimeline'
 import ChurnRiskWidget from '../components/ChurnRiskWidget'
 import RecommendationsWidget from '../components/RecommendationsWidget'
+import { OfferBuilder } from '../components/offers'
 
 // Helper para extrair level do JWT
 const getJwtLevel = (token) => {
@@ -168,9 +170,11 @@ function CustomerDetailPage() {
   const [orders, setOrders] = useState([])
   const [leads, setLeads] = useState([])
   const [products, setProducts] = useState([])
+  const [customerOffers, setCustomerOffers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tabValue, setTabValue] = useState(0)
+  const [showOfferBuilder, setShowOfferBuilder] = useState(false)
 
   // Paginação
   const [ordersPage, setOrdersPage] = useState(1)
@@ -229,6 +233,13 @@ function CustomerDetailPage() {
     }
   }, [tabValue])
 
+  // Carregar ofertas quando tab muda
+  useEffect(() => {
+    if (tabValue === 4) {
+      loadOffers()
+    }
+  }, [tabValue])
+
   async function loadOrders() {
     try {
       const res = await customersService.getOrders(id, { page: ordersPage, limit: 10 })
@@ -262,6 +273,23 @@ function CustomerDetailPage() {
     } catch (err) {
       console.error('Erro ao carregar produtos:', err)
     }
+  }
+
+  async function loadOffers() {
+    try {
+      const res = await offersService.getByCustomer(id, 20)
+      if (res.data.success) {
+        setCustomerOffers(res.data.offers || [])
+      }
+    } catch (err) {
+      console.error('Erro ao carregar ofertas:', err)
+    }
+  }
+
+  const handleOfferBuilt = (offer) => {
+    toast.success(`Oferta ${offer.offerId} criada com sucesso!`)
+    loadOffers()
+    setShowOfferBuilder(false)
   }
 
   const handleNewLead = () => {
@@ -332,6 +360,15 @@ function CustomerDetailPage() {
             </Typography>
           </Box>
         </Box>
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<OfferIcon />}
+          onClick={() => setShowOfferBuilder(true)}
+          sx={{ mr: 1 }}
+        >
+          Construir Oferta
+        </Button>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -447,6 +484,7 @@ function CustomerDetailPage() {
           <Tab label={`Cotações (${metrics?.leads?.openCount || 0} abertas)`} />
           <Tab label="Produtos Frequentes" />
           <Tab label="Interações" />
+          <Tab label="Ofertas" icon={<OfferIcon />} iconPosition="start" />
         </Tabs>
 
         {/* Tab: Pedidos */}
@@ -607,6 +645,94 @@ function CustomerDetailPage() {
         {/* Tab: Interações */}
         <TabPanel value={tabValue} index={3}>
           <InteractionsTimeline customerId={id} />
+        </TabPanel>
+
+        {/* Tab: Ofertas */}
+        <TabPanel value={tabValue} index={4}>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              <OfferIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              Ofertas Comerciais
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setShowOfferBuilder(true)}
+            >
+              Nova Oferta
+            </Button>
+          </Box>
+
+          {showOfferBuilder && (
+            <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.default' }}>
+              <OfferBuilder
+                customerId={parseInt(id)}
+                customerName={customer?.tradeName || customer?.name}
+                sellerId={user?.sellerId || user?.id}
+                segment="machines"
+                onOfferBuilt={handleOfferBuilt}
+                onClose={() => setShowOfferBuilder(false)}
+                embedded
+              />
+            </Paper>
+          )}
+
+          {customerOffers.length === 0 && !showOfferBuilder ? (
+            <Alert severity="info">
+              Nenhuma oferta encontrada. Clique em "Nova Oferta" para construir uma oferta comercial usando IA.
+            </Alert>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Data</TableCell>
+                    <TableCell>Segmento</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Valor</TableCell>
+                    <TableCell align="center">Itens</TableCell>
+                    <TableCell align="center">Ações</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {customerOffers.map(offer => (
+                    <TableRow key={offer.offer_id} hover>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="bold">
+                          {offer.offer_id?.slice(0, 8)}...
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{formatDate(offer.created_at)}</TableCell>
+                      <TableCell>
+                        <Chip label={offer.segment} size="small" />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={offer.outcome}
+                          size="small"
+                          color={offer.outcome === 'ALLOW' ? 'success' : 'warning'}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        {offer.pricing_total ? formatCurrency(offer.pricing_total) : '-'}
+                      </TableCell>
+                      <TableCell align="center">
+                        {offer.items_count || '-'}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Ver detalhes">
+                          <IconButton size="small">
+                            <ViewIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </TabPanel>
       </Paper>
     </Box>
