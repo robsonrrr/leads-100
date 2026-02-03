@@ -908,7 +908,7 @@ export async function updateItem(req, res, next) {
         // Buscar TODOS os itens do lead (exceto acessórios puros) com seus motor/tampo
         const [allLeadItems] = await db.execute(`
           SELECT c.cProduct, c.qProduct, i.motor, i.tampo
-          FROM mak.cart c
+          FROM mak.icart c
           INNER JOIN mak.inv i ON i.id = c.cProduct
           WHERE c.cSCart = ?
             AND c.cProduct != ?

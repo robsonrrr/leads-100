@@ -1758,86 +1758,172 @@ function CartItems({ leadId, lead, readOnly = false, onStockIssuesChange }) {
                         </Box>
                       </TableCell>
                       <TableCell align="right" sx={{ minWidth: 80 }}>
-                        {inlineEdit.itemId === item.id && inlineEdit.field === 'quantity' ? (
-                          <TextField
-                            autoFocus
-                            type="number"
-                            size="small"
-                            value={inlineEdit.value}
-                            onChange={(e) => setInlineEdit(prev => ({ ...prev, value: e.target.value }))}
-                            onBlur={() => handleSaveInlineEdit(item)}
-                            onKeyDown={(e) => handleInlineKeyDown(e, item)}
-                            inputProps={{ min: 1, step: 1, style: { textAlign: 'right' } }}
-                            disabled={savingInline[item.id]}
-                            sx={{ width: 70 }}
-                            InputProps={{
-                              endAdornment: savingInline[item.id] ? (
-                                <CircularProgress size={14} />
-                              ) : null
-                            }}
-                          />
-                        ) : (
-                          <Tooltip title={readOnly ? '' : 'Clique para editar'} placement="top">
-                            <Typography
-                              variant="body2"
-                              onClick={() => handleStartInlineEdit(item, 'quantity')}
-                              sx={{
-                                cursor: readOnly ? 'default' : 'pointer',
-                                padding: '4px 8px',
-                                borderRadius: 1,
-                                display: 'inline-block',
-                                transition: 'all 0.2s ease',
-                                '&:hover': readOnly ? {} : {
-                                  bgcolor: 'action.hover',
-                                  boxShadow: 1
-                                }
+                        {/* Acessórios sem preço (motor/tampo) herdam quantidade das máquinas - não editável */}
+                        {(() => {
+                          const isZeroPriceAccessory = parseFloat(item.price) === 0 || parseFloat(item.originalPrice || item.product?.price || 0) === 0
+
+                          if (isZeroPriceAccessory) {
+                            // Acessório sem preço - mostrar quantidade herdada com indicador visual
+                            return (
+                              <Tooltip
+                                title="Quantidade calculada das máquinas no carrinho (atualizado automaticamente)"
+                                placement="top"
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      padding: '4px 8px',
+                                      borderRadius: 1,
+                                      display: 'inline-block',
+                                      color: 'text.secondary',
+                                      fontStyle: 'italic'
+                                    }}
+                                  >
+                                    {item.quantity}
+                                  </Typography>
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      fontSize: '0.7rem',
+                                      color: 'info.main',
+                                      display: 'flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title="Vinculado à máquina"
+                                  >
+                                    🔗
+                                  </Box>
+                                </Box>
+                              </Tooltip>
+                            )
+                          }
+
+                          // Produto com preço - permite edição normal
+                          return inlineEdit.itemId === item.id && inlineEdit.field === 'quantity' ? (
+                            <TextField
+                              autoFocus
+                              type="number"
+                              size="small"
+                              value={inlineEdit.value}
+                              onChange={(e) => setInlineEdit(prev => ({ ...prev, value: e.target.value }))}
+                              onBlur={() => handleSaveInlineEdit(item)}
+                              onKeyDown={(e) => handleInlineKeyDown(e, item)}
+                              inputProps={{ min: 1, step: 1, style: { textAlign: 'right' } }}
+                              disabled={savingInline[item.id]}
+                              sx={{ width: 70 }}
+                              InputProps={{
+                                endAdornment: savingInline[item.id] ? (
+                                  <CircularProgress size={14} />
+                                ) : null
                               }}
-                            >
-                              {item.quantity}
-                            </Typography>
-                          </Tooltip>
-                        )}
+                            />
+                          ) : (
+                            <Tooltip title={readOnly ? '' : 'Clique para editar'} placement="top">
+                              <Typography
+                                variant="body2"
+                                onClick={() => handleStartInlineEdit(item, 'quantity')}
+                                sx={{
+                                  cursor: readOnly ? 'default' : 'pointer',
+                                  padding: '4px 8px',
+                                  borderRadius: 1,
+                                  display: 'inline-block',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': readOnly ? {} : {
+                                    bgcolor: 'action.hover',
+                                    boxShadow: 1
+                                  }
+                                }}
+                              >
+                                {item.quantity}
+                              </Typography>
+                            </Tooltip>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell align="center" sx={{ minWidth: 70 }}>
-                        {inlineEdit.itemId === item.id && inlineEdit.field === 'times' ? (
-                          <TextField
-                            autoFocus
-                            type="number"
-                            size="small"
-                            value={inlineEdit.value}
-                            onChange={(e) => setInlineEdit(prev => ({ ...prev, value: e.target.value }))}
-                            onBlur={() => handleSaveInlineEdit(item)}
-                            onKeyDown={(e) => handleInlineKeyDown(e, item)}
-                            inputProps={{ min: 0, step: 1, style: { textAlign: 'center' } }}
-                            disabled={savingInline[item.id]}
-                            sx={{ width: 60 }}
-                            InputProps={{
-                              endAdornment: savingInline[item.id] ? (
-                                <CircularProgress size={14} />
-                              ) : null
-                            }}
-                          />
-                        ) : (
-                          <Tooltip title={readOnly ? '' : 'Clique para editar'} placement="top">
-                            <Typography
-                              variant="body2"
-                              onClick={() => handleStartInlineEdit(item, 'times')}
-                              sx={{
-                                cursor: readOnly ? 'default' : 'pointer',
-                                padding: '4px 8px',
-                                borderRadius: 1,
-                                display: 'inline-block',
-                                transition: 'all 0.2s ease',
-                                '&:hover': readOnly ? {} : {
-                                  bgcolor: 'action.hover',
-                                  boxShadow: 1
-                                }
+                        {/* Acessórios sem preço (motor/tampo) herdam prazo da máquina - não editável */}
+                        {(() => {
+                          const isZeroPriceAccessory = parseFloat(item.price) === 0 || parseFloat(item.originalPrice || item.product?.price || 0) === 0
+
+                          if (isZeroPriceAccessory) {
+                            // Acessório sem preço - mostrar prazo herdado com indicador visual
+                            return (
+                              <Tooltip
+                                title="Prazo herdado da máquina (atualizado automaticamente)"
+                                placement="top"
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      padding: '4px 8px',
+                                      borderRadius: 1,
+                                      display: 'inline-block',
+                                      color: 'text.secondary',
+                                      fontStyle: 'italic'
+                                    }}
+                                  >
+                                    {item.times ?? 1}
+                                  </Typography>
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      fontSize: '0.7rem',
+                                      color: 'info.main',
+                                      display: 'flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title="Vinculado à máquina"
+                                  >
+                                    🔗
+                                  </Box>
+                                </Box>
+                              </Tooltip>
+                            )
+                          }
+
+                          // Produto com preço - permite edição normal
+                          return inlineEdit.itemId === item.id && inlineEdit.field === 'times' ? (
+                            <TextField
+                              autoFocus
+                              type="number"
+                              size="small"
+                              value={inlineEdit.value}
+                              onChange={(e) => setInlineEdit(prev => ({ ...prev, value: e.target.value }))}
+                              onBlur={() => handleSaveInlineEdit(item)}
+                              onKeyDown={(e) => handleInlineKeyDown(e, item)}
+                              inputProps={{ min: 0, step: 1, style: { textAlign: 'center' } }}
+                              disabled={savingInline[item.id]}
+                              sx={{ width: 60 }}
+                              InputProps={{
+                                endAdornment: savingInline[item.id] ? (
+                                  <CircularProgress size={14} />
+                                ) : null
                               }}
-                            >
-                              {item.times ?? 1}
-                            </Typography>
-                          </Tooltip>
-                        )}
+                            />
+                          ) : (
+                            <Tooltip title={readOnly ? '' : 'Clique para editar'} placement="top">
+                              <Typography
+                                variant="body2"
+                                onClick={() => handleStartInlineEdit(item, 'times')}
+                                sx={{
+                                  cursor: readOnly ? 'default' : 'pointer',
+                                  padding: '4px 8px',
+                                  borderRadius: 1,
+                                  display: 'inline-block',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': readOnly ? {} : {
+                                    bgcolor: 'action.hover',
+                                    boxShadow: 1
+                                  }
+                                }}
+                              >
+                                {item.times ?? 1}
+                              </Typography>
+                            </Tooltip>
+                          )
+                        })()}
                       </TableCell>
                       {/* Preço Unit. */}
                       <TableCell align="right">
