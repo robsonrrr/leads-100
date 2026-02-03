@@ -13,13 +13,13 @@ class AIGateway {
             apiKey: process.env.OPENAI_API_KEY || 'sk-placeholder', // Fallback seguro
         });
 
-        // Rate Limiter: Máximo 20 requests por segundo, com fila
+        // Rate Limiter: Aumentado para suportar ARIA + UI (200 RPM)
         this.limiter = new Bottleneck({
-            minTime: 50, // Mínimo 50ms entre requests (20req/s)
-            maxConcurrent: 5, // No máximo 5 requests simultâneos
-            reservoir: 100, // 100 tokens iniciais
-            reservoirRefreshAmount: 100, // Recarrega 100 tokens
-            reservoirRefreshInterval: 60 * 1000 // A cada 60 segundos (100 RPM global)
+            minTime: 30, // Mínimo 30ms entre requests (~33req/s)
+            maxConcurrent: 10, // No máximo 10 requests simultâneos
+            reservoir: 200, // 200 tokens iniciais
+            reservoirRefreshAmount: 200, // Recarrega 200 tokens
+            reservoirRefreshInterval: 60 * 1000 // A cada 60 segundos (200 RPM global)
         });
 
         // Modelo padrão - Custo x Benefício

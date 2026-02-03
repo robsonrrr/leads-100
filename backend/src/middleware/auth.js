@@ -18,6 +18,25 @@ export async function authenticateToken(req, res, next) {
     return next();
   }
 
+  // ARIA Service-to-Service Auth: Check for internal service token
+  const ariaServiceToken = req.headers['x-aria-service-token'];
+  const ariaUserId = req.headers['x-aria-user-id'];
+  const ARIA_SERVICE_SECRET = process.env.ARIA_SERVICE_SECRET || 'aria-internal-service-2026';
+
+  if (ariaServiceToken && ariaServiceToken === ARIA_SERVICE_SECRET) {
+    logger.debug('ARIA Service Auth: Accepting service token');
+    req.user = {
+      userId: parseInt(ariaUserId) || 1,
+      seller_id: parseInt(ariaUserId) || 1,
+      username: 'aria_service',
+      nick: 'ARIA Voice Assistant',
+      email: 'aria@csuite.internal',
+      level: 5,  // High level for AI access
+      source: 'aria'
+    };
+    return next();
+  }
+
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 

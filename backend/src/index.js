@@ -44,6 +44,7 @@ import pricingAdminRoutes from './routes/pricing-admin.routes.js';
 import v2Routes from './v2/index.js';
 import whatsappSendRoutes from './routes/whatsapp-send.routes.js';
 import whatsappAIRoutes from './routes/whatsapp-ai.routes.js';
+import offersRoutes from './routes/offers.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -238,6 +239,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/pricing-admin', pricingAdminRoutes);
 app.use('/api/whatsapp', whatsappSendRoutes);
 app.use('/api/whatsapp/ai', whatsappAIRoutes);
+app.use('/api/offers', offersRoutes);
 
 // API V2 Routes (Plan 2026)
 app.use('/api/v2', v2Routes);

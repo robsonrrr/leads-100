@@ -366,5 +366,32 @@ export const analyticsV2Service = {
   updateBriefConfig: (data) => api.put('/v2/analytics/brief/config', data),
 }
 
+// CSuite Offers Agent Integration
+export const offersService = {
+  // Build offer for customer
+  build: (data) => api.post('/offers/build', data),
+
+  // Get offer by ID
+  getById: (offerId) => api.get(`/offers/${offerId}`),
+
+  // Get customer offers
+  getByCustomer: (customerId, limit = 10) => api.get(`/offers/customer/${customerId}`, { params: { limit } }),
+
+  // Get today's offers
+  getToday: () => api.get('/offers/today'),
+
+  // Calculate prices (via Pricing Agent)
+  price: (offerId, options = {}) => api.post(`/offers/${offerId}/price`, options),
+
+  // Evaluate credit (via Credit Agent)
+  evaluateCredit: (offerId, options = {}) => api.post(`/offers/${offerId}/credit`, options),
+
+  // Get configuration (segments, goals)
+  getConfig: () => api.get('/offers/config'),
+
+  // Health check
+  health: () => api.get('/offers/health'),
+}
+
 export default api
 

@@ -41,7 +41,7 @@ fi
 # 1. Construir Backend
 log "📦 [1/5] Construindo Backend..."
 cd "$LEADS_PATH"
-docker build -t leads-backend:latest -f docker/Dockerfile.backend.prod .
+docker build --no-cache -t leads-backend:latest -f docker/Dockerfile.backend.prod .
 success "Backend construído!"
 
 # 2. Construir Frontend
@@ -78,16 +78,16 @@ echo "[deploy] Carregando leads-frontend..."
 gunzip -c /tmp/leads-frontend-deploy.tar.gz | docker load
 
 echo "[deploy] Atualizando serviço leads-backend..."
-docker service update --force csuite-prod_leads-backend
+docker service update --force vallery_leads-backend
 
 echo "[deploy] Atualizando serviço leads-frontend..."
-docker service update --force csuite-prod_leads-frontend
+docker service update --force vallery_leads-frontend
 
 echo "[deploy] Limpando arquivos temporários..."
 rm -f /tmp/leads-*-deploy.tar.gz
 
 echo "[deploy] Status dos serviços:"
-docker service ls | grep leads
+docker service ls | grep vallery_leads
 REMOTE_DEPLOY
 
 success "Deploy concluído!"
