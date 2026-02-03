@@ -21,7 +21,15 @@ import {
   TableRow,
   Pagination,
   IconButton,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material'
 import {
   ArrowBack as ArrowBackIcon,
@@ -36,7 +44,10 @@ import {
   TrendingDown as TrendingDownIcon,
   ShoppingCart as CartIcon,
   OpenInNew as OpenInNewIcon,
-  LocalOffer as OfferIcon
+  LocalOffer as OfferIcon,
+  Close as CloseIcon,
+  ContentCopy as CopyIcon,
+  WhatsApp as WhatsAppIcon
 } from '@mui/icons-material'
 import { customersService, offersService } from '../services/api'
 import { useToast } from '../contexts/ToastContext'
@@ -175,6 +186,8 @@ function CustomerDetailPage() {
   const [error, setError] = useState('')
   const [tabValue, setTabValue] = useState(0)
   const [showOfferBuilder, setShowOfferBuilder] = useState(false)
+  const [selectedOffer, setSelectedOffer] = useState(null)
+  const [offerDetailLoading, setOfferDetailLoading] = useState(false)
 
   // Paginação
   const [ordersPage, setOrdersPage] = useState(1)
@@ -306,6 +319,42 @@ function CustomerDetailPage() {
 
   const handleEditLead = (leadId) => {
     navigate(`/leads/${leadId}/edit`)
+  }
+
+  const handleViewOfferDetails = async (offer) => {
+    setOfferDetailLoading(true)
+    try {
+      const res = await offersService.getById(offer.offer_id)
+      if (res.data?.success && res.data.offer) {
+        setSelectedOffer(res.data.offer)
+      } else {
+        // Use the offer from the list if API call doesn't return full details
+        setSelectedOffer(offer)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar detalhes da oferta:', err)
+      setSelectedOffer(offer)
+    } finally {
+      setOfferDetailLoading(false)
+    }
+  }
+
+  const handleCloseOfferDetails = () => {
+    setSelectedOffer(null)
+  }
+
+  const handleCopyWhatsApp = (text) => {
+    if (text) {
+      navigator.clipboard.writeText(text)
+      toast.success('Texto copiado!')
+    }
+  }
+
+  const handleOpenWhatsApp = (text) => {
+    if (text) {
+      const encodedText = encodeURIComponent(text)
+      window.open(`https://wa.me/?text=${encodedText}`, '_blank')
+    }
   }
 
   if (loading) {
@@ -722,7 +771,10 @@ function CustomerDetailPage() {
                       </TableCell>
                       <TableCell align="center">
                         <Tooltip title="Ver detalhes">
-                          <IconButton size="small">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewOfferDetails(offer)}
+                          >
                             <ViewIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -735,6 +787,174 @@ function CustomerDetailPage() {
           )}
         </TabPanel>
       </Paper>
+
+      {/* Offer Details Dialog */}
+      <Dialog
+        open={!!selectedOffer}
+        onClose={handleCloseOfferDetails}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <OfferIcon color="primary" />
+            <Typography variant="h6">
+              Detalhes da Oferta
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseOfferDetails} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {offerDetailLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : selectedOffer && (
+            <Box>
+              {/* Offer ID and Status */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  ID da Oferta
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {selectedOffer.offer_id}
+                </Typography>
+              </Box>
+
+              {/* Status Chips */}
+              <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                <Chip
+                  label={selectedOffer.segment?.toUpperCase()}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+                <Chip
+                  label={selectedOffer.outcome || 'GOVERNED'}
+                  size="small"
+                  color={selectedOffer.outcome === 'ALLOW' ? 'success' : 'warning'}
+                />
+                {selectedOffer.goal_code && (
+                  <Chip label={`Meta: ${selectedOffer.goal_code}`} size="small" variant="outlined" />
+                )}
+              </Box>
+
+              {/* Dates */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Criado em</Typography>
+                  <Typography>{formatDate(selectedOffer.created_at)}</Typography>
+                </Grid>
+                {selectedOffer.pricing_total && (
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Valor Total</Typography>
+                    <Typography fontWeight="bold" color="primary.main">
+                      {formatCurrency(selectedOffer.pricing_total)}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+
+              {/* Reasons */}
+              {selectedOffer.reasons?.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" gutterBottom>Razões</Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {selectedOffer.reasons.map((reason, idx) => (
+                      <Chip key={idx} label={reason} size="small" variant="outlined" />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Bundles */}
+              {selectedOffer.bundles?.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Bundles Sugeridos ({selectedOffer.bundles.length})
+                  </Typography>
+                  {selectedOffer.bundles.map((bundle, idx) => (
+                    <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 1 }}>
+                      <Typography variant="body2" fontWeight="bold" gutterBottom>
+                        {bundle.name}
+                      </Typography>
+                      <List dense disablePadding>
+                        {bundle.items?.map((item, itemIdx) => (
+                          <ListItem key={itemIdx} disablePadding sx={{ py: 0.25 }}>
+                            <ListItemText
+                              primary={`${item.qty}x ${item.sku}`}
+                              secondary={item.why?.join(', ')}
+                              primaryTypographyProps={{ variant: 'body2' }}
+                              secondaryTypographyProps={{ variant: 'caption' }}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  ))}
+                </Box>
+              )}
+
+              {/* WhatsApp Text */}
+              {selectedOffer.whatsapp_text && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <WhatsAppIcon sx={{ color: '#25D366' }} />
+                    Mensagem WhatsApp
+                  </Typography>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      backgroundColor: '#f5f5f5',
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'monospace',
+                      fontSize: '0.85rem',
+                      maxHeight: 200,
+                      overflow: 'auto'
+                    }}
+                  >
+                    {selectedOffer.whatsapp_text}
+                  </Paper>
+                  <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<CopyIcon />}
+                      onClick={() => handleCopyWhatsApp(selectedOffer.whatsapp_text)}
+                    >
+                      Copiar
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      startIcon={<WhatsAppIcon />}
+                      onClick={() => handleOpenWhatsApp(selectedOffer.whatsapp_text)}
+                    >
+                      Enviar WhatsApp
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              {/* No data message */}
+              {!selectedOffer.bundles?.length && !selectedOffer.whatsapp_text && (
+                <Alert severity="info">
+                  Esta oferta está em processamento. Os bundles e a mensagem WhatsApp serão gerados em breve.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseOfferDetails}>
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
