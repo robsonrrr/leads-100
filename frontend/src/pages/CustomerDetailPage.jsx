@@ -767,7 +767,7 @@ function CustomerDetailPage() {
                         {offer.pricing_total ? formatCurrency(offer.pricing_total) : '-'}
                       </TableCell>
                       <TableCell align="center">
-                        {offer.items_count || '-'}
+                        {offer.item_count || offer.items_count || '-'}
                       </TableCell>
                       <TableCell align="center">
                         <Tooltip title="Ver detalhes">
