@@ -87,7 +87,7 @@ function ChurnRiskWidget({ customerId }) {
                 <Box sx={{ flex: 1 }}>
                     <LinearProgress
                         variant="determinate"
-                        value={risk.score}
+                        value={Number(risk.score) || 0}
                         sx={{
                             height: 8,
                             borderRadius: 5,
